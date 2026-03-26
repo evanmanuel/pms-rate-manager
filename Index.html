@@ -1,11 +1,504 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Rate Manager</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PMS — Villa & Small Rental</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f9f9f9;
+      color: #111;
+      font-size: 14px;
+    }
+    nav {
+      display: flex;
+      gap: 0;
+      border-bottom: 1px solid #e0e0e0;
+      background: #fff;
+      padding: 0 32px;
+    }
+    nav button {
+      padding: 16px 24px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: #666;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+    nav button.active {
+      color: #111;
+      border-bottom: 2px solid #111;
+      font-weight: 600;
+    }
+    nav button:hover { color: #111; }
+    .page { display: none; padding: 40px 32px; max-width: 900px; }
+    .page.active { display: block; }
+    h2 { font-size: 20px; font-weight: 600; margin-bottom: 24px; }
+    h3 { font-size: 15px; font-weight: 600; margin-bottom: 16px; color: #333; }
+    .section {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 10px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .list-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid #f0f0f0;
+    }
+    .list-item:last-child { border-bottom: none; }
+    .remove-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #999;
+      font-size: 16px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      transition: all 0.2s;
+    }
+    .remove-btn:hover { background: #fee2e2; color: #ef4444; }
+    .add-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 16px;
+    }
+    .add-row input {
+      flex: 1;
+      padding: 9px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+    }
+    .add-row input:focus { border-color: #111; }
+    .btn {
+      padding: 9px 18px;
+      background: #111;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    .btn:hover { background: #333; }
+    .btn-secondary {
+      background: #fff;
+      color: #111;
+      border: 1px solid #e0e0e0;
+    }
+    .btn-secondary:hover { background: #f5f5f5; }
+    /* Form */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 6px; }
+    .form-group label { font-size: 13px; color: #555; font-weight: 500; }
+    .form-group input,
+    .form-group select {
+      padding: 9px 12px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+      transition: border 0.2s;
+      background: #fff;
+    }
+    .form-group input:focus,
+    .form-group select:focus { border-color: #111; }
+    .form-actions { margin-top: 24px; }
+    /* Table */
+    .table-wrapper { overflow-x: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+      border-radius: 10px;
+      overflow: hidden;
+      border: 1px solid #e8e8e8;
+    }
+    th {
+      background: #f5f5f5;
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+    }
+    td {
+      padding: 12px 14px;
+      border-top: 1px solid #f0f0f0;
+      font-size: 13px;
+      white-space: nowrap;
+    }
+    tr:hover td { background: #fafafa; }
+    .status-badge {
+      padding: 3px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    .status-new { background: #dcfce7; color: #16a34a; }
+    .status-cancelled { background: #fee2e2; color: #dc2626; }
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: #111;
+      color: #fff;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px;
+      opacity: 0;
+      transition: opacity 0.3s;
+      z-index: 999;
+    }
+    .toast.show { opacity: 1; }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      color: #999;
+      font-size: 13px;
+    }
+  </style>
 </head>
 <body>
-  <h1>My Rate Management Tool</h1>
-  <p>Coming soon — built by me!</p>
+
+<nav>
+  <button class="active" onclick="showPage('settings')">Settings</button>
+  <button onclick="showPage('reservation')">Reservation</button>
+  <button onclick="showPage('database')">Database</button>
+</nav>
+
+<!-- SETTINGS PAGE -->
+<div class="page active" id="page-settings">
+  <h2>Settings</h2>
+
+  <div class="section">
+    <h3>Channels</h3>
+    <div id="channel-list"></div>
+    <div class="add-row">
+      <input type="text" id="new-channel" placeholder="Add new channel..." />
+      <button class="btn" onclick="addChannel()">Save</button>
+    </div>
+  </div>
+
+  <div class="section">
+    <h3>Room Names</h3>
+    <div id="room-list"></div>
+    <div class="add-row">
+      <input type="text" id="new-room" placeholder="Add new room..." />
+      <button class="btn" onclick="addRoom()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- RESERVATION PAGE -->
+<div class="page" id="page-reservation">
+  <h2>New Reservation</h2>
+  <div class="section">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Guest Name</label>
+        <input type="text" id="guest-name" placeholder="Enter guest name" />
+      </div>
+      <div class="form-group">
+        <label>Country</label>
+        <input type="text" id="country" placeholder="Enter country" />
+      </div>
+      <div class="form-group">
+        <label>Arrival Date</label>
+        <input type="date" id="arrival-date" />
+      </div>
+      <div class="form-group">
+        <label>Departure Date</label>
+        <input type="date" id="departure-date" />
+      </div>
+      <div class="form-group">
+        <label>Rate (per night)</label>
+        <input type="number" id="rate" placeholder="0.00" />
+      </div>
+      <div class="form-group">
+        <label>Channel</label>
+        <select id="channel-select">
+          <option value="">Select channel...</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Room Name</label>
+        <select id="room-select">
+          <option value="">Select room...</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn" onclick="saveReservation()">Save Reservation</button>
+    </div>
+  </div>
+</div>
+
+<!-- DATABASE PAGE -->
+<div class="page" id="page-database">
+  <h2>Database</h2>
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Confirmation No.</th>
+          <th>Created Date</th>
+          <th>Status</th>
+          <th>Guest Name</th>
+          <th>Arrival</th>
+          <th>Departure</th>
+          <th>Rate</th>
+          <th>Country</th>
+          <th>Channel</th>
+          <th>Room</th>
+          <th>Arr. Month</th>
+          <th>Room Nights</th>
+          <th>Room Revenue</th>
+        </tr>
+      </thead>
+      <tbody id="reservation-table-body">
+        <tr><td colspan="13" class="empty-state">No reservations yet</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── SUPABASE CONFIG ──────────────────────────────────────────
+  const SUPABASE_URL = 'https://qhyrdlaeeruyireocfbl.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoeXJkbGFlZXJ1eWlyZW9jZmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MzExNjEsImV4cCI6MjA5MDEwNzE2MX0.QG_6ZV0p51pejAZMbX1gcKbov43jRxDthki2abMMpNs';
+  const { createClient } = supabase;
+  const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ── NAVIGATION ───────────────────────────────────────────────
+  function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    event.target.classList.add('active');
+    if (page === 'reservation') loadDropdowns();
+    if (page === 'database') loadReservations();
+  }
+
+  // ── TOAST ────────────────────────────────────────────────────
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── SETTINGS: CHANNELS ───────────────────────────────────────
+  async function loadChannels() {
+    const { data } = await db.from('channels').select('*').order('created_at');
+    const list = document.getElementById('channel-list');
+    list.innerHTML = '';
+    if (!data || data.length === 0) {
+      list.innerHTML = '<p class="empty-state">No channels yet</p>';
+      return;
+    }
+    data.forEach(ch => {
+      list.innerHTML += `
+        <div class="list-item">
+          <span>${ch.name}</span>
+          <button class="remove-btn" onclick="removeChannel('${ch.id}')">✕</button>
+        </div>`;
+    });
+  }
+
+  async function addChannel() {
+    const input = document.getElementById('new-channel');
+    const name = input.value.trim();
+    if (!name) return showToast('Please enter a channel name');
+    const { error } = await db.from('channels').insert({ name });
+    if (error) return showToast('Error adding channel');
+    input.value = '';
+    loadChannels();
+    showToast('Channel added ✓');
+  }
+
+  async function removeChannel(id) {
+    await db.from('channels').delete().eq('id', id);
+    loadChannels();
+    showToast('Channel removed');
+  }
+
+  // ── SETTINGS: ROOMS ──────────────────────────────────────────
+  async function loadRooms() {
+    const { data } = await db.from('rooms').select('*').order('created_at');
+    const list = document.getElementById('room-list');
+    list.innerHTML = '';
+    if (!data || data.length === 0) {
+      list.innerHTML = '<p class="empty-state">No rooms yet</p>';
+      return;
+    }
+    data.forEach(r => {
+      list.innerHTML += `
+        <div class="list-item">
+          <span>${r.name}</span>
+          <button class="remove-btn" onclick="removeRoom('${r.id}')">✕</button>
+        </div>`;
+    });
+  }
+
+  async function addRoom() {
+    const input = document.getElementById('new-room');
+    const name = input.value.trim();
+    if (!name) return showToast('Please enter a room name');
+    const { error } = await db.from('rooms').insert({ name });
+    if (error) return showToast('Error adding room');
+    input.value = '';
+    loadRooms();
+    showToast('Room added ✓');
+  }
+
+  async function removeRoom(id) {
+    await db.from('rooms').delete().eq('id', id);
+    loadRooms();
+    showToast('Room removed');
+  }
+
+  // ── RESERVATION: DROPDOWNS ───────────────────────────────────
+  async function loadDropdowns() {
+    const { data: channels } = await db.from('channels').select('*').order('created_at');
+    const { data: rooms } = await db.from('rooms').select('*').order('created_at');
+
+    const chSel = document.getElementById('channel-select');
+    chSel.innerHTML = '<option value="">Select channel...</option>';
+    channels?.forEach(c => chSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+
+    const rmSel = document.getElementById('room-select');
+    rmSel.innerHTML = '<option value="">Select room...</option>';
+    rooms?.forEach(r => rmSel.innerHTML += `<option value="${r.name}">${r.name}</option>`);
+  }
+
+  // ── RESERVATION: SAVE ────────────────────────────────────────
+  function generateConfNumber() {
+    const today = new Date();
+    const date = today.toISOString().slice(0, 10).replace(/-/g, '');
+    const letters = Array.from({length: 3}, () =>
+      String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('');
+    return date + letters;
+  }
+
+  async function saveReservation() {
+    const guestName   = document.getElementById('guest-name').value.trim();
+    const arrivalDate = document.getElementById('arrival-date').value;
+    const departureDate = document.getElementById('departure-date').value;
+    const rate        = parseFloat(document.getElementById('rate').value);
+    const country     = document.getElementById('country').value.trim();
+    const channel     = document.getElementById('channel-select').value;
+    const roomName    = document.getElementById('room-select').value;
+
+    if (!guestName || !arrivalDate || !departureDate || !rate || !channel || !roomName) {
+      return showToast('Please fill in all required fields');
+    }
+    if (departureDate <= arrivalDate) {
+      return showToast('Departure must be after arrival');
+    }
+
+    const arrival  = new Date(arrivalDate);
+    const departure = new Date(departureDate);
+    const roomNight = Math.round((departure - arrival) / (1000 * 60 * 60 * 24));
+    const roomRevenue = roomNight * rate;
+    const arrivalMonth = arrival.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+    let confNumber, exists = true;
+    while (exists) {
+      confNumber = generateConfNumber();
+      const { data } = await db.from('reservations')
+        .select('id').eq('confirmation_number', confNumber);
+      exists = data && data.length > 0;
+    }
+
+    const { error } = await db.from('reservations').insert({
+      confirmation_number: confNumber,
+      guest_name: guestName,
+      arrival_date: arrivalDate,
+      departure_date: departureDate,
+      rate,
+      country,
+      channel,
+      room_name: roomName,
+      arrival_month: arrivalMonth,
+      room_night: roomNight,
+      room_revenue: roomRevenue,
+      status: 'New Reservation'
+    });
+
+    if (error) return showToast('Error saving reservation');
+
+    showToast(`Reservation saved! Conf: ${confNumber} ✓`);
+    document.getElementById('guest-name').value = '';
+    document.getElementById('arrival-date').value = '';
+    document.getElementById('departure-date').value = '';
+    document.getElementById('rate').value = '';
+    document.getElementById('country').value = '';
+    document.getElementById('channel-select').value = '';
+    document.getElementById('room-select').value = '';
+  }
+
+  // ── DATABASE: LOAD RESERVATIONS ──────────────────────────────
+  async function loadReservations() {
+    const { data } = await db.from('reservations').select('*').order('created_date', { ascending: false });
+    const tbody = document.getElementById('reservation-table-body');
+    if (!data || data.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="13" class="empty-state">No reservations yet</td></tr>';
+      return;
+    }
+    tbody.innerHTML = data.map(r => `
+      <tr>
+        <td>${r.confirmation_number}</td>
+        <td>${r.created_date}</td>
+        <td>
+          <select class="status-badge ${r.status === 'Cancelled' ? 'status-cancelled' : 'status-new'}"
+            onchange="updateStatus('${r.id}', this.value, this)">
+            <option ${r.status === 'New Reservation' ? 'selected' : ''}>New Reservation</option>
+            <option ${r.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
+          </select>
+        </td>
+        <td>${r.guest_name}</td>
+        <td>${r.arrival_date}</td>
+        <td>${r.departure_date}</td>
+        <td>${Number(r.rate).toLocaleString()}</td>
+        <td>${r.country || '-'}</td>
+        <td>${r.channel}</td>
+        <td>${r.room_name}</td>
+        <td>${r.arrival_month}</td>
+        <td>${r.room_night}</td>
+        <td>${Number(r.room_revenue).toLocaleString()}</td>
+      </tr>`).join('');
+  }
+
+  async function updateStatus(id, newStatus, selectEl) {
+    await db.from('reservations').update({ status: newStatus }).eq('id', id);
+    selectEl.className = `status-badge ${newStatus === 'Cancelled' ? 'status-cancelled' : 'status-new'}`;
+    showToast('Status updated ✓');
+  }
+
+  // ── INIT ─────────────────────────────────────────────────────
+  loadChannels();
+  loadRooms();
+</script>
 </body>
 </html>
