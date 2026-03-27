@@ -713,7 +713,290 @@
     }
     .toast.show { opacity: 1; transform: translateY(0); }
 
-    /* ── SCROLLBAR ── */
+    /* ── AVAILABILITY PAGE ── */
+    .avail-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .avail-nav {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .avail-month-display {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 200px;
+    }
+    .avail-month-name {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+      letter-spacing: -0.3px;
+    }
+    .avail-month-year {
+      font-size: 16px;
+      font-weight: 400;
+      color: var(--text-muted);
+    }
+    .avail-nav-btn {
+      width: 32px;
+      height: 32px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-secondary);
+      transition: all 0.15s;
+    }
+    .avail-nav-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+    .avail-today-btn {
+      padding: 6px 14px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--surface);
+      font-size: 12.5px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .avail-today-btn:hover { border-color: var(--accent); color: var(--text-primary); }
+
+    /* Legend */
+    .avail-legend {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      flex-wrap: wrap;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+    .legend-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    /* Calendar card */
+    .avail-calendar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+    }
+
+    /* Day-of-week header */
+    .cal-dow-row {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      border-bottom: 1px solid var(--border);
+    }
+    .cal-dow {
+      padding: 13px 16px;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      border-right: 1px solid var(--border-light);
+    }
+    .cal-dow:last-child { border-right: none; }
+
+    /* Week rows */
+    .cal-weeks { position: relative; }
+    .cal-week {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      border-bottom: 1px solid var(--border-light);
+      min-height: 110px;
+      position: relative;
+    }
+    .cal-week:last-child { border-bottom: none; }
+
+    .cal-cell {
+      border-right: 1px solid var(--border-light);
+      padding: 10px 12px 8px;
+      position: relative;
+      min-height: 110px;
+      vertical-align: top;
+    }
+    .cal-cell:last-child { border-right: none; }
+    .cal-cell.other-month { background: #fafafa; }
+    .cal-cell.today { background: #f0f7ff; }
+
+    /* Day number — large, top-right aligned like reference */
+    .cal-day-num {
+      font-size: 15px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      display: block;
+      text-align: right;
+      line-height: 1;
+      margin-bottom: 6px;
+    }
+    .cal-cell.other-month .cal-day-num { color: #d1d5db; }
+    .cal-cell.today .cal-day-num {
+      color: #fff;
+      background: #3b82f6;
+      border-radius: 50%;
+      width: 28px;
+      height: 28px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      float: right;
+    }
+
+    /* Bar layer */
+    .cal-bars-layer {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+    }
+
+    /* Bars — full-height, bleed to cell edges like reference */
+    .cal-bar {
+      position: absolute;
+      height: 26px;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      cursor: pointer;
+      pointer-events: auto;
+      transition: filter 0.15s, box-shadow 0.15s;
+      z-index: 2;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    }
+    .cal-bar:hover {
+      filter: brightness(0.93);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      z-index: 3;
+    }
+    /* Bar start/end rounding — only round ends where the reservation starts/ends */
+    .cal-bar.bar-start { border-radius: 6px 0 0 6px; }
+    .cal-bar.bar-end   { border-radius: 0 6px 6px 0; }
+    .cal-bar.bar-both  { border-radius: 6px; }
+    .cal-bar.bar-mid   { border-radius: 0; }
+
+    /* Popup */
+    .avail-popup {
+      position: fixed;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0;
+      width: 260px;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.14);
+      z-index: 300;
+      opacity: 0;
+      transform: scale(0.94) translateY(-6px);
+      transition: all 0.2s cubic-bezier(.4,0,.2,1);
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .avail-popup.show {
+      opacity: 1;
+      transform: scale(1) translateY(0);
+      pointer-events: auto;
+    }
+    .popup-banner {
+      padding: 14px 16px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .popup-banner-left { display: flex; align-items: center; gap: 8px; }
+    .popup-room-dot {
+      width: 10px; height: 10px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+    .popup-room-name {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+    .popup-close {
+      width: 24px; height: 24px;
+      border: none; background: none;
+      cursor: pointer;
+      color: var(--text-muted);
+      font-size: 15px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 5px;
+      transition: all 0.15s;
+    }
+    .popup-close:hover { background: var(--bg); color: var(--text-primary); }
+    .popup-body {
+      padding: 0 16px 14px;
+      border-top: 1px solid var(--border-light);
+      padding-top: 12px;
+    }
+    .popup-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 5px 0;
+      font-size: 12.5px;
+      gap: 8px;
+    }
+    .popup-label { color: var(--text-muted); flex-shrink: 0; }
+    .popup-value { color: var(--text-primary); font-weight: 500; text-align: right; }
+    .popup-conf {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      color: var(--text-secondary);
+    }
+    .popup-date-range {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-top: 2px;
+    }
+
+    /* Room-not-available warning on Reservation page */
+    .avail-warning {
+      display: none;
+      align-items: center;
+      gap: 7px;
+      padding: 9px 12px;
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      border-radius: 8px;
+      font-size: 12.5px;
+      color: #dc2626;
+      font-weight: 500;
+      margin-top: 6px;
+    }
+    .avail-warning.show { display: flex; }
+    .form-group select.error { border-color: #f87171; background: #fff8f8; }
+
     ::-webkit-scrollbar { width: 6px; height: 6px; }
     ::-webkit-scrollbar-track { background: transparent; }
     ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
@@ -744,6 +1027,16 @@
       <ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/>
     </svg>
     <span class="tooltip">Database</span>
+  </button>
+
+  <button class="nav-item" onclick="showPage('availability', this)" title="">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
+      <line x1="8" y1="2" x2="8" y2="6"/><line x1="16" y1="2" x2="16" y2="6"/>
+      <rect x="7" y="14" width="3" height="3" rx="0.5" fill="currentColor" stroke="none"/>
+      <rect x="14" y="14" width="3" height="3" rx="0.5" fill="currentColor" stroke="none"/>
+    </svg>
+    <span class="tooltip">Availability</span>
   </button>
 
   <button class="nav-item" onclick="showPage('settings', this)" title="">
@@ -858,11 +1151,15 @@
         <div class="form-grid">
           <div class="form-group">
             <label>Arrival Date</label>
-            <input type="date" id="arrival-date" />
+            <input type="date" id="arrival-date" onchange="
+              document.getElementById('departure-date').min = this.value;
+              if(document.getElementById('departure-date').value && document.getElementById('departure-date').value <= this.value) document.getElementById('departure-date').value = '';
+              checkAvailability();
+            " />
           </div>
           <div class="form-group">
             <label>Departure Date</label>
-            <input type="date" id="departure-date" />
+            <input type="date" id="departure-date" onchange="checkAvailability()" />
           </div>
           <div class="form-group">
             <label>Rate (per night)</label>
@@ -879,9 +1176,13 @@
           </div>
           <div class="form-group">
             <label>Room</label>
-            <select id="room-select">
+            <select id="room-select" onchange="checkAvailability()">
               <option value="">Select room...</option>
             </select>
+            <div class="avail-warning" id="room-avail-warning">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+              Room not available for selected dates
+            </div>
           </div>
         </div>
 
@@ -895,6 +1196,39 @@
             <span class="conf-chip-number" id="conf-chip-number">–</span>
           </div>
         </div>
+      </div>
+    </div>
+
+    <!-- AVAILABILITY PAGE -->
+    <div class="page" id="page-availability">
+      <div class="avail-header">
+        <div class="avail-nav">
+          <button class="avail-nav-btn" onclick="changeMonth(-1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="avail-month-display">
+            <span class="avail-month-name" id="avail-month-name">–</span>
+            <span class="avail-month-year" id="avail-month-year">–</span>
+          </div>
+          <button class="avail-nav-btn" onclick="changeMonth(1)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+          </button>
+          <button class="avail-today-btn" onclick="goToToday()">Today</button>
+        </div>
+        <div class="avail-legend" id="avail-legend"></div>
+      </div>
+
+      <div class="avail-calendar" id="avail-calendar">
+        <div class="cal-dow-row">
+          <div class="cal-dow">Sunday</div>
+          <div class="cal-dow">Monday</div>
+          <div class="cal-dow">Tuesday</div>
+          <div class="cal-dow">Wednesday</div>
+          <div class="cal-dow">Thursday</div>
+          <div class="cal-dow">Friday</div>
+          <div class="cal-dow">Saturday</div>
+        </div>
+        <div class="cal-weeks" id="cal-weeks"></div>
       </div>
     </div>
 
@@ -995,6 +1329,37 @@
   </div><!-- /content -->
 </div><!-- /main -->
 
+<!-- Availability popup -->
+<div class="avail-popup" id="avail-popup">
+  <div class="popup-banner">
+    <div class="popup-banner-left">
+      <span class="popup-room-dot" id="popup-dot"></span>
+      <span class="popup-room-name" id="popup-room"></span>
+    </div>
+    <button class="popup-close" onclick="closePopup()">✕</button>
+  </div>
+  <div class="popup-body">
+    <div class="popup-row">
+      <span class="popup-label">Guest</span>
+      <span class="popup-value" id="popup-guest"></span>
+    </div>
+    <div class="popup-row">
+      <span class="popup-label">Dates</span>
+      <span class="popup-value">
+        <span id="popup-arrival"></span> — <span id="popup-departure"></span>
+      </span>
+    </div>
+    <div class="popup-row">
+      <span class="popup-label">Nights</span>
+      <span class="popup-value" id="popup-nights"></span>
+    </div>
+    <div class="popup-row">
+      <span class="popup-label">Conf. No.</span>
+      <span class="popup-value popup-conf" id="popup-conf"></span>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1014,6 +1379,7 @@
   const pageTitles = {
     database: { title: 'Database', subtitle: 'All reservations' },
     reservation: { title: 'New Reservation', subtitle: 'Create a new booking' },
+    availability: { title: 'Availability', subtitle: 'Room occupancy calendar' },
     settings: { title: 'Settings', subtitle: 'Manage channels, rooms and countries' }
   };
 
@@ -1029,6 +1395,7 @@
 
     if (page === 'reservation') loadDropdowns();
     if (page === 'database') loadReservations();
+    if (page === 'availability') loadAvailability();
     if (page === 'settings') { loadChannels(); loadRooms(); loadCountries(); }
   }
 
@@ -1176,6 +1543,17 @@
     if (departureDate <= arrivalDate)
       return showToast('Departure must be after arrival');
 
+    // Availability conflict check
+    const arrNew = new Date(arrivalDate);
+    const depNew = new Date(departureDate);
+    const conflict = allReservations.some(r =>
+      r.status === 'New Reservation' &&
+      r.room_name === roomName &&
+      parseDate(r.arrival_date) < depNew &&
+      parseDate(r.departure_date) > arrNew
+    );
+    if (conflict) return showToast('Room not available for selected dates');
+
     // Auto-add new country to countries table if custom
     if (isCustom && country) {
       const { data: existing } = await db.from('countries').select('id').ilike('name', country);
@@ -1228,6 +1606,8 @@
     document.getElementById('country-select').value = '';
     document.getElementById('country-custom-row').style.display = 'none';
     document.getElementById('country-hint').style.display = 'none';
+    document.getElementById('room-avail-warning').classList.remove('show');
+    document.getElementById('room-select').classList.remove('error');
     if (hideChip) {
       document.getElementById('conf-chip').classList.remove('visible');
       document.getElementById('conf-chip-number').textContent = '–';
@@ -1405,7 +1785,289 @@
     showToast('Country removed');
   }
 
+  // ── AVAILABILITY ─────────────────────────────────────────────
+  const ROOM_COLORS = [
+    '#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6',
+    '#ec4899','#06b6d4','#84cc16','#f97316','#6366f1'
+  ];
+  let roomColorMap = {};
+  let availReservations = [];
+  let calYear, calMonth; // 0-based month
+
+  function getRoomColor(roomName) {
+    if (!roomColorMap[roomName]) {
+      const keys = Object.keys(roomColorMap);
+      roomColorMap[roomName] = ROOM_COLORS[keys.length % ROOM_COLORS.length];
+    }
+    return roomColorMap[roomName];
+  }
+
+  async function loadAvailability() {
+    const { data } = await db.from('reservations')
+      .select('*')
+      .eq('status', 'New Reservation')
+      .order('arrival_date');
+    availReservations = data || [];
+
+    // Build room color map in sorted room order
+    roomColorMap = {};
+    [...new Set(availReservations.map(r => r.room_name))].sort().forEach(r => getRoomColor(r));
+
+    renderLegend();
+    renderCalendar();
+  }
+
+  function renderLegend() {
+    const legend = document.getElementById('avail-legend');
+    legend.innerHTML = Object.entries(roomColorMap).map(([name, color]) => `
+      <div class="legend-item">
+        <div class="legend-dot" style="background:${color}"></div>
+        <span>${name}</span>
+      </div>`).join('');
+  }
+
+  function goToToday() {
+    const now = new Date();
+    calYear = now.getFullYear();
+    calMonth = now.getMonth();
+    renderCalendar();
+  }
+
+  function changeMonth(dir) {
+    calMonth += dir;
+    if (calMonth > 11) { calMonth = 0; calYear++; }
+    if (calMonth < 0)  { calMonth = 11; calYear--; }
+    renderCalendar();
+  }
+
+  function renderCalendar() {
+    const monthNames = ['January','February','March','April','May','June',
+                        'July','August','September','October','November','December'];
+    document.getElementById('avail-month-name').textContent = monthNames[calMonth];
+    document.getElementById('avail-month-year').textContent = calYear;
+
+    const today     = new Date();
+    const firstDay  = new Date(calYear, calMonth, 1);
+    const lastDay   = new Date(calYear, calMonth + 1, 0);
+
+    // Build weeks
+    const weeks = [];
+    let week = [];
+    for (let i = 0; i < firstDay.getDay(); i++) {
+      week.push({ date: new Date(calYear, calMonth, 1 - (firstDay.getDay() - i)), current: false });
+    }
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      week.push({ date: new Date(calYear, calMonth, d), current: true });
+      if (week.length === 7) { weeks.push(week); week = []; }
+    }
+    if (week.length > 0) {
+      let nd = 1;
+      while (week.length < 7) week.push({ date: new Date(calYear, calMonth + 1, nd++), current: false });
+      weeks.push(week);
+    }
+
+    const weeksEl = document.getElementById('cal-weeks');
+    weeksEl.innerHTML = '';
+
+    weeks.forEach((week) => {
+      const weekEl = document.createElement('div');
+      weekEl.className = 'cal-week';
+
+      // Render day cells
+      week.forEach(({ date, current }) => {
+        const cell = document.createElement('div');
+        cell.className = 'cal-cell' +
+          (!current ? ' other-month' : '') +
+          (isSameDay(date, today) ? ' today' : '');
+        const numSpan = document.createElement('span');
+        numSpan.className = 'cal-day-num';
+        numSpan.textContent = date.getDate();
+        cell.appendChild(numSpan);
+        weekEl.appendChild(cell);
+      });
+
+      // Bar layer
+      const barsLayer = document.createElement('div');
+      barsLayer.className = 'cal-bars-layer';
+
+      const weekStart = week[0].date;
+      const weekEnd   = week[6].date;
+
+      // Collect reservations overlapping this week
+      const relevant = availReservations.filter(r => {
+        const arr    = parseDate(r.arrival_date);
+        const barEnd = new Date(parseDate(r.departure_date));
+        barEnd.setDate(barEnd.getDate() - 1); // exclude checkout
+        return arr <= weekEnd && barEnd >= weekStart;
+      });
+
+      relevant.sort((a, b) => parseDate(a.arrival_date) - parseDate(b.arrival_date));
+
+      // Track placement to avoid vertical overlap
+      const tracks = [];
+
+      relevant.forEach(res => {
+        const arr    = parseDate(res.arrival_date);
+        const dep    = parseDate(res.departure_date);
+        const barEnd = new Date(dep); barEnd.setDate(barEnd.getDate() - 1);
+
+        const visStart = arr < weekStart ? weekStart : arr;
+        const visEnd   = barEnd > weekEnd ? weekEnd : barEnd;
+
+        const startCol = dayIndex(visStart, weekStart);
+        const endCol   = dayIndex(visEnd, weekStart);
+        const spanCols = endCol - startCol + 1;
+
+        // Find a free track
+        let trackIdx = 0;
+        while (true) {
+          if (!tracks[trackIdx]) { tracks[trackIdx] = []; break; }
+          const conflict = tracks[trackIdx].some(b =>
+            !(b.endCol < startCol || b.startCol > endCol));
+          if (!conflict) break;
+          trackIdx++;
+        }
+        tracks[trackIdx].push({ startCol, endCol });
+
+        const color = getRoomColor(res.room_name);
+
+        // Determine rounding class
+        const isStart = isSameDay(arr, visStart);
+        const isEnd   = isSameDay(barEnd, visEnd);
+        let roundClass = 'bar-mid';
+        if (isStart && isEnd) roundClass = 'bar-both';
+        else if (isStart)     roundClass = 'bar-start';
+        else if (isEnd)       roundClass = 'bar-end';
+
+        // Position: bleed to cell edges, leave 1px gap between tracks
+        // Top offset: day-number area (~38px) + track * (bar height + gap)
+        const BAR_H = 26;
+        const BAR_GAP = 4;
+        const TOP_OFFSET = 38;
+
+        // Precise left/right: each col = 100%/7; no inner padding for bleed effect
+        const leftPct  = (startCol / 7 * 100).toFixed(4);
+        const widthPct = (spanCols / 7 * 100).toFixed(4);
+
+        const bar = document.createElement('div');
+        bar.className = `cal-bar ${roundClass}`;
+        bar.style.cssText = `
+          background: ${color};
+          left: ${leftPct}%;
+          width: ${widthPct}%;
+          top: ${TOP_OFFSET + trackIdx * (BAR_H + BAR_GAP)}px;
+          height: ${BAR_H}px;
+        `;
+
+        // Label: show room name + guest, only when bar starts this week or at col 0
+        const showLabel = isStart || startCol === 0;
+        bar.textContent = showLabel ? `${res.guest_name}` : '';
+        bar.title = `${res.room_name} — ${res.guest_name} (${formatDate(res.arrival_date)} → ${formatDate(res.departure_date)})`;
+
+        bar.addEventListener('click', (e) => {
+          e.stopPropagation();
+          showReservationPopup(res, color, e);
+        });
+
+        barsLayer.appendChild(bar);
+      });
+
+      weekEl.appendChild(barsLayer);
+      weeksEl.appendChild(weekEl);
+    });
+  }
+
+  function parseDate(str) {
+    const [y, m, d] = str.split('-').map(Number);
+    return new Date(y, m - 1, d);
+  }
+
+  function isSameDay(a, b) {
+    return a.getFullYear() === b.getFullYear() &&
+           a.getMonth() === b.getMonth() &&
+           a.getDate() === b.getDate();
+  }
+
+  function dayIndex(date, weekStart) {
+    return Math.round((date - weekStart) / 86400000);
+  }
+
+  // ── POPUP ────────────────────────────────────────────────────
+  function showReservationPopup(res, color, event) {
+    const popup = document.getElementById('avail-popup');
+    document.getElementById('popup-dot').style.background = color;
+    document.getElementById('popup-room').textContent = res.room_name;
+    document.getElementById('popup-guest').textContent = res.guest_name;
+    document.getElementById('popup-arrival').textContent = formatDate(res.arrival_date);
+    document.getElementById('popup-departure').textContent = formatDate(res.departure_date);
+    document.getElementById('popup-nights').textContent = res.room_night + ' night' + (res.room_night !== 1 ? 's' : '');
+    document.getElementById('popup-conf').textContent = res.confirmation_number || '–';
+
+    // Position near click
+    const margin = 12;
+    let x = event.clientX + margin;
+    let y = event.clientY + margin;
+    if (x + 250 > window.innerWidth)  x = event.clientX - 250 - margin;
+    if (y + 220 > window.innerHeight) y = event.clientY - 220 - margin;
+    popup.style.left = x + 'px';
+    popup.style.top  = y + 'px';
+    popup.classList.add('show');
+  }
+
+  function closePopup() {
+    document.getElementById('avail-popup').classList.remove('show');
+  }
+
+  function formatDate(str) {
+    if (!str) return '–';
+    const [y, m, d] = str.split('-').map(Number);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return `${d} ${months[m-1]} ${y}`;
+  }
+
+  // Close popup when clicking outside
+  document.addEventListener('click', (e) => {
+    const popup = document.getElementById('avail-popup');
+    if (popup.classList.contains('show') && !popup.contains(e.target)) closePopup();
+  });
+
+  // ── AVAILABILITY CHECK (Reservation form) ─────────────────────
+  function checkAvailability() {
+    const arrival   = document.getElementById('arrival-date').value;
+    const departure = document.getElementById('departure-date').value;
+    const room      = document.getElementById('room-select').value;
+    const warning   = document.getElementById('room-avail-warning');
+    const roomSel   = document.getElementById('room-select');
+
+    if (!arrival || !departure || !room) {
+      warning.classList.remove('show');
+      roomSel.classList.remove('error');
+      return;
+    }
+
+    const arrNew = parseDate(arrival);
+    const depNew = parseDate(departure);
+
+    const conflict = allReservations.some(r =>
+      r.status === 'New Reservation' &&
+      r.room_name === room &&
+      parseDate(r.arrival_date) < depNew &&
+      parseDate(r.departure_date) > arrNew
+    );
+
+    if (conflict) {
+      warning.classList.add('show');
+      roomSel.classList.add('error');
+    } else {
+      warning.classList.remove('show');
+      roomSel.classList.remove('error');
+    }
+  }
+
   // ── INIT ─────────────────────────────────────────────────────
+  const _now = new Date();
+  calYear = _now.getFullYear();
+  calMonth = _now.getMonth();
   loadReservations();
 </script>
 </body>
