@@ -346,35 +346,115 @@
     .page-btn:disabled { opacity: 0.4; cursor: default; }
 
     /* ── SETTINGS PAGE ── */
-    .settings-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+    /* ── SETTINGS ACCORDION ── */
+    .settings-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 560px;
     }
-    .settings-card {
+
+    .acc-card {
       background: var(--surface);
       border: 1px solid var(--border);
       border-radius: 12px;
       overflow: hidden;
+      transition: box-shadow 0.2s;
     }
-    .settings-card-header {
-      padding: 16px 20px;
-      border-bottom: 1px solid var(--border);
+    .acc-card:hover { box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+    .acc-card.open { box-shadow: 0 2px 16px rgba(0,0,0,0.08); }
+
+    /* Summary row — always visible */
+    .acc-summary {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 16px 20px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
     }
-    .settings-card-header h3 {
+    .acc-summary:hover { background: #fafbfc; }
+    .acc-card.open .acc-summary { background: #fafbfc; border-bottom: 1px solid var(--border-light); }
+
+    .acc-summary-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .acc-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-secondary);
+      flex-shrink: 0;
+    }
+    .acc-title {
       font-size: 14px;
       font-weight: 600;
       color: var(--text-primary);
     }
-    .settings-card-body { padding: 8px 0; }
+    .acc-badge {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+      background: var(--bg);
+      border: 1px solid var(--border);
+      padding: 2px 9px;
+      border-radius: 20px;
+    }
+
+    .acc-summary-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .acc-chevron {
+      color: var(--text-muted);
+      transition: transform 0.25s cubic-bezier(.4,0,.2,1);
+      flex-shrink: 0;
+    }
+    .acc-card.open .acc-chevron { transform: rotate(180deg); }
+
+    /* Add button in collapsed state */
+    .acc-add-quick {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      border-radius: 7px;
+      background: var(--surface);
+      font-size: 12px;
+      font-weight: 500;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .acc-add-quick:hover { border-color: var(--accent); color: var(--text-primary); background: #f9fafb; }
+    .acc-card.open .acc-add-quick { display: none; }
+
+    /* Expandable body */
+    .acc-body {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.28s cubic-bezier(.4,0,.2,1);
+    }
+    .acc-card.open .acc-body { grid-template-rows: 1fr; }
+    .acc-body-inner { overflow: hidden; }
+
+    /* Item list */
+    .acc-list { padding: 4px 0; }
     .settings-item {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 10px 20px;
+      padding: 9px 20px;
       transition: background 0.1s;
     }
     .settings-item:hover { background: #fafbfc; }
@@ -395,16 +475,19 @@
       justify-content: center;
       transition: all 0.15s;
       font-size: 13px;
+      flex-shrink: 0;
     }
     .remove-btn:hover { background: var(--red-bg); color: var(--red-text); }
-    .settings-add {
+
+    /* Add-new row inside expanded */
+    .acc-add-row {
       display: flex;
       gap: 8px;
       padding: 12px 20px;
       border-top: 1px solid var(--border-light);
-      margin-top: 4px;
+      background: #fafbfc;
     }
-    .settings-add input {
+    .acc-add-row input {
       flex: 1;
       padding: 8px 12px;
       border: 1px solid var(--border);
@@ -414,9 +497,11 @@
       outline: none;
       transition: border 0.15s;
       color: var(--text-primary);
+      background: var(--surface);
     }
-    .settings-add input:focus { border-color: var(--accent); }
-    .settings-add input::placeholder { color: var(--text-muted); }
+    .acc-add-row input:focus { border-color: var(--accent); }
+    .acc-add-row input::placeholder { color: var(--text-muted); }
+
     .btn-sm {
       padding: 8px 14px;
       background: var(--accent);
@@ -433,7 +518,7 @@
     .btn-sm:hover { background: var(--accent-hover); }
     .empty-state {
       text-align: center;
-      padding: 32px;
+      padding: 28px;
       color: var(--text-muted);
       font-size: 13px;
     }
@@ -483,6 +568,63 @@
     .form-group input:focus,
     .form-group select:focus { border-color: var(--accent); }
     .form-group input::placeholder { color: var(--text-muted); }
+
+    /* IDR currency input */
+    .input-prefix-wrap {
+      display: flex;
+      align-items: stretch;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border 0.15s;
+      background: var(--surface);
+    }
+    .input-prefix-wrap:focus-within { border-color: var(--accent); }
+    .input-prefix {
+      padding: 9px 11px;
+      background: #f9fafb;
+      border-right: 1px solid var(--border);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
+    }
+    .input-prefix-wrap input {
+      border: none !important;
+      border-radius: 0 !important;
+      flex: 1;
+      outline: none !important;
+    }
+    .input-prefix-wrap input:focus { border: none; }
+
+    /* Country combobox */
+    .country-wrap { position: relative; }
+    .country-wrap select,
+    .country-wrap input.country-custom {
+      width: 100%;
+    }
+    .country-custom-row {
+      display: flex;
+      gap: 6px;
+      margin-top: 6px;
+      align-items: center;
+    }
+    .country-custom-row input {
+      flex: 1;
+    }
+    .country-hint {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 5px;
+    }
+    .country-hint span {
+      color: var(--accent);
+      cursor: pointer;
+      text-decoration: underline;
+    }
+
     .form-divider {
       border: none;
       border-top: 1px solid var(--border-light);
@@ -491,7 +633,52 @@
     .form-actions {
       margin-top: 20px;
       display: flex;
+      align-items: center;
       gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    /* Confirmation chip — appears next to Save button */
+    .conf-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 14px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      font-size: 13px;
+      color: #166534;
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    .conf-chip.visible {
+      opacity: 1;
+      transform: translateX(0);
+      pointer-events: auto;
+    }
+    .conf-chip-label {
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #16a34a;
+      opacity: 0.75;
+    }
+    .conf-chip-number {
+      font-family: 'DM Mono', monospace;
+      font-size: 13.5px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
+      color: #14532d;
+    }
+    .conf-chip-divider {
+      width: 1px;
+      height: 14px;
+      background: #86efac;
     }
     .btn-outline {
       padding: 9px 16px;
@@ -651,7 +838,19 @@
           </div>
           <div class="form-group">
             <label>Country</label>
-            <input type="text" id="country" placeholder="Enter country" />
+            <div class="country-wrap">
+              <select id="country-select" onchange="handleCountrySelect(this)">
+                <option value="">Select country...</option>
+                <option value="__other__">＋ Type a new country...</option>
+              </select>
+              <div class="country-custom-row" id="country-custom-row" style="display:none">
+                <input type="text" id="country-custom" placeholder="Enter country name..." />
+                <button class="btn-sm" type="button" onclick="cancelCustomCountry()" style="background:var(--border);color:var(--text-secondary);padding:8px 10px">✕</button>
+              </div>
+              <div class="country-hint" id="country-hint" style="display:none">
+                This country will be <span onclick="focusCustomCountry()">auto-added</span> to the Settings list on save.
+              </div>
+            </div>
           </div>
         </div>
 
@@ -667,7 +866,10 @@
           </div>
           <div class="form-group">
             <label>Rate (per night)</label>
-            <input type="number" id="rate" placeholder="0.00" />
+            <div class="input-prefix-wrap">
+              <span class="input-prefix">IDR</span>
+              <input type="number" id="rate" placeholder="0" min="0" />
+            </div>
           </div>
           <div class="form-group">
             <label>Channel</label>
@@ -687,40 +889,106 @@
         <div class="form-actions">
           <button class="btn-primary" onclick="saveReservation()">Save Reservation</button>
           <button class="btn-outline" onclick="clearForm()">Clear</button>
+          <div class="conf-chip" id="conf-chip">
+            <span class="conf-chip-label">Confirmed</span>
+            <div class="conf-chip-divider"></div>
+            <span class="conf-chip-number" id="conf-chip-number">–</span>
+          </div>
         </div>
       </div>
     </div>
 
     <!-- SETTINGS PAGE -->
     <div class="page" id="page-settings">
-      <div class="settings-grid">
-        <div class="settings-card">
-          <div class="settings-card-header">
-            <h3>Channels</h3>
-            <span style="font-size:12px;color:var(--text-muted)" id="channel-count">–</span>
+      <div class="settings-stack">
+
+        <!-- CHANNELS -->
+        <div class="acc-card" id="acc-channels">
+          <div class="acc-summary" onclick="toggleAcc('acc-channels')">
+            <div class="acc-summary-left">
+              <div class="acc-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11a9 9 0 0 1 9 9"/><path d="M4 4a16 16 0 0 1 16 16"/><circle cx="5" cy="19" r="1"/></svg>
+              </div>
+              <span class="acc-title">Channels</span>
+              <span class="acc-badge" id="channel-count">0 items</span>
+            </div>
+            <div class="acc-summary-right">
+              <button class="acc-add-quick" onclick="openAccAndFocus(event,'acc-channels','new-channel')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add
+              </button>
+              <svg class="acc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
           </div>
-          <div class="settings-card-body">
-            <div id="channel-list"></div>
-          </div>
-          <div class="settings-add">
-            <input type="text" id="new-channel" placeholder="Add new channel..." onkeydown="if(event.key==='Enter') addChannel()" />
-            <button class="btn-sm" onclick="addChannel()">Add</button>
+          <div class="acc-body">
+            <div class="acc-body-inner">
+              <div class="acc-list" id="channel-list"></div>
+              <div class="acc-add-row">
+                <input type="text" id="new-channel" placeholder="New channel name..." onkeydown="if(event.key==='Enter') addChannel()" />
+                <button class="btn-sm" onclick="addChannel()">Add</button>
+              </div>
+            </div>
           </div>
         </div>
 
-        <div class="settings-card">
-          <div class="settings-card-header">
-            <h3>Room Names</h3>
-            <span style="font-size:12px;color:var(--text-muted)" id="room-count">–</span>
+        <!-- ROOMS -->
+        <div class="acc-card" id="acc-rooms">
+          <div class="acc-summary" onclick="toggleAcc('acc-rooms')">
+            <div class="acc-summary-left">
+              <div class="acc-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </div>
+              <span class="acc-title">Room Names</span>
+              <span class="acc-badge" id="room-count">0 items</span>
+            </div>
+            <div class="acc-summary-right">
+              <button class="acc-add-quick" onclick="openAccAndFocus(event,'acc-rooms','new-room')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add
+              </button>
+              <svg class="acc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
           </div>
-          <div class="settings-card-body">
-            <div id="room-list"></div>
-          </div>
-          <div class="settings-add">
-            <input type="text" id="new-room" placeholder="Add new room..." onkeydown="if(event.key==='Enter') addRoom()" />
-            <button class="btn-sm" onclick="addRoom()">Add</button>
+          <div class="acc-body">
+            <div class="acc-body-inner">
+              <div class="acc-list" id="room-list"></div>
+              <div class="acc-add-row">
+                <input type="text" id="new-room" placeholder="New room name..." onkeydown="if(event.key==='Enter') addRoom()" />
+                <button class="btn-sm" onclick="addRoom()">Add</button>
+              </div>
+            </div>
           </div>
         </div>
+
+        <!-- COUNTRIES -->
+        <div class="acc-card" id="acc-countries">
+          <div class="acc-summary" onclick="toggleAcc('acc-countries')">
+            <div class="acc-summary-left">
+              <div class="acc-icon">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+              </div>
+              <span class="acc-title">Countries</span>
+              <span class="acc-badge" id="country-count">0 items</span>
+            </div>
+            <div class="acc-summary-right">
+              <button class="acc-add-quick" onclick="openAccAndFocus(event,'acc-countries','new-country')">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add
+              </button>
+              <svg class="acc-chevron" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+            </div>
+          </div>
+          <div class="acc-body">
+            <div class="acc-body-inner">
+              <div class="acc-list" id="country-list"></div>
+              <div class="acc-add-row">
+                <input type="text" id="new-country" placeholder="New country name..." onkeydown="if(event.key==='Enter') addCountry()" />
+                <button class="btn-sm" onclick="addCountry()">Add</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 
@@ -746,7 +1014,7 @@
   const pageTitles = {
     database: { title: 'Database', subtitle: 'All reservations' },
     reservation: { title: 'New Reservation', subtitle: 'Create a new booking' },
-    settings: { title: 'Settings', subtitle: 'Manage channels and rooms' }
+    settings: { title: 'Settings', subtitle: 'Manage channels, rooms and countries' }
   };
 
   function showPage(page, clickedBtn) {
@@ -761,7 +1029,7 @@
 
     if (page === 'reservation') loadDropdowns();
     if (page === 'database') loadReservations();
-    if (page === 'settings') { loadChannels(); loadRooms(); }
+    if (page === 'settings') { loadChannels(); loadRooms(); loadCountries(); }
   }
 
   // ── TOAST ────────────────────────────────────────────────────
@@ -770,6 +1038,19 @@
     t.textContent = msg;
     t.classList.add('show');
     setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  // ── ACCORDION ────────────────────────────────────────────────
+  function toggleAcc(id) {
+    const card = document.getElementById(id);
+    card.classList.toggle('open');
+  }
+
+  function openAccAndFocus(event, accId, inputId) {
+    event.stopPropagation();
+    const card = document.getElementById(accId);
+    if (!card.classList.contains('open')) card.classList.add('open');
+    setTimeout(() => document.getElementById(inputId)?.focus(), 280);
   }
 
   // ── SETTINGS: CHANNELS ───────────────────────────────────────
@@ -852,12 +1133,20 @@
   async function loadDropdowns() {
     const { data: channels } = await db.from('channels').select('*').order('created_at');
     const { data: rooms } = await db.from('rooms').select('*').order('created_at');
+    const { data: countries } = await db.from('countries').select('*').order('name');
+
     const chSel = document.getElementById('channel-select');
     chSel.innerHTML = '<option value="">Select channel...</option>';
     channels?.forEach(c => chSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+
     const rmSel = document.getElementById('room-select');
     rmSel.innerHTML = '<option value="">Select room...</option>';
     rooms?.forEach(r => rmSel.innerHTML += `<option value="${r.name}">${r.name}</option>`);
+
+    const ctSel = document.getElementById('country-select');
+    ctSel.innerHTML = '<option value="">Select country...</option>';
+    countries?.forEach(c => ctSel.innerHTML += `<option value="${c.name}">${c.name}</option>`);
+    ctSel.innerHTML += '<option value="__other__">＋ Type a new country...</option>';
   }
 
   // ── RESERVATION: SAVE ────────────────────────────────────────
@@ -873,14 +1162,28 @@
     const arrivalDate   = document.getElementById('arrival-date').value;
     const departureDate = document.getElementById('departure-date').value;
     const rate          = parseFloat(document.getElementById('rate').value);
-    const country       = document.getElementById('country').value.trim();
     const channel       = document.getElementById('channel-select').value;
     const roomName      = document.getElementById('room-select').value;
 
-    if (!guestName || !arrivalDate || !departureDate || !rate || !channel || !roomName)
+    // Country: from dropdown or custom input
+    const countrySelect = document.getElementById('country-select').value;
+    const countryCustom = document.getElementById('country-custom').value.trim();
+    const isCustom = countrySelect === '__other__';
+    const country = isCustom ? countryCustom : countrySelect;
+
+    if (!guestName || !arrivalDate || !departureDate || !rate || !channel || !roomName || !country)
       return showToast('Please fill in all required fields');
     if (departureDate <= arrivalDate)
       return showToast('Departure must be after arrival');
+
+    // Auto-add new country to countries table if custom
+    if (isCustom && country) {
+      const { data: existing } = await db.from('countries').select('id').ilike('name', country);
+      if (!existing || existing.length === 0) {
+        await db.from('countries').insert({ name: country });
+        showToast(`"${country}" added to Countries list ✓`);
+      }
+    }
 
     const arrival     = new Date(arrivalDate);
     const departure   = new Date(departureDate);
@@ -909,16 +1212,52 @@
     });
 
     if (error) return showToast('Error saving reservation');
-    showToast(`Saved! Conf: ${confNumber} ✓`);
-    clearForm();
+
+    // Show persistent confirmation chip next to Save button
+    document.getElementById('conf-chip-number').textContent = confNumber;
+    document.getElementById('conf-chip').classList.add('visible');
+    clearForm(false); // clear fields but keep chip visible
   }
 
-  function clearForm() {
-    ['guest-name','arrival-date','departure-date','rate','country'].forEach(id => {
+  function clearForm(hideChip = true) {
+    ['guest-name','arrival-date','departure-date','rate','country-custom'].forEach(id => {
       document.getElementById(id).value = '';
     });
     document.getElementById('channel-select').value = '';
     document.getElementById('room-select').value = '';
+    document.getElementById('country-select').value = '';
+    document.getElementById('country-custom-row').style.display = 'none';
+    document.getElementById('country-hint').style.display = 'none';
+    if (hideChip) {
+      document.getElementById('conf-chip').classList.remove('visible');
+      document.getElementById('conf-chip-number').textContent = '–';
+    }
+  }
+
+  // ── COUNTRY COMBOBOX LOGIC ───────────────────────────────────
+  function handleCountrySelect(sel) {
+    const customRow = document.getElementById('country-custom-row');
+    const hint = document.getElementById('country-hint');
+    if (sel.value === '__other__') {
+      customRow.style.display = 'flex';
+      hint.style.display = 'block';
+      document.getElementById('country-custom').focus();
+    } else {
+      customRow.style.display = 'none';
+      hint.style.display = 'none';
+      document.getElementById('country-custom').value = '';
+    }
+  }
+
+  function cancelCustomCountry() {
+    document.getElementById('country-select').value = '';
+    document.getElementById('country-custom-row').style.display = 'none';
+    document.getElementById('country-hint').style.display = 'none';
+    document.getElementById('country-custom').value = '';
+  }
+
+  function focusCustomCountry() {
+    document.getElementById('country-custom').focus();
   }
 
   // ── DATABASE ─────────────────────────────────────────────────
@@ -1024,6 +1363,46 @@
     const r = allReservations.find(x => x.id === id);
     if (r) r.status = newStatus;
     showToast('Status updated ✓');
+  }
+
+  // ── SETTINGS: COUNTRIES ──────────────────────────────────────
+  async function loadCountries() {
+    const { data } = await db.from('countries').select('*').order('name');
+    const list = document.getElementById('country-list');
+    const count = document.getElementById('country-count');
+    list.innerHTML = '';
+    if (!data || data.length === 0) {
+      list.innerHTML = '<p class="empty-state">No countries yet</p>';
+      count.textContent = '0 items';
+      return;
+    }
+    count.textContent = data.length + ' item' + (data.length !== 1 ? 's' : '');
+    data.forEach(c => {
+      list.innerHTML += `
+        <div class="settings-item">
+          <span>${c.name}</span>
+          <button class="remove-btn" onclick="removeCountry('${c.id}')">✕</button>
+        </div>`;
+    });
+  }
+
+  async function addCountry() {
+    const input = document.getElementById('new-country');
+    const name = input.value.trim();
+    if (!name) return showToast('Please enter a country name');
+    const { data: existing } = await db.from('countries').select('id').ilike('name', name);
+    if (existing && existing.length > 0) return showToast('Country already exists');
+    const { error } = await db.from('countries').insert({ name });
+    if (error) return showToast('Error adding country');
+    input.value = '';
+    loadCountries();
+    showToast('Country added ✓');
+  }
+
+  async function removeCountry(id) {
+    await db.from('countries').delete().eq('id', id);
+    loadCountries();
+    showToast('Country removed');
   }
 
   // ── INIT ─────────────────────────────────────────────────────
