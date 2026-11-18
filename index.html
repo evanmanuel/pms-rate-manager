@@ -1333,11 +1333,11 @@
           <div class="stats-row">
             <div class="stat-card stat-card-dark">
               <div><div class="stat-label">Occupancy Rate</div><div class="stat-value" id="stat-occupancy">—</div></div>
-              <div class="stat-footer"><span class="mso" style="font-size:14px">trending_up</span>This month</div>
+              <div class="stat-footer"><span class="mso" style="font-size:14px">trending_up</span><span id="stat-occupancy-month">This month</span></div>
             </div>
             <div class="stat-card stat-card-light">
               <div><div class="stat-label">Active Bookings</div><div class="stat-value" id="stat-active">—</div></div>
-              <div class="stat-footer"><span class="mso" style="font-size:14px">event_available</span>New reservations</div>
+              <div class="stat-footer"><span class="mso" style="font-size:14px">event_available</span>Upcoming &amp; in-house</div>
             </div>
             <div class="stat-card stat-card-light">
               <div><div class="stat-label">Total Records</div><div class="stat-value" id="stat-total">—</div></div>
@@ -1971,12 +1971,25 @@ async function loadResSummary() {
     }).join('');
   }
 
-  const { data: all } = await db.from('reservations').select('status, room_night');
+  const [{ data: all }, { data: rooms }] = await Promise.all([
+    db.from('reservations').select('status, arrival_date, departure_date'),
+    db.from('rooms').select('id'),
+  ]);
   const total = all?.length || 0;
-  const active = all?.filter(r => r.status !== 'Cancelled').length || 0;
-  const totalNights = all?.reduce((s, r) => s + (r.room_night || 0), 0) || 0;
-  const occ = total > 0 ? Math.min(Math.round((totalNights / (total * 30)) * 100), 99) : 0;
+  // Active = booked or in-house (not cancelled, checked out or no-show)
+  const active = all?.filter(r => !r.status || r.status === 'New Reservation' || r.status === 'Checked-in').length || 0;
+
+  // Occupancy this month, by stay night: nights sold ÷ (rooms × days in month)
+  const now = new Date();
+  const [mFrom, mTo] = monthRange(now.getFullYear(), now.getMonth());
+  const pFrom = dayNum(mFrom), pEnd = dayNum(mTo) + 1;
+  const nightsSold = (all || [])
+    .filter(r => r.status !== 'Cancelled' && r.status !== 'No-show' && r.arrival_date && r.departure_date)
+    .reduce((sum, r) => sum + Math.max(0, Math.min(dayNum(r.departure_date), pEnd) - Math.max(dayNum(r.arrival_date), pFrom)), 0);
+  const capacity = (rooms?.length || 0) * (pEnd - pFrom);
+  const occ = capacity ? Math.round((nightsSold / capacity) * 100) : 0;
   document.getElementById('stat-occupancy').textContent = occ + '%';
+  document.getElementById('stat-occupancy-month').textContent = now.toLocaleString('en-GB', { month: 'long', year: 'numeric' });
   document.getElementById('stat-active').textContent = String(active).padStart(2,'0');
   document.getElementById('stat-total').textContent = String(total).padStart(2,'0');
 }
