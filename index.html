@@ -423,6 +423,15 @@
     .remove-btn:hover { background:#fee2e2; color:#dc2626; }
     .room-item { gap:12px; }
     .room-count { font-size:11px; color:var(--secondary); font-weight:400; margin-left:8px; }
+    .room-name-wrap { min-width:0; }
+    .room-desc { display:block; font-size:12px; color:var(--on-surface-variant); font-weight:400; margin-top:2px; }
+    .room-desc.empty { color:#a0aec0; font-style:italic; }
+    .room-item.editing { flex-wrap:wrap; background:var(--surface-container-low); padding:12px; }
+    .room-edit-fields { flex:1; min-width:220px; display:grid; grid-template-columns:1fr 1.4fr; gap:10px; }
+    .room-edit-fields label { display:flex; flex-direction:column; gap:4px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.07em; text-transform:uppercase; color:var(--secondary); }
+    .room-desc-count { float:right; font-weight:600; letter-spacing:0; text-transform:none; color:#a0aec0; }
+    .room-edit-fields .room-rename-input { width:100%; }
+    @media (max-width: 768px) { .room-edit-fields { grid-template-columns:1fr; } .room-item.editing .room-actions { width:100%; justify-content:flex-end; } }
     .room-actions { display:flex; align-items:center; gap:6px; }
     .room-edit-btn { width:28px; height:28px; background:none; border:none; cursor:pointer; color:var(--on-surface-variant); border-radius:6px; display:flex; align-items:center; justify-content:center; opacity:0; transition:background .15s,opacity .15s; }
     .room-edit-btn .mso { font-size:17px; }
@@ -956,6 +965,138 @@
     .cf-actions button { min-width:220px; justify-content:center; padding:15px 24px; }
 
     /* ══════════════════════════════════════════════════════════
+       AVAILABILITY (Calendar page)
+    ══════════════════════════════════════════════════════════ */
+    .av-wrap { max-width:1400px; }
+    .av-eyebrow { font-family:'Manrope',sans-serif; font-size:11px; font-weight:700; letter-spacing:.06em; color:var(--secondary); margin-bottom:6px; }
+    .av-head { align-items:center; }
+    .av-controls { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:12px; background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); border-radius:16px; padding:14px 18px; margin-bottom:20px; }
+    .av-period { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .av-period input[type=date] { background:var(--surface-container-low); border:none; border-radius:8px; padding:9px 10px; font-family:'Inter',sans-serif; font-size:13px; color:var(--on-surface); outline:none; }
+    .av-period .to { color:var(--secondary); font-size:12px; }
+    .av-period .dash-period-nav { margin-left:4px; }
+    .av-legend { display:flex; flex-wrap:wrap; align-items:center; gap:6px; background:#f6f7f3; border-radius:12px; padding:6px 8px; }
+    .av-legend > span { font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--secondary); margin:0 4px; }
+    .av-chip { display:inline-flex; align-items:center; gap:6px; border:none; background:transparent; border-radius:8px; padding:6px 9px; font-family:'Inter',sans-serif; font-size:12px; font-weight:600; color:var(--on-surface); cursor:pointer; }
+    .av-chip i { width:12px; height:12px; border-radius:50%; background:var(--rc); display:inline-block; }
+    .av-chip:hover { background:#fff; }
+    .av-chip.off { color:#a0aec0; text-decoration:line-through; }
+    .av-chip.off i { background:#d1d5db; }
+
+    .av-tiles { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:20px; }
+    .av-tile { background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); border-radius:16px; padding:18px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px; min-width:0; }
+    .av-tile > div:first-child { min-width:0; }
+    .av-tile .rd-label { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .av-tile-val { font-family:'Manrope',sans-serif; font-size:24px; font-weight:800; color:var(--on-surface); letter-spacing:-0.02em; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .av-tile-sub { font-size:12px; font-weight:600; color:var(--primary-container); margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .av-tile-ico { width:46px; height:46px; border-radius:14px; display:flex; align-items:center; justify-content:center; flex-shrink:0; background:var(--ib,#e3efe9); color:var(--ic,var(--primary)); }
+    .av-tile.dark { background:var(--grad-primary); }
+    .av-tile.dark .rd-label { color:var(--primary-fixed); opacity:.8; }
+    .av-tile.dark .av-tile-val { color:#fff; }
+    .av-tile.dark .av-tile-sub { color:var(--primary-fixed); opacity:.85; }
+    .av-tile.dark .av-tile-ico { background:rgba(255,255,255,.1); color:var(--primary-fixed); }
+
+    .av-card { background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); border-radius:18px; overflow:hidden; margin-bottom:28px; }
+    .av-tl-head { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:16px 22px; border-bottom:1px solid var(--surface-container-high); flex-wrap:wrap; }
+    .av-tl-title { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .av-tl-title h3 { font-family:'Manrope',sans-serif; font-size:17px; font-weight:800; color:var(--on-surface); }
+    .av-today-pill { background:var(--primary-fixed); color:var(--primary); border-radius:20px; padding:3px 10px; font-size:11px; font-weight:700; }
+    .av-today-pill:empty { display:none; }
+    .av-view-pill { display:inline-flex; align-items:center; gap:6px; background:var(--primary-container); color:#fff; border-radius:9px; padding:7px 12px; font-size:12px; font-weight:700; }
+    .av-view-pill .mso { font-size:16px; }
+
+    .av-scroll { overflow-x:auto; position:relative; -webkit-overflow-scrolling:touch; }
+    .av-scroll::-webkit-scrollbar { height:8px; }
+    .av-scroll::-webkit-scrollbar-thumb { background:#d7e9de; border-radius:9px; }
+    .av-grid { --room-w:210px; --cell:46px; position:relative; }
+    .av-row { display:flex; border-bottom:1px solid var(--surface-container-high); }
+    .av-row:last-child { border-bottom:none; }
+    .av-room { width:var(--room-w); flex-shrink:0; position:sticky; left:0; z-index:4; background:#fff; border-right:1px solid var(--surface-container-high); padding:14px 16px; display:flex; align-items:center; gap:12px; }
+    .av-room-num { width:36px; height:36px; border-radius:10px; background:var(--rc); color:#fff; display:flex; align-items:center; justify-content:center; font-family:'Manrope',sans-serif; font-weight:800; font-size:14px; flex-shrink:0; }
+    .av-room-txt { min-width:0; }
+    .av-room-txt b { display:block; font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .av-room-txt small { display:block; font-size:11px; color:var(--secondary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
+    .av-head-row .av-room { background:#f6f7f3; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--secondary); padding-top:10px; padding-bottom:10px; }
+    .av-track { flex:1; position:relative; display:grid; grid-template-columns:repeat(var(--days), minmax(var(--cell), 1fr)); min-width:calc(var(--days) * var(--cell)); }
+    .av-track > .av-cell { border-right:1px solid #eef1ec; }
+    .av-track > .av-cell:last-of-type { border-right:none; }
+    .av-cell.we { background:#fafbf8; }
+    .av-cell.today { background:rgba(186,238,214,.28); }
+    .av-head-row .av-track { background:#f6f7f3; }
+    .av-day { text-align:center; padding:8px 2px; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+    .av-day span { font-size:9px; font-weight:700; letter-spacing:.05em; color:var(--secondary); }
+    .av-day b { font-size:13px; font-weight:600; color:var(--on-surface); margin-top:2px; }
+    .av-day.today { background:var(--primary-container); border-radius:10px 10px 0 0; }
+    .av-day.today span { color:var(--primary-fixed); } .av-day.today b { color:#fff; font-weight:800; }
+    .av-day.m1 b::after { content:attr(data-m); display:block; font-size:8px; font-weight:700; color:var(--secondary); letter-spacing:.05em; }
+    .av-body-row .av-track { height:76px; }
+
+    .av-bar { position:absolute; top:12px; bottom:12px; left:calc(100% / var(--days) * var(--s) + 2px); width:calc(100% / var(--days) * var(--n) - 4px);
+      background:var(--rc); color:#fff; border-radius:12px; padding:0 10px; display:flex; align-items:center; gap:8px; overflow:hidden; cursor:grab; z-index:2;
+      box-shadow:0 2px 8px rgba(13,28,47,.15); -webkit-user-select:none; user-select:none; -webkit-touch-callout:none; touch-action:pan-x pan-y; transition:filter .15s, opacity .15s; }
+    .av-bar:hover { filter:brightness(1.12); }
+    .av-bar.locked { cursor:pointer; }
+    .av-bar.clip-l { border-top-left-radius:2px; border-bottom-left-radius:2px; }
+    .av-bar.clip-r { border-top-right-radius:2px; border-bottom-right-radius:2px; }
+    .av-bar.noshow { opacity:.45; background-image:repeating-linear-gradient(135deg, rgba(255,255,255,.18) 0 6px, transparent 6px 12px); }
+    .av-bar.past { opacity:.78; }
+    .av-bar.dragging { opacity:.3; }
+    .av-ini { width:26px; height:26px; border-radius:50%; background:#fff; color:var(--rc); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:800; flex-shrink:0; }
+    .av-bar-txt { min-width:0; flex:1; }
+    .av-bar-txt b { display:block; font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.25; }
+    .av-bar-txt small { display:block; font-size:10px; opacity:.8; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .av-badges { display:flex; gap:4px; flex-shrink:0; }
+    .av-badge { background:#fff; color:var(--rc); border-radius:5px; padding:2px 6px; font-size:9px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; }
+    .av-badge.lt { background:rgba(255,255,255,.2); color:#fff; }
+    .av-bar .av-lock { font-size:14px; opacity:.75; flex-shrink:0; }
+    .av-bar.n1 { padding:0 4px; justify-content:center; } .av-bar.n1 .av-bar-txt, .av-bar.n1 .av-badges, .av-bar.n1 .av-lock { display:none; }
+    .av-bar.n2 .av-badges, .av-bar.n2 .av-lock { display:none; }
+    .av-bar.n3 .av-badges { display:none; }
+    .av-ghost { position:fixed; z-index:1000; pointer-events:none; opacity:.92; box-shadow:0 14px 34px rgba(13,28,47,.35); transform:scale(1.03); transition:none; top:auto; bottom:auto; }
+    .av-drop { position:absolute; top:8px; bottom:8px; left:calc(100% / var(--days) * var(--s) + 1px); width:calc(100% / var(--days) * var(--n) - 2px); border:2px dashed var(--primary-container); background:rgba(186,238,214,.35); border-radius:12px; z-index:1; pointer-events:none; }
+    .av-drop.bad { border-color:#b42318; background:rgba(253,232,232,.7); }
+    body.av-dragging, body.av-dragging * { cursor:grabbing !important; }
+
+    .av-tl-foot { display:flex; flex-wrap:wrap; gap:8px 20px; padding:12px 22px; background:#f9faf6; border-top:1px solid var(--surface-container-high); font-size:12px; color:var(--secondary); }
+    .av-tl-foot > span { display:flex; align-items:center; gap:6px; }
+    .av-tl-foot .mso { font-size:16px; }
+    .av-hint-touch { display:none; }
+    @media (hover: none) { .av-hint-touch { display:inline; } .av-hint-desktop { display:none; } }
+
+    .av-sec-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:10px; }
+    .av-sec-head h3 { font-family:'Manrope',sans-serif; font-size:17px; font-weight:800; }
+    .av-sec-head span { font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--secondary); }
+    .av-cards { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+    .av-res { background:#fff; border-radius:14px; box-shadow:var(--shadow-sm); border-left:4px solid var(--rc); padding:14px 16px; display:flex; flex-direction:column; justify-content:space-between; gap:12px; cursor:pointer; transition:transform .15s; min-width:0; }
+    .av-res:hover { transform:translateY(-2px); }
+    .av-res-top { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:8px; }
+    .av-room-chip { background:var(--rl); color:var(--rc); border-radius:6px; padding:3px 8px; font-size:10px; font-weight:800; letter-spacing:.05em; text-transform:uppercase; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60%; }
+    .av-res-conf { font-size:11px; color:var(--secondary); font-family:ui-monospace,Menlo,monospace; }
+    .av-res h4 { font-family:'Manrope',sans-serif; font-size:15px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .av-res p { font-size:12px; color:var(--secondary); margin-top:3px; }
+    .av-res-foot { display:flex; justify-content:space-between; align-items:center; gap:8px; border-top:1px solid var(--surface-container-high); padding-top:10px; font-size:12px; font-weight:600; color:var(--on-surface-variant); }
+    .av-res-foot b { color:var(--rc); font-size:13px; }
+
+    @media (max-width: 1100px) { .av-tiles { grid-template-columns:repeat(2,1fr); } .av-cards { grid-template-columns:repeat(2,1fr); } }
+    @media (max-width: 768px) {
+      .av-controls { padding:12px; }
+      .av-period { width:100%; gap:8px; }
+      .av-period .dash-period-label { width:100%; }
+      .av-period input[type=date] { flex:1; min-width:0; font-size:16px; }
+      .av-period .dash-period-nav { margin-left:0; width:100%; }
+      .av-period .dash-period-nav button { flex:1; height:40px; }
+      .av-legend { width:100%; }
+      .av-tiles { gap:10px; }
+      .av-tile { padding:14px; } .av-tile-val { font-size:19px; } .av-tile-ico { display:none; }
+      .av-tl-head { padding:14px 16px; }
+      .av-grid { --room-w:104px; --cell:42px; }
+      .av-room { padding:10px; gap:8px; }
+      .av-room-num { width:28px; height:28px; font-size:12px; border-radius:8px; }
+      .av-room-txt b { font-size:12px; } .av-room-txt small { display:none; }
+      .av-tl-foot { padding:12px 16px; }
+      .av-cards { grid-template-columns:1fr; }
+    }
+    /* ══════════════════════════════════════════════════════════
        MOBILE & TABLET (Android / iOS)
     ══════════════════════════════════════════════════════════ */
     html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
@@ -1273,7 +1414,7 @@
             <h2>Portfolio Overview</h2>
             <p>Welcome back. Here's what's happening across your property today.</p>
           </div>
-          <button class="dash-new-btn" onclick="showPage('reservations', document.querySelector('[onclick*=reservations]')); setTimeout(()=>showScreen('new-booking'),50)">
+          <button class="dash-new-btn" onclick="showPage('reservations', navBtn('reservations')); startNewBooking('reservations')">
             <span class="mso">add_circle</span>New Reservation
           </button>
         </div>
@@ -1353,7 +1494,7 @@
           <div class="page-header">
             <div class="page-header-text"><h2>Reservations</h2><p>Latest bookings across all rooms</p></div>
             <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-              <button class="btn-primary" onclick="showScreen('new-booking')">
+              <button class="btn-primary" onclick="startNewBooking('reservations')">
                 <span class="mso">add</span>New Booking
               </button>
               <button class="btn-primary" style="background:var(--surface-container-high);color:var(--on-surface);box-shadow:none" onclick="showScreen('all-reservations')">
@@ -1387,7 +1528,7 @@
         <div class="page-wrap">
           <div class="page-header">
             <div class="page-header-text"><h2>New Booking</h2><p>Create a reservation for your property</p></div>
-            <button class="btn-ghost" onclick="showScreen('res-summary')">
+            <button class="btn-ghost" onclick="bookingBack()">
               <span class="mso" style="font-size:16px">arrow_back</span>Back
             </button>
           </div>
@@ -1426,7 +1567,7 @@
               <button class="btn-text" onclick="clearForm()"><span class="mso" style="font-size:16px">refresh</span>Clear Form</button>
               <div class="form-actions-right">
                 <div class="save-chip" id="save-chip"><span class="mso">check_circle</span>Saved</div>
-                <button class="btn-ghost" onclick="showScreen('res-summary')">Cancel</button>
+                <button class="btn-ghost" onclick="bookingBack()">Cancel</button>
                 <button class="btn-primary" id="save-res-btn" onclick="saveReservation()"><span class="mso">save</span>Save Reservation</button>
               </div>
             </div>
@@ -1515,8 +1656,53 @@
 
     <!-- CALENDAR -->
     <div class="page" id="page-calendar">
-      <div class="page-wrap">
-        <div class="page-header"><div class="page-header-text"><h2>Calendar</h2><p>Availability view — coming soon</p></div></div>
+      <div class="page-wrap av-wrap">
+        <div class="page-header av-head">
+          <div class="page-header-text">
+            <div class="av-eyebrow">Availability Calendar</div>
+            <h2>Room Availability</h2>
+            <p>Track stay schedules, manage guest arrivals, and check room occupancy.</p>
+          </div>
+          <button class="dash-new-btn" onclick="startNewBooking('availability')"><span class="mso">add_circle</span>New Reservation</button>
+        </div>
+
+        <!-- Period + room legend -->
+        <div class="av-controls">
+          <div class="av-period">
+            <span class="dash-period-label">Period</span>
+            <input type="date" id="av-from" onchange="onAvFromChange()" aria-label="From date" />
+            <span class="to">to</span>
+            <input type="date" id="av-to" onchange="onAvToChange()" aria-label="To date" />
+            <div class="dash-period-nav">
+              <button onclick="shiftAvMonth(-1)" title="Previous month"><span class="mso">chevron_left</span></button>
+              <button onclick="setAvThisMonth()">This month</button>
+              <button onclick="shiftAvMonth(1)" title="Next month"><span class="mso">chevron_right</span></button>
+            </div>
+          </div>
+          <div class="av-legend" id="av-legend"></div>
+        </div>
+
+        <!-- Stat tiles -->
+        <div class="av-tiles" id="av-tiles"></div>
+
+        <!-- Timeline -->
+        <section class="av-card">
+          <div class="av-tl-head">
+            <div class="av-tl-title"><h3 id="av-tl-title">Timeline</h3><span class="av-today-pill" id="av-today-pill"></span></div>
+            <span class="av-view-pill"><span class="mso">view_day</span>Day View</span>
+          </div>
+          <div class="av-scroll" id="av-scroll"><div class="av-grid" id="av-grid"><div class="empty-state">Loading…</div></div></div>
+          <div class="av-tl-foot">
+            <span><span class="mso">pan_tool_alt</span><span class="av-hint-desktop">Drag a booking to move it to another room or date.</span><span class="av-hint-touch">Press and hold a booking, then drag to move it.</span> Tap to open details.</span>
+            <span><span class="mso">lock</span>Locked: checked-out, no-show, or stays running past this timeline — change those from the booking's detail page.</span>
+          </div>
+        </section>
+
+        <!-- Reservations in the period -->
+        <section>
+          <div class="av-sec-head"><h3>Reservations in Selected Period</h3><span id="av-count"></span></div>
+          <div class="av-cards" id="av-cards"></div>
+        </section>
       </div>
     </div>
 
@@ -1541,7 +1727,7 @@
         </div>
         <div class="section">
           <div class="section-label">Room Names</div>
-          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Renaming a room also updates every reservation assigned to it.</p>
+          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Tap ✏️ to change a room's name or short description (max 30 characters, shown on the Availability page). Renaming a room also updates every reservation assigned to it.</p>
           <div id="room-list"></div>
           <div class="add-row">
             <input type="text" id="new-room" placeholder="Add new room…" onkeydown="if(event.key==='Enter') addRoom()" />
@@ -1689,7 +1875,31 @@ function enterApp() {
 /* ══════════════════════════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════════════════════════ */
-const PAGE_TITLES = { dashboard:'Overview', reservations:'Reservations', calendar:'Calendar', rates:'Rates', settings:'Settings', admin:'Administration' };
+const PAGE_TITLES = { dashboard:'Overview', reservations:'Reservations', calendar:'Availability', rates:'Rates', settings:'Settings', admin:'Administration' };
+
+/* ── Where did the user come from? (Back buttons return there) ── */
+let _bookingOrigin = 'reservations';   // 'reservations' | 'availability'
+function navBtn(page) { return document.querySelector(`.nav-item[onclick*="'${page}'"]`); }
+// Show the Reservations page container without resetting its screen,
+// keeping another menu item (e.g. Calendar) highlighted.
+function enterReservationsPage(highlight) {
+  toggleNav(false);
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-reservations').classList.add('active');
+  const b = navBtn(highlight || 'reservations'); if (b) b.classList.add('active');
+  document.getElementById('topbar-title').textContent = PAGE_TITLES[highlight] || 'Reservations';
+}
+function startNewBooking(origin) {
+  _bookingOrigin = origin || 'reservations';
+  if (_bookingOrigin === 'availability') enterReservationsPage('calendar');
+  clearForm();
+  showScreen('new-booking');
+}
+function bookingBack() {
+  if (_bookingOrigin === 'availability') return showPage('calendar', navBtn('calendar'));
+  showScreen('res-summary');
+}
 
 function toggleNav(open) {
   const want = typeof open === 'boolean' ? open : !document.body.classList.contains('nav-open');
@@ -1713,6 +1923,7 @@ function showPage(page, btn) {
   if (page === 'reservations') { showScreen('res-summary'); loadResSummary(); }
   if (page === 'settings')     { loadChannels(); loadRooms(); }
   if (page === 'admin')        loadUserList();
+  if (page === 'calendar')     loadAvailability();
 }
 
 function showScreen(screen) {
@@ -2081,7 +2292,8 @@ async function loadRooms() {
   list.innerHTML = _roomsCache.map(r => {
     const n = counts[r.name] || 0;
     return `<div class="list-item room-item" id="room-row-${r.id}">
-      <span>${escHtml(r.name)} <small class="room-count">${n} booking${n === 1 ? '' : 's'}</small></span>
+      <span class="room-name-wrap">${escHtml(r.name)} <small class="room-count">${n} booking${n === 1 ? '' : 's'}</small>
+        <small class="room-desc ${r.description ? '' : 'empty'}">${r.description ? escHtml(r.description) : 'No description'}</small></span>
       <div class="room-actions">
         <button class="room-edit-btn" title="Rename" onclick="startRenameRoom('${r.id}')"><span class="mso">edit</span></button>
         <button class="remove-btn" title="${n ? 'Has bookings — rename instead' : 'Remove'}" onclick="removeRoom('${r.id}')">✕</button>
@@ -2093,8 +2305,15 @@ function startRenameRoom(id) {
   const r = _roomsCache.find(x => x.id === id);
   const row = document.getElementById('room-row-' + id);
   if (!r || !row) return;
-  row.innerHTML = `<input type="text" class="room-rename-input" id="room-rename-${id}" value="${escHtml(r.name)}"
-      onkeydown="if(event.key==='Enter') saveRenameRoom('${id}'); if(event.key==='Escape') loadRooms();" />
+  row.classList.add('editing');
+  row.innerHTML = `<div class="room-edit-fields">
+      <label>Room name<input type="text" class="room-rename-input" id="room-rename-${id}" value="${escHtml(r.name)}"
+        onkeydown="if(event.key==='Enter') saveRenameRoom('${id}'); if(event.key==='Escape') loadRooms();" /></label>
+      <label>Description <span class="room-desc-count" id="room-desc-count-${id}">${(r.description || '').length}/30</span>
+        <input type="text" class="room-rename-input" id="room-desc-${id}" maxlength="30" value="${escHtml(r.description || '')}" placeholder="e.g. Garden view · Queen bed"
+          oninput="document.getElementById('room-desc-count-${id}').textContent = this.value.length + '/30'"
+          onkeydown="if(event.key==='Enter') saveRenameRoom('${id}'); if(event.key==='Escape') loadRooms();" /></label>
+    </div>
     <div class="room-actions" style="opacity:1">
       <button class="btn-ghost" style="padding:7px 12px" onclick="loadRooms()">Cancel</button>
       <button class="btn-primary" style="padding:7px 14px" onclick="saveRenameRoom('${id}')">Save</button>
@@ -2105,14 +2324,21 @@ function startRenameRoom(id) {
 async function saveRenameRoom(id) {
   const r = _roomsCache.find(x => x.id === id);
   const name = document.getElementById('room-rename-' + id).value.trim();
+  const description = document.getElementById('room-desc-' + id).value.trim().slice(0, 30) || null;
   if (!name) return showToast('Enter a room name');
-  if (name === r.name) return loadRooms();
+  if (name === r.name) {
+    if (description === (r.description || null)) return loadRooms();
+    const { error } = await db.from('rooms').update({ description }).eq('id', id);
+    if (error) return showToast('Error: ' + error.message);
+    showToast('Description saved ✓');
+    return loadRooms();
+  }
   const { count } = await db.from('reservations').select('id', { count: 'exact', head: true }).eq('room_name', r.name);
   if (count) {
     const ok = await showModal('Rename Room', `Rename "${r.name}" to "${name}"? ${count} reservation${count === 1 ? '' : 's'} in this room will be updated, and the change is recorded in each booking's history.`);
     if (!ok) return;
   }
-  const { error } = await db.from('rooms').update({ name }).eq('id', id);
+  const { error } = await db.from('rooms').update({ name, description }).eq('id', id);
   if (error) return showToast('Error: ' + error.message);
   showToast(`Renamed to ${name}${count ? ` — ${count} reservation${count === 1 ? '' : 's'} updated` : ''} ✓`);
   loadRooms();
@@ -2260,7 +2486,7 @@ function showBookingConfirmed(r) {
       </div>
     </div>
     <div class="cf-actions">
-      <button class="btn-ghost" onclick="showScreen('res-summary')"><span class="mso" style="font-size:18px">close</span>Close Page</button>
+      <button class="btn-ghost" onclick="bookingBack()"><span class="mso" style="font-size:18px">close</span>Close Page</button>
       <button class="btn-primary" onclick="clearForm(); showScreen('new-booking')"><span class="mso">add</span>Create New Reservation</button>
     </div>`;
   showScreen('res-confirmed');
@@ -2499,6 +2725,331 @@ function _doExport() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   AVAILABILITY (Calendar page)
+   - Timeline shows From → To (max 31 days), one row per room.
+   - A stay bar covers arrival → the night before departure.
+   - Drag (desktop) or press-and-hold then drag (phones) to move a booking
+     to another room/date; number of nights stays the same.
+══════════════════════════════════════════════════════════ */
+const AV_MAX_DAYS = 31;
+const AV_LONG_TERM = 15;          // "Long Term" badge when nights > 15
+const ROOM_COLORS = [
+  { c:'#0F382A', l:'#E3EFE9' }, { c:'#1E4B72', l:'#E1EEF8' },
+  { c:'#733D14', l:'#FAEFE7' }, { c:'#502568', l:'#F4ECF8' },
+  { c:'#0E5E5E', l:'#E0F2F1' }, { c:'#7A2E46', l:'#F8E8EE' },
+];
+let _avFrom = null, _avTo = null;   // ISO dates, inclusive
+let _avRooms = [], _avRes = [];
+let _avHidden = new Set();          // room names hidden via the legend
+let _avScrollLeft = null;
+
+function addDaysISO(iso, n) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1, d + n));
+  return `${t.getUTCFullYear()}-${_pad2(t.getUTCMonth() + 1)}-${_pad2(t.getUTCDate())}`;
+}
+function avDays() { return dayNum(_avTo) - dayNum(_avFrom) + 1; }
+function avRoomColor(name) {
+  const i = _avRooms.findIndex(r => r.name === name);
+  return ROOM_COLORS[(i < 0 ? 0 : i) % ROOM_COLORS.length];
+}
+function fmtShort(iso) { return new Date(iso + 'T00:00:00').toLocaleDateString('en-US', { month:'short', day:'numeric' }); }
+
+/* ── Period controls ──────────────────────────────────────── */
+function setAvThisMonth() { const t = new Date(); [_avFrom, _avTo] = monthRange(t.getFullYear(), t.getMonth()); _avScrollLeft = null; loadAvailability(); }
+function shiftAvMonth(step) {
+  const base = new Date(_avFrom + 'T00:00:00');
+  [_avFrom, _avTo] = monthRange(base.getFullYear(), base.getMonth() + step);
+  _avScrollLeft = 0; loadAvailability();
+}
+function onAvFromChange() {
+  const f = document.getElementById('av-from').value;
+  if (!f) { document.getElementById('av-from').value = _avFrom; return; }
+  const len = avDays();                                  // keep the same length
+  _avFrom = f; _avTo = addDaysISO(f, Math.min(len, AV_MAX_DAYS) - 1);
+  _avScrollLeft = 0; loadAvailability();
+}
+function onAvToChange() {
+  const t = document.getElementById('av-to').value;
+  if (!t || t < _avFrom) { showToast('"To" must be on or after "From"'); document.getElementById('av-to').value = _avTo; return; }
+  const max = addDaysISO(_avFrom, AV_MAX_DAYS - 1);
+  if (t > max) { _avTo = max; showToast('The timeline shows up to 31 days'); }
+  else _avTo = t;
+  loadAvailability();
+}
+function toggleAvRoom(name) {
+  _avHidden.has(name) ? _avHidden.delete(name) : _avHidden.add(name);
+  renderAvailability();
+}
+
+/* ── Load + render ────────────────────────────────────────── */
+async function loadAvailability() {
+  if (!_avFrom || !_avTo) { const t = new Date(); [_avFrom, _avTo] = monthRange(t.getFullYear(), t.getMonth()); }
+  document.getElementById('av-from').value = _avFrom;
+  document.getElementById('av-to').value = _avTo;
+  const toExcl = addDaysISO(_avTo, 1);
+  const today = localISO(new Date());
+  const [roomsQ, resQ, tonightQ] = await Promise.all([
+    db.from('rooms').select('id, name, description').order('created_at'),
+    db.from('reservations').select('*').neq('status', 'Cancelled').lt('arrival_date', toExcl).gt('departure_date', _avFrom).order('arrival_date'),
+    db.from('reservations').select('room_name').neq('status', 'Cancelled').neq('status', 'No-show').lte('arrival_date', today).gt('departure_date', today),
+  ]);
+  _avRooms = roomsQ.data || [];
+  _avRes = resQ.data || [];
+  _avTonight = new Set((tonightQ.data || []).map(r => r.room_name));
+  renderAvailability();
+}
+let _avTonight = new Set();
+
+function renderAvailability() {
+  const days = avDays(), today = localISO(new Date());
+  const pFrom = dayNum(_avFrom), pEnd = pFrom + days;
+  const visibleRooms = _avRooms.filter(r => !_avHidden.has(r.name));
+  const counted = _avRes.filter(r => r.status !== 'No-show');
+  const inPeriod = r => Math.max(0, Math.min(dayNum(r.departure_date), pEnd) - Math.max(dayNum(r.arrival_date), pFrom));
+
+  // Legend (click to show/hide a room)
+  document.getElementById('av-legend').innerHTML = '<span>Rooms:</span>' + _avRooms.map(r =>
+    `<button class="av-chip ${_avHidden.has(r.name) ? 'off' : ''}" style="--rc:${avRoomColor(r.name).c}" onclick="toggleAvRoom(${escHtml(JSON.stringify(r.name))})" title="Show / hide">
+      <i></i>${escHtml(r.name)}</button>`).join('');
+
+  // Tiles
+  const fromD = new Date(_avFrom + 'T00:00:00'), toD = new Date(_avTo + 'T00:00:00');
+  const wholeMonth = _avFrom.endsWith('-01') && _avTo === monthRange(fromD.getFullYear(), fromD.getMonth())[1];
+  const mon = fromD.toLocaleString('en-US', { month:'short' });
+  const nights = counted.reduce((s, r) => s + inPeriod(r), 0);
+  const revenue = counted.reduce((s, r) => s + inPeriod(r) * Number(r.rate || 0), 0);
+  const cap = _avRooms.length * days;
+  const occ = cap ? Math.round(nights / cap * 100) : 0;
+  const upcoming = counted.filter(r => r.arrival_date >= today && r.arrival_date <= _avTo && r.status === 'New Reservation')
+                          .sort((a, b) => a.arrival_date.localeCompare(b.arrival_date));
+  const vacant = _avRooms.filter(r => !_avTonight.has(r.name)).length;
+  const compact = v => v >= 1e6 ? `IDR ${(v / 1e6).toLocaleString('id-ID', { maximumFractionDigits: 1 })}M` : idr(v);
+  const tile = (label, val, sub, icon, bg, fg, dark) => `
+    <div class="av-tile ${dark ? 'dark' : ''}" style="--ib:${bg};--ic:${fg}">
+      <div><div class="rd-label">${label}</div><div class="av-tile-val">${val}</div><div class="av-tile-sub">${sub}</div></div>
+      <div class="av-tile-ico"><span class="mso">${icon}</span></div></div>`;
+  document.getElementById('av-tiles').innerHTML =
+    tile('Total Rooms', `${_avRooms.length} Room${_avRooms.length === 1 ? '' : 's'}`, `${vacant} vacant tonight`, 'meeting_room', '#E3EFE9', '#0F382A') +
+    tile(`${wholeMonth ? mon : 'Period'} Occupancy`, `${occ}% Occupied`, `Total ${nights} RN${nights === 1 ? '' : 's'}`, 'group', '#E1EEF8', '#1E4B72') +
+    tile('Upcoming Arrivals', `${upcoming.length} Arrival${upcoming.length === 1 ? '' : 's'}`, upcoming.length ? `Next: ${fmtDateLong(upcoming[0].arrival_date)}` : 'None scheduled', 'flight_land', '#FAEFE7', '#733D14') +
+    tile(`${wholeMonth ? 'Monthly' : 'Period'} Revenue`, compact(revenue), `ADR ${idr(nights ? Math.round(revenue / nights) : 0)}`, 'payments', '', '', true);
+
+  // Timeline title
+  document.getElementById('av-tl-title').textContent = wholeMonth
+    ? `${fromD.toLocaleString('en-US', { month:'long', year:'numeric' })} Timeline`
+    : `${fmtShort(_avFrom)} – ${fmtDateLong(_avTo)} Timeline`;
+  document.getElementById('av-today-pill').textContent = (today >= _avFrom && today <= _avTo) ? `Today: ${fmtShort(today)}` : '';
+
+  // Timeline grid
+  const dayISO = i => addDaysISO(_avFrom, i);
+  let head = '';
+  for (let i = 0; i < days; i++) {
+    const iso = dayISO(i), d = new Date(iso + 'T00:00:00');
+    const wd = d.toLocaleDateString('en-US', { weekday:'short' }).toUpperCase();
+    const first = d.getDate() === 1 && i > 0;
+    head += `<div class="av-day ${iso === today ? 'today' : ''} ${first ? 'm1' : ''}" ${first ? `data-m="${d.toLocaleString('en-US', { month:'short' }).toUpperCase()}"` : ''}><span>${wd}</span><b>${_pad2(d.getDate())}</b></div>`;
+  }
+  let cells = '';
+  for (let i = 0; i < days; i++) {
+    const iso = dayISO(i), wd = new Date(iso + 'T00:00:00').getDay();
+    cells += `<div class="av-cell ${iso === today ? 'today' : ''} ${wd === 0 || wd === 6 ? 'we' : ''}"></div>`;
+  }
+  const rows = visibleRooms.map((room, idx) => {
+    const col = avRoomColor(room.name);
+    const num = _avRooms.findIndex(r => r.name === room.name) + 1;
+    const bars = _avRes.filter(r => r.room_name === room.name).map(r => avBarHTML(r, col, pFrom, pEnd, today)).join('');
+    return `<div class="av-row av-body-row">
+      <div class="av-room"><div class="av-room-num" style="--rc:${col.c}">${num}</div>
+        <div class="av-room-txt"><b>${escHtml(room.name)}</b><small>${escHtml(room.description || '')}</small></div></div>
+      <div class="av-track" data-room="${escHtml(room.name)}">${cells}${bars}</div></div>`;
+  }).join('');
+  const grid = document.getElementById('av-grid');
+  grid.style.setProperty('--days', days);
+  grid.innerHTML = `<div class="av-row av-head-row"><div class="av-room">Room</div><div class="av-track">${head}</div></div>` +
+    (rows || '<div class="empty-state">No rooms selected — tap a room in the legend to show it.</div>');
+  grid.querySelectorAll('.av-bar').forEach(avAttachBar);
+
+  // Keep scroll position when coming back; otherwise jump to today
+  const sc = document.getElementById('av-scroll');
+  if (_avScrollLeft !== null) sc.scrollLeft = _avScrollLeft;
+  else if (today >= _avFrom && today <= _avTo) {
+    const cellW = (grid.querySelector('.av-body-row .av-track')?.getBoundingClientRect().width || 0) / days;
+    sc.scrollLeft = Math.max(0, (dayNum(today) - pFrom - 2) * cellW);
+  }
+  sc.onscroll = () => { _avScrollLeft = sc.scrollLeft; };
+
+  // Reservations in selected period
+  const list = _avRes.filter(r => !_avHidden.has(r.room_name));
+  document.getElementById('av-count').textContent = `${list.length} Active Record${list.length === 1 ? '' : 's'}`;
+  document.getElementById('av-cards').innerHTML = list.length ? list.map(r => {
+    const col = avRoomColor(r.room_name), n = r.room_night || nightsBetween(r.arrival_date, r.departure_date);
+    return `<div class="av-res" style="--rc:${col.c};--rl:${col.l}" onclick="openReservation('${r.id}', 'availability')">
+      <div><div class="av-res-top"><span class="av-room-chip">${escHtml(r.room_name)}</span><span class="av-res-conf">${escHtml(r.confirmation_number)}</span></div>
+        <h4>${escHtml(r.guest_name)}</h4>
+        <p>${fmtShort(r.arrival_date)} – ${fmtDateLong(r.departure_date)} (${n} night${n === 1 ? '' : 's'})</p>
+        <div style="margin-top:8px">${statusChip(r.status)}</div></div>
+      <div class="av-res-foot"><span>${idr(r.rate)} / night</span><b>Details →</b></div></div>`;
+  }).join('') : '<div class="empty-state" style="grid-column:1/-1">No reservations in this period.</div>';
+}
+
+function avBarHTML(r, col, pFrom, pEnd, today) {
+  const a = dayNum(r.arrival_date), d = dayNum(r.departure_date);
+  const s = Math.max(a, pFrom) - pFrom, e = Math.min(d, pEnd) - pFrom, n = e - s;
+  if (n <= 0) return '';
+  const nights = d - a;
+  const clipL = a < pFrom, clipR = d > pEnd;
+  const status = r.status || 'New Reservation';
+  const locked = clipL || clipR || status === 'Checked-out' || status === 'No-show';
+  const badge = { 'New Reservation':'Arrival', 'Checked-in':'In-House', 'Checked-out':'Completed', 'No-show':'No-show' }[status] || status;
+  const lockWhy = clipL || clipR ? 'This stay runs past the timeline — change it from the booking detail page'
+                : status === 'Checked-out' ? 'Checked-out — locked' : status === 'No-show' ? 'No-show — locked' : '';
+  const cls = ['av-bar', locked ? 'locked' : '', clipL ? 'clip-l' : '', clipR ? 'clip-r' : '', status === 'No-show' ? 'noshow' : '',
+               status === 'Checked-out' ? 'past' : '', n === 1 ? 'n1' : n === 2 ? 'n2' : n === 3 ? 'n3' : ''].join(' ');
+  return `<div class="${cls}" data-id="${r.id}" data-s="${s}" data-n="${n}" style="--s:${s};--n:${n};--rc:${col.c}"
+      title="${escHtml(r.guest_name)} · ${fmtShort(r.arrival_date)} – ${fmtShort(r.departure_date)} (${nights} night${nights === 1 ? '' : 's'})${lockWhy ? ' · ' + lockWhy : ''}">
+    <span class="av-ini">${escHtml(initials(r.guest_name))}</span>
+    <div class="av-bar-txt"><b>${escHtml(r.guest_name)}</b><small>${fmtShort(r.arrival_date)} – ${fmtShort(r.departure_date)} · ${nights} night${nights === 1 ? '' : 's'} · ${escHtml(r.channel || '')}</small></div>
+    <div class="av-badges"><span class="av-badge">${badge}</span>${nights > AV_LONG_TERM ? '<span class="av-badge lt">Long Term</span>' : ''}</div>
+    ${locked ? '<span class="mso av-lock">lock</span>' : ''}
+  </div>`;
+}
+
+/* ── Drag and drop ────────────────────────────────────────── */
+let _avDrag = null;
+const AV_HOLD_MS = 450;
+
+function avAttachBar(bar) {
+  bar.addEventListener('contextmenu', e => e.preventDefault());
+  bar.addEventListener('mousedown', e => { if (e.button === 0) avPointerDown(bar, e.clientX, e.clientY, 'mouse'); });
+  bar.addEventListener('touchstart', e => { const t = e.touches[0]; avPointerDown(bar, t.clientX, t.clientY, 'touch'); }, { passive: true });
+}
+
+function avPointerDown(bar, x, y, kind) {
+  avCancelDrag();
+  _avDrag = { bar, id: bar.dataset.id, x0: x, y0: y, x, y, kind, active: false, moved: false,
+              locked: bar.classList.contains('locked') };
+  if (kind === 'touch' && !_avDrag.locked) {
+    _avDrag.timer = setTimeout(() => { if (_avDrag && !_avDrag.moved) avActivate(); }, AV_HOLD_MS);
+  }
+}
+
+function avActivate() {
+  const d = _avDrag, bar = d.bar, rect = bar.getBoundingClientRect();
+  const track = bar.parentElement;
+  d.active = true;
+  d.cellW = track.getBoundingClientRect().width / avDays();
+  d.n = +bar.dataset.n; d.s0 = +bar.dataset.s; d.room0 = track.dataset.room;
+  d.grabCell = Math.min(d.n - 1, Math.max(0, Math.floor((d.x0 - rect.left) / d.cellW)));
+  d.offX = d.x0 - rect.left; d.offY = d.y0 - rect.top;
+  const g = bar.cloneNode(true);
+  g.classList.add('av-ghost'); g.classList.remove('dragging');
+  g.style.width = rect.width + 'px'; g.style.height = rect.height + 'px';
+  g.style.left = rect.left + 'px'; g.style.top = rect.top + 'px';
+  g.style.setProperty('--rc', bar.style.getPropertyValue('--rc'));
+  document.body.appendChild(g);
+  d.ghost = g;
+  bar.classList.add('dragging');
+  document.body.classList.add('av-dragging');
+  if (navigator.vibrate) try { navigator.vibrate(15); } catch (_) {}
+  avDragMove(d.x, d.y);
+}
+
+function avDragMove(x, y) {
+  const d = _avDrag; if (!d || !d.active) return;
+  d.ghost.style.left = (x - d.offX) + 'px';
+  d.ghost.style.top = (y - d.offY) + 'px';
+  // auto-scroll the timeline / page near the edges
+  const sc = document.getElementById('av-scroll'), sr = sc.getBoundingClientRect();
+  const roomW = document.querySelector('.av-body-row .av-room')?.getBoundingClientRect().width || 0;
+  if (x > sr.right - 36) sc.scrollLeft += 14; else if (x < sr.left + roomW + 30) sc.scrollLeft -= 14;
+  if (y > window.innerHeight - 50) window.scrollBy(0, 12); else if (y < 90) window.scrollBy(0, -12);
+  // which room row + which day?
+  const el = document.elementFromPoint(x, y);
+  const track = el && el.closest ? el.closest('.av-body-row .av-track') : null;
+  if (d.preview) { d.preview.remove(); d.preview = null; }
+  d.target = null;
+  if (!track) return;
+  const tr = track.getBoundingClientRect(), cellW = tr.width / avDays();
+  let s = Math.floor((x - tr.left) / cellW) - d.grabCell;
+  s = Math.max(0, Math.min(avDays() - d.n, s));
+  const room = track.dataset.room;
+  const arr = addDaysISO(_avFrom, s), dep = addDaysISO(arr, d.n);
+  const clash = _avRes.find(r => r.id !== d.id && r.room_name === room && r.status !== 'Cancelled'
+                              && r.arrival_date < dep && r.departure_date > arr);
+  const pv = document.createElement('div');
+  pv.className = 'av-drop' + (clash ? ' bad' : '');
+  pv.style.setProperty('--s', s); pv.style.setProperty('--n', d.n);
+  track.appendChild(pv);
+  d.preview = pv;
+  d.target = { room, s, arr, dep, clash };
+}
+
+async function avDrop() {
+  const d = _avDrag; if (!d) return;
+  const t = d.target, r = _avRes.find(x => x.id === d.id);
+  avCancelDrag();
+  if (!t || !r) return;
+  if (t.room === d.room0 && t.s === d.s0) return;          // dropped where it was
+  if (t.clash) return showToast(`${t.room} is already booked (${t.clash.guest_name}) on those dates`);
+  const n = d.n;
+  const ok = await showModal('Move Reservation',
+    `Move ${r.guest_name} (${r.confirmation_number}) to ${t.room}, ${fmtDateLong(t.arr)} – ${fmtDateLong(t.dep)} (${n} night${n === 1 ? '' : 's'})? The rate and total stay the same.`);
+  if (!ok) return;
+  // re-check on the server in case someone else just booked it
+  const { data: conflicts } = await db.from('reservations').select('id, guest_name').eq('room_name', t.room)
+    .neq('status', 'Cancelled').neq('id', r.id).lt('arrival_date', t.dep).gt('departure_date', t.arr);
+  if (conflicts && conflicts.length) { showToast(`${t.room} was just booked by ${conflicts[0].guest_name}`); return loadAvailability(); }
+  const { error } = await db.from('reservations').update({
+    room_name: t.room, arrival_date: t.arr, departure_date: t.dep,
+    arrival_month: new Date(t.arr + 'T00:00:00').toLocaleString('default', { month:'long', year:'numeric' }),
+  }).eq('id', r.id);
+  if (error) { showToast('Error: ' + error.message); return loadAvailability(); }
+  showToast(`Moved to ${t.room} · ${fmtShort(t.arr)} – ${fmtShort(t.dep)} ✓`);
+  loadAvailability();
+}
+
+function avCancelDrag() {
+  const d = _avDrag; if (!d) return;
+  clearTimeout(d.timer);
+  if (d.ghost) d.ghost.remove();
+  if (d.preview) d.preview.remove();
+  d.bar.classList.remove('dragging');
+  document.body.classList.remove('av-dragging');
+  _avDrag = null;
+}
+
+function avPointerMove(x, y, ev) {
+  const d = _avDrag; if (!d) return;
+  d.x = x; d.y = y;
+  const dist = Math.hypot(x - d.x0, y - d.y0);
+  if (!d.active) {
+    if (d.kind === 'touch') { if (dist > 10) { d.moved = true; clearTimeout(d.timer); } return; }   // it's a scroll
+    if (dist > 5) { d.moved = true; if (!d.locked) avActivate(); }
+    return;
+  }
+  if (ev && ev.cancelable) ev.preventDefault();
+  avDragMove(x, y);
+}
+
+function avPointerUp() {
+  const d = _avDrag; if (!d) return;
+  if (d.active) return avDrop();
+  const tap = !d.moved;
+  const id = d.id, locked = d.locked;
+  avCancelDrag();
+  if (tap) openReservation(id, 'availability');
+  else if (locked && d.kind === 'mouse') showToast('This booking is locked here — open it to change dates or room');
+}
+
+document.addEventListener('mousemove', e => avPointerMove(e.clientX, e.clientY, e));
+document.addEventListener('mouseup', () => avPointerUp());
+document.addEventListener('touchmove', e => { if (_avDrag) avPointerMove(e.touches[0].clientX, e.touches[0].clientY, e); }, { passive: false });
+document.addEventListener('touchend', e => { if (_avDrag && e.cancelable) e.preventDefault(); avPointerUp(); }, { passive: false });  // no extra mouse events after a tap
+document.addEventListener('touchcancel', () => avCancelDrag());
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && _avDrag) avCancelDrag(); });
+
+/* ══════════════════════════════════════════════════════════
    COUNTRY LIST (dropdown on New Booking + Edit Booking)
 ══════════════════════════════════════════════════════════ */
 const COMMON_COUNTRIES = ["Indonesia", "Australia", "Singapore", "Malaysia", "China", "Japan", "South Korea", "India", "United States", "United Kingdom", "Germany", "France", "Netherlands", "Russia"];
@@ -2561,6 +3112,7 @@ let _rdOptions = { rooms: [], channels: [] };
 
 async function openReservation(id, backTo) {
   if (backTo) _rdBack = backTo;
+  if (backTo === 'availability') enterReservationsPage('calendar');
   _rdMode = 'view';
   showScreen('res-detail');
   document.getElementById('rd-root').innerHTML = '<div class="empty-state">Loading reservation…</div>';
@@ -2586,6 +3138,7 @@ async function loadReservationDetail(id) {
 }
 
 function rdGoBack() {
+  if (_rdBack === 'availability') return showPage('calendar', navBtn('calendar'));
   showScreen(_rdBack || 'all-reservations');
 }
 
@@ -2725,7 +3278,7 @@ function renderReservationDetail() {
   const cancelBox = cancelled
     ? `<div class="rd-cancel done"><div><h4>Reservation cancelled</h4>
         <p>${rdCancelledInfo()} This booking can no longer be changed. To rebook this guest, create a new booking.</p></div>
-        <button class="btn-ghost" onclick="showScreen('new-booking')"><span class="mso" style="font-size:16px">add</span>New Booking</button></div>`
+        <button class="btn-ghost" onclick="startNewBooking(_rdBack === 'availability' ? 'availability' : 'reservations')"><span class="mso" style="font-size:16px">add</span>New Booking</button></div>`
     : (r.status === 'New Reservation' || r.status === 'No-show' || !r.status)
       ? `<div class="rd-cancel"><div><h4>Cancellation</h4>
           <p>Cancelling frees the room for these dates. A cancelled booking cannot be reopened — the guest would need a new booking.</p></div>
