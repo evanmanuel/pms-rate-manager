@@ -746,6 +746,153 @@
     .page-btn:hover { background: var(--surface-container-high); }
     .page-btn.active { background: var(--primary); color: #fff; }
     .page-btn:disabled { opacity: 0.4; cursor: default; }
+
+    /* ══════════════════════════════════════════════════════════
+       RESERVATION STATUS CHIPS (shared)
+    ══════════════════════════════════════════════════════════ */
+    .st-chip { display:inline-flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; white-space:nowrap; }
+    .st-chip::before { content:''; width:6px; height:6px; border-radius:50%; background:currentColor; opacity:0.8; }
+    .st-new     { background:var(--primary-fixed); color:var(--on-primary-fixed-var); }
+    .st-in      { background:#dbeafe; color:#1e40af; }
+    .st-out     { background:var(--surface-container-high); color:var(--on-surface-variant); }
+    .st-noshow  { background:#fef3c7; color:#92400e; }
+    .st-cancel  { background:#fde8e8; color:#9b1c1c; }
+    .pay-unpaid { background:#fff1f0; color:#a8382c; }
+    .pay-deposit{ background:#fef3c7; color:#92400e; }
+    .pay-paid   { background:#d1fae5; color:#065f46; }
+    .allres-table tbody tr { cursor:pointer; }
+    .view-btn { display:inline-flex; align-items:center; gap:4px; border:none; background:var(--surface-container-high); color:var(--primary); border-radius:8px; padding:6px 10px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; cursor:pointer; white-space:nowrap; }
+    .view-btn:hover { background:var(--primary-fixed); }
+    .view-btn .mso { font-size:15px; }
+
+    /* ══════════════════════════════════════════════════════════
+       RESERVATION DETAIL (full-screen)
+    ══════════════════════════════════════════════════════════ */
+    .rd-wrap { max-width:1180px; }
+    .rd-crumb { font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--secondary); display:flex; align-items:center; gap:6px; margin-bottom:14px; }
+    .rd-crumb a { color:var(--secondary); cursor:pointer; text-decoration:none; }
+    .rd-crumb a:hover { color:var(--primary); }
+    .rd-crumb b { color:var(--primary); }
+    .rd-head { display:flex; justify-content:space-between; align-items:flex-start; gap:20px; margin-bottom:32px; flex-wrap:wrap; }
+    .rd-title { font-family:'Manrope',sans-serif; font-size:34px; font-weight:800; letter-spacing:-0.03em; color:var(--primary); line-height:1.1; }
+    .rd-sub { display:flex; align-items:center; gap:12px; margin-top:12px; flex-wrap:wrap; color:var(--secondary); font-size:13px; }
+    .rd-sub .mso { font-size:16px; }
+    .rd-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .btn-soft { display:inline-flex; align-items:center; gap:8px; padding:12px 20px; border:none; border-radius:10px; background:var(--primary-fixed); color:var(--primary); font-family:'Manrope',sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:opacity .15s; }
+    .btn-soft:hover { opacity:.85; }
+    .btn-soft .mso { font-size:17px; }
+    .btn-soft:disabled, .btn-primary:disabled { opacity:.45; cursor:not-allowed; transform:none; }
+
+    .rd-grid { display:grid; grid-template-columns:330px 1fr; gap:24px; align-items:start; }
+    .rd-col { display:flex; flex-direction:column; gap:24px; min-width:0; }
+    .rd-card { background:var(--surface-container-lowest); border-radius:16px; padding:28px; box-shadow:var(--shadow-sm); }
+    .rd-card.tint { background:#f2f6f3; box-shadow:none; }
+    .rd-label { font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--secondary); }
+
+    /* guest card */
+    .rd-guest { text-align:center; padding-bottom:22px; border-bottom:1px solid var(--surface-container-high); margin:22px 0 20px; }
+    .rd-avatar { width:84px; height:84px; border-radius:22px; background:var(--grad-primary); color:var(--primary-fixed); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-family:'Manrope',sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.02em; }
+    .rd-guest h3 { font-family:'Manrope',sans-serif; font-size:21px; font-weight:800; color:var(--on-surface); word-break:break-word; }
+    .rd-guest p { margin-top:4px; color:var(--secondary); font-size:13px; }
+    .rd-info { display:flex; align-items:center; gap:14px; padding:10px 0; }
+    .rd-info-icon { width:40px; height:40px; border-radius:12px; background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); display:flex; align-items:center; justify-content:center; color:var(--primary); flex-shrink:0; }
+    .rd-info-val { font-size:14px; font-weight:500; margin-top:3px; word-break:break-all; }
+    .rd-info-val a { color:inherit; text-decoration:none; }
+    .rd-info-val.empty { color:#a0aec0; font-weight:400; }
+
+    /* status actions */
+    .rd-status-btns { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:16px; }
+    .rd-status-btn { background:var(--surface-container-lowest); border:none; border-radius:12px; padding:16px 10px; display:flex; flex-direction:column; align-items:center; gap:8px; cursor:pointer; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.07em; color:var(--on-surface); box-shadow:var(--shadow-sm); transition:transform .15s; }
+    .rd-status-btn:hover { transform:translateY(-2px); }
+    .rd-status-btn .mso { font-size:22px; color:var(--primary); }
+    .rd-status-btn.subtle { box-shadow:none; background:transparent; color:var(--secondary); }
+    .rd-status-btn.subtle .mso { color:var(--secondary); }
+    .rd-muted { font-size:12px; color:var(--secondary); line-height:1.6; margin-top:12px; }
+
+    /* stay card */
+    .rd-stay { display:grid; grid-template-columns:38% 1fr; border-radius:16px; overflow:hidden; box-shadow:var(--shadow-sm); background:var(--surface-container-lowest); }
+    .rd-room { background:var(--grad-primary); color:#fff; padding:28px; display:flex; flex-direction:column; justify-content:space-between; min-height:200px; position:relative; overflow:hidden; }
+    .rd-room .mso.bg { position:absolute; right:-18px; bottom:-26px; font-size:150px; opacity:.08; }
+    .rd-room-name { font-family:'Manrope',sans-serif; font-size:24px; font-weight:800; letter-spacing:-0.02em; }
+    .rd-room small { font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--primary-fixed); opacity:.85; }
+    .rd-period { padding:28px; }
+    .rd-period-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+    .rd-dates { font-family:'Manrope',sans-serif; font-size:24px; font-weight:800; color:var(--on-surface); letter-spacing:-0.02em; margin-top:8px; line-height:1.25; }
+    .rd-nights { background:#eaf5ef; border-radius:12px; padding:10px 16px; text-align:center; color:var(--primary); flex-shrink:0; }
+    .rd-nights b { display:block; font-family:'Manrope',sans-serif; font-size:22px; font-weight:800; }
+    .rd-nights span { font-family:'Manrope',sans-serif; font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
+    .rd-inout { display:grid; grid-template-columns:1fr 1fr; margin-top:24px; }
+    .rd-inout > div + div { border-left:1px solid var(--surface-container-high); padding-left:20px; }
+    .rd-inout-val { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600; margin-top:8px; }
+    .rd-inout-val .mso { color:var(--primary); }
+    .rd-meta { margin-top:22px; background:#f2f6f3; border-radius:12px; padding:12px 16px; display:flex; gap:20px; flex-wrap:wrap; font-size:12px; color:var(--on-surface-variant); }
+    .rd-meta b { color:var(--on-surface); font-weight:600; }
+
+    /* finance + notes */
+    .rd-two { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .rd-fin-row { display:flex; justify-content:space-between; gap:12px; font-size:14px; color:var(--on-surface-variant); margin-top:16px; }
+    .rd-fin-row b { color:var(--on-surface); font-weight:600; white-space:nowrap; }
+    .rd-fin-total { display:flex; justify-content:space-between; align-items:center; gap:12px; border-top:1px solid var(--surface-container-high); margin-top:20px; padding-top:20px; }
+    .rd-fin-total span { font-family:'Manrope',sans-serif; font-weight:700; font-size:15px; }
+    .rd-fin-total b { font-family:'Manrope',sans-serif; font-size:24px; font-weight:800; color:var(--primary-container); white-space:nowrap; }
+    .rd-mini-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); border-radius:10px; padding:12px 16px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; color:var(--primary); margin-top:22px; width:100%; }
+    .rd-mini-btn .mso { font-size:16px; }
+    .rd-notes { background:var(--grad-primary); color:#fff; border-radius:16px; padding:28px; display:flex; flex-direction:column; position:relative; overflow:hidden; }
+    .rd-notes .rd-label { color:#6ee7b7; }
+    .rd-notes-text { font-style:italic; font-size:15px; line-height:1.6; margin:16px 0 20px; white-space:pre-wrap; word-break:break-word; flex:1; }
+    .rd-notes-text.empty { opacity:.55; font-style:normal; font-size:13px; }
+    .rd-notes textarea { width:100%; min-height:120px; border:none; border-radius:10px; padding:12px; font-family:'Inter',sans-serif; font-size:14px; margin:16px 0 12px; resize:vertical; outline:none; }
+    .rd-notes-btn { border:1px solid rgba(255,255,255,.25); background:transparent; color:#fff; border-radius:10px; padding:12px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; cursor:pointer; }
+    .rd-notes-btn:hover { background:rgba(255,255,255,.08); }
+    .rd-notes-btn.solid { background:var(--primary-fixed); color:var(--primary); border-color:transparent; }
+
+    /* history */
+    .rd-hist-item { display:grid; grid-template-columns:28px 1fr; gap:14px; padding:16px 0; }
+    .rd-hist-item + .rd-hist-item { border-top:1px solid var(--surface-container-high); }
+    .rd-hist-dot { width:28px; height:28px; border-radius:50%; background:var(--surface-container-high); display:flex; align-items:center; justify-content:center; color:var(--primary); }
+    .rd-hist-dot .mso { font-size:15px; }
+    .rd-hist-dot.cancel { background:#fde8e8; color:#9b1c1c; }
+    .rd-hist-head { display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+    .rd-hist-head b { font-family:'Manrope',sans-serif; font-size:13px; font-weight:700; }
+    .rd-hist-head span { font-size:12px; color:var(--secondary); }
+    .rd-hist-who { font-size:12px; color:var(--secondary); margin-top:2px; word-break:break-all; }
+    .rd-hist-changes { margin-top:8px; display:flex; flex-direction:column; gap:4px; font-size:13px; }
+    .rd-hist-changes div { color:var(--on-surface-variant); word-break:break-word; }
+    .rd-hist-changes s { color:#9aa5a0; }
+    .rd-hist-changes em { font-style:normal; color:var(--on-surface); font-weight:600; }
+
+    /* cancel box */
+    .rd-cancel { border:2px dashed #e5e7e4; border-radius:16px; padding:24px 28px; display:flex; justify-content:space-between; align-items:center; gap:20px; flex-wrap:wrap; }
+    .rd-cancel h4 { font-family:'Manrope',sans-serif; font-size:16px; font-weight:700; }
+    .rd-cancel p { font-size:13px; color:var(--secondary); margin-top:4px; max-width:560px; line-height:1.5; }
+    .rd-cancel-btn { display:inline-flex; align-items:center; gap:8px; border:none; background:none; color:#b42318; font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; cursor:pointer; padding:8px 4px; }
+    .rd-cancel-btn .mso { font-size:22px; font-variation-settings:'FILL' 1,'wght' 400,'GRAD' 0,'opsz' 24; }
+    .rd-cancel.done { border-color:#f5c2c0; background:#fffafa; }
+
+    /* edit form */
+    .rd-edit .form-grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:24px 28px; }
+    .rd-edit-section + .rd-edit-section { margin-top:30px; }
+    .rd-edit-section h3 { font-family:'Manrope',sans-serif; font-size:14px; font-weight:700; color:var(--primary); display:flex; align-items:center; gap:8px; margin-bottom:18px; }
+    .rd-edit-section h3 .mso { font-size:18px; }
+    .rd-edit-summary { margin-top:24px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
+    .rd-edit-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:28px; flex-wrap:wrap; }
+
+    @media (max-width: 960px) {
+      .rd-grid { grid-template-columns:1fr; }
+      .rd-two { grid-template-columns:1fr; }
+      .rd-edit .form-grid-3 { grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width: 640px) {
+      .rd-wrap.page-wrap { padding:24px 16px 48px; }
+      .rd-title { font-size:26px; }
+      .rd-stay { grid-template-columns:1fr; }
+      .rd-room { min-height:120px; }
+      .rd-dates { font-size:20px; }
+      .rd-card, .rd-notes { padding:22px; }
+      .rd-edit .form-grid-3 { grid-template-columns:1fr; }
+      .rd-actions { width:100%; }
+      .rd-actions > button { flex:1; justify-content:center; }
+    }
   </style>
 </head>
 <body>
@@ -987,6 +1134,10 @@
               <div class="form-grid-2">
                 <div class="form-group"><label>Guest Name</label><input type="text" id="guest-name" placeholder="e.g. James Whitmore" /></div>
                 <div class="form-group"><label>Country</label><input type="text" id="country" placeholder="e.g. Indonesia" /></div>
+                <div class="form-group"><label>Email (Optional)</label><input type="email" id="guest-email" placeholder="guest@email.com" /></div>
+                <div class="form-group"><label>Phone (Optional)</label><input type="tel" id="guest-phone" placeholder="+62 812 3456 7890" /></div>
+                <div class="form-group"><label>Number of Guests</label><input type="number" id="guest-count" min="1" value="1" /></div>
+                <div class="form-group"><label>Payment Status</label><select id="payment-status"><option>Unpaid</option><option>Deposit</option><option>Paid</option></select></div>
               </div>
             </div>
             <div class="form-section">
@@ -1042,7 +1193,10 @@
             <div class="allres-filters">
               <select id="allres-status" onchange="filterAllRes()">
                 <option value="">All Statuses</option>
-                <option value="New Reservation">Confirmed</option>
+                <option value="New Reservation">New Reservation</option>
+                <option value="Checked-in">Checked-in</option>
+                <option value="Checked-out">Checked-out</option>
+                <option value="No-show">No-show</option>
                 <option value="Cancelled">Cancelled</option>
               </select>
               <input type="date" id="allres-date-from" onchange="filterAllRes()" title="Arrival from" />
@@ -1070,10 +1224,11 @@
                   <th onclick="sortAllRes('rate')" class="sortable">ADR <span class="mso sort-icon">unfold_more</span></th>
                   <th onclick="sortAllRes('room_night')" class="sortable">Nights <span class="mso sort-icon">unfold_more</span></th>
                   <th onclick="sortAllRes('room_revenue')" class="sortable">Revenue <span class="mso sort-icon">unfold_more</span></th>
+                  <th></th>
                 </tr>
               </thead>
               <tbody id="allres-tbody">
-                <tr><td colspan="9" class="empty-state">Loading…</td></tr>
+                <tr><td colspan="10" class="empty-state">Loading…</td></tr>
               </tbody>
             </table>
           </div>
@@ -1081,6 +1236,11 @@
           <!-- Pagination -->
           <div class="allres-pagination" id="allres-pagination"></div>
         </div>
+      </div>
+
+      <!-- Screen D: Reservation detail (full screen) -->
+      <div class="screen" id="screen-res-detail">
+        <div class="page-wrap rd-wrap" id="rd-root"><div class="empty-state">Loading…</div></div>
       </div>
 
     </div><!-- /page-reservations -->
@@ -1512,13 +1672,11 @@ async function loadResSummary() {
   } else {
     list.innerHTML = data.map(r => {
       const nights = r.room_night || 0;
-      const chipClass = !r.status || r.status === 'New Reservation' ? 'chip-confirmed' : r.status === 'Cancelled' ? 'chip-cancelled' : 'chip-new';
-      const chipLabel = r.status === 'New Reservation' ? 'Confirmed' : (r.status || 'New');
       return `
-        <div class="res-card">
+        <div class="res-card" style="cursor:pointer" onclick="openReservation('${r.id}', 'res-summary')">
           <div>
-            <div class="res-guest-name">${r.guest_name}</div>
-            <div class="res-guest-meta">${r.country || '—'} · ${r.channel || '—'}</div>
+            <div class="res-guest-name">${escHtml(r.guest_name)}</div>
+            <div class="res-guest-meta">${escHtml(r.country || '—')} · ${escHtml(r.channel || '—')}</div>
           </div>
           <div class="res-dates">
             <div class="res-dates-range">${fmtDate(r.arrival_date)} — ${fmtDate(r.departure_date)}</div>
@@ -1526,10 +1684,10 @@ async function loadResSummary() {
           </div>
           <div style="display:flex;justify-content:center"><span class="res-room">${r.room_name || '—'}</span></div>
           <div style="display:flex;justify-content:center">
-            <span class="chip ${chipClass}"><span class="chip-dot"></span>${chipLabel}</span>
+            ${statusChip(r.status)}
           </div>
           <div style="display:flex;justify-content:flex-end">
-            <button class="icon-btn"><span class="mso">more_vert</span></button>
+            <button class="icon-btn" title="View details"><span class="mso">chevron_right</span></button>
           </div>
         </div>`;
     }).join('');
@@ -1651,6 +1809,11 @@ async function saveReservation() {
   const country       = document.getElementById('country').value.trim();
   const channel       = document.getElementById('channel-select').value;
   const roomName      = document.getElementById('room-select').value;
+  const guestEmail    = document.getElementById('guest-email').value.trim();
+  const guestPhone    = document.getElementById('guest-phone').value.trim();
+  const guestCount    = parseInt(document.getElementById('guest-count').value, 10) || 1;
+  const paymentStatus = document.getElementById('payment-status').value || 'Unpaid';
+  const notes         = document.getElementById('notes').value.trim();
   if (!guestName || !arrivalDate || !departureDate || !rate || !channel || !roomName) return showToast('Please fill in all required fields');
   if (departureDate <= arrivalDate) return showToast('Departure must be after arrival');
   const { data: conflicts } = await db.from('reservations').select('id').eq('room_name', roomName).neq('status','Cancelled').lt('arrival_date', departureDate).gt('departure_date', arrivalDate);
@@ -1670,7 +1833,9 @@ async function saveReservation() {
     confirmation_number: confNumber, guest_name: guestName, arrival_date: arrivalDate,
     departure_date: departureDate, rate, country, channel, room_name: roomName,
     arrival_month: arrivalMonth, room_night: roomNight, room_revenue: roomRevenue,
-    status: 'New Reservation'
+    status: 'New Reservation',
+    guest_email: guestEmail || null, guest_phone: guestPhone || null, guests: guestCount,
+    payment_status: paymentStatus, notes: notes || null
   });
   if (error) return showToast('Error saving reservation');
   const chip = document.getElementById('save-chip');
@@ -1681,7 +1846,9 @@ async function saveReservation() {
 }
 
 function clearForm() {
-  ['guest-name','arrival-date','departure-date','rate','country'].forEach(id => document.getElementById(id).value = '');
+  ['guest-name','arrival-date','departure-date','rate','country','guest-email','guest-phone'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('guest-count').value = '1';
+  document.getElementById('payment-status').value = 'Unpaid';
   document.getElementById('channel-select').value = '';
   document.getElementById('room-select').value = '';
   document.getElementById('notes').value = '';
@@ -1701,7 +1868,7 @@ let _sortCol = 'arrival_date';
 let _sortDir = 'desc';
 
 async function initAllRes() {
-  document.getElementById('allres-tbody').innerHTML = '<tr><td colspan="9" class="empty-state">Loading…</td></tr>';
+  document.getElementById('allres-tbody').innerHTML = '<tr><td colspan="10" class="empty-state">Loading…</td></tr>';
   const { data } = await db.from('reservations').select('*').order('arrival_date', { ascending: false });
   _allResData = data || [];
   filterAllRes();
@@ -1766,25 +1933,21 @@ function renderAllRes() {
 
   const tbody = document.getElementById('allres-tbody');
   if (slice.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" class="empty-state">No reservations match your filters.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" class="empty-state">No reservations match your filters.</td></tr>';
   } else {
     tbody.innerHTML = slice.map(r => {
-      const chipClass = r.status === 'Cancelled' ? 'status-cancelled' : 'status-new';
-      const chipLabel = r.status === 'Cancelled' ? 'Cancelled' : 'Confirmed';
-      return `<tr>
-        <td><span class="allres-conf">${r.confirmation_number || '—'}</span></td>
-        <td><span class="allres-guest">${r.guest_name || '—'}</span>
-            <div style="font-size:11px;color:var(--on-surface-variant);margin-top:1px">${r.country || '—'}</div></td>
+      return `<tr onclick="openReservation('${r.id}', 'all-reservations')">
+        <td><span class="allres-conf">${escHtml(r.confirmation_number || '—')}</span></td>
+        <td><span class="allres-guest">${escHtml(r.guest_name || '—')}</span>
+            <div style="font-size:11px;color:var(--on-surface-variant);margin-top:1px">${escHtml(r.country || '—')}</div></td>
         <td>${fmtDateLong(r.arrival_date)}</td>
         <td>${fmtDateLong(r.departure_date)}</td>
-        <td>${r.room_name || '—'}</td>
-        <td><select class="status-select ${chipClass}" onchange="updateStatus('${r.id}', this.value, this)">
-          <option ${r.status === 'New Reservation' ? 'selected' : ''}>New Reservation</option>
-          <option ${r.status === 'Cancelled' ? 'selected' : ''}>Cancelled</option>
-        </select></td>
+        <td>${escHtml(r.room_name || '—')}</td>
+        <td>${statusChip(r.status)}</td>
         <td class="allres-money">IDR ${Number(r.rate || 0).toLocaleString('id-ID')}</td>
         <td class="allres-nights">${r.room_night || 0}</td>
         <td class="allres-money">IDR ${Number(r.room_revenue || 0).toLocaleString('id-ID')}</td>
+        <td><button class="view-btn" onclick="event.stopPropagation(); openReservation('${r.id}', 'all-reservations')"><span class="mso">visibility</span>View</button></td>
       </tr>`;
     }).join('');
   }
@@ -1870,7 +2033,12 @@ function _doExport() {
     'Status',
     'ADR (IDR)',
     'Total Nights',
-    'Total Revenue (IDR)'
+    'Total Revenue (IDR)',
+    'Payment Status',
+    'Guests',
+    'Email',
+    'Phone',
+    'Notes'
   ];
 
   const wsData = [
@@ -1886,14 +2054,19 @@ function _doExport() {
       r.status              || '',
       r.rate                || 0,
       r.room_night          || 0,
-      r.room_revenue        || 0
+      r.room_revenue        || 0,
+      r.payment_status      || '',
+      r.guests              || '',
+      r.guest_email         || '',
+      r.guest_phone         || '',
+      r.notes               || ''
     ])
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(wsData);
 
   // Column widths
-  ws['!cols'] = [18,22,16,16,16,14,14,18,14,12,18].map(w => ({ wch: w }));
+  ws['!cols'] = [18,22,16,16,16,14,14,18,14,12,18,14,8,24,18,40].map(w => ({ wch: w }));
 
   // Style header row bold (SheetJS community doesn't support cell styles, just structure)
   const wb = XLSX.utils.book_new();
@@ -1904,13 +2077,417 @@ function _doExport() {
   showToast(`Exported ${rows.length} row${rows.length !== 1 ? 's' : ''} ✓`);
 }
 
-async function updateStatus(id, newStatus, selectEl) {
-  await db.from('reservations').update({ status: newStatus }).eq('id', id);
-  selectEl.className = `status-select ${newStatus === 'Cancelled' ? 'status-cancelled' : 'status-new'}`;
-  // also update local cache so export stays in sync
-  const rec = _allResData.find(r => r.id === id);
-  if (rec) rec.status = newStatus;
-  showToast('Status updated ✓');
+/* ══════════════════════════════════════════════════════════
+   RESERVATION STATUS HELPERS
+══════════════════════════════════════════════════════════ */
+const RES_STATUSES = {
+  'New Reservation': 'st-new',
+  'Checked-in':      'st-in',
+  'Checked-out':     'st-out',
+  'No-show':         'st-noshow',
+  'Cancelled':       'st-cancel',
+};
+function statusChip(status) {
+  const s = status || 'New Reservation';
+  return `<span class="st-chip ${RES_STATUSES[s] || 'st-new'}">${escHtml(s)}</span>`;
+}
+function paymentChip(p) {
+  const v = p || 'Unpaid';
+  const cls = v === 'Paid' ? 'pay-paid' : v === 'Deposit' ? 'pay-deposit' : 'pay-unpaid';
+  return `<span class="st-chip ${cls}">${escHtml(v)}</span>`;
+}
+function idr(n) { return 'IDR ' + Number(n || 0).toLocaleString('id-ID'); }
+function nightsBetween(a, d) {
+  if (!a || !d) return 0;
+  return Math.round((new Date(d + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
+}
+function initials(name) {
+  const parts = String(name || '?').trim().split(/\s+/).filter(Boolean);
+  return ((parts[0]?.[0] || '?') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
+}
+function fmtDateTime(ts) {
+  if (!ts) return '';
+  return new Date(ts).toLocaleString('en-GB', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+}
+
+/* ══════════════════════════════════════════════════════════
+   RESERVATION DETAIL (full-screen)
+══════════════════════════════════════════════════════════ */
+let _rd = null;          // current reservation record
+let _rdHistory = [];     // its history rows
+let _rdBack = 'all-reservations';
+let _rdMode = 'view';    // 'view' | 'edit' | 'note'
+let _rdOptions = { rooms: [], channels: [] };
+
+async function openReservation(id, backTo) {
+  if (backTo) _rdBack = backTo;
+  _rdMode = 'view';
+  showScreen('res-detail');
+  document.getElementById('rd-root').innerHTML = '<div class="empty-state">Loading reservation…</div>';
+  window.scrollTo(0, 0);
+  await loadReservationDetail(id);
+}
+
+async function loadReservationDetail(id) {
+  const [resQ, histQ, roomsQ, chQ] = await Promise.all([
+    db.from('reservations').select('*').eq('id', id).single(),
+    db.from('reservation_history').select('*').eq('reservation_id', id).order('changed_at', { ascending: false }),
+    db.from('rooms').select('name').order('created_at'),
+    db.from('channels').select('name').order('created_at'),
+  ]);
+  if (resQ.error || !resQ.data) {
+    document.getElementById('rd-root').innerHTML = '<div class="empty-state">Could not load this reservation.</div>';
+    return;
+  }
+  _rd = resQ.data;
+  _rdHistory = histQ.data || [];
+  _rdOptions = { rooms: (roomsQ.data || []).map(r => r.name), channels: (chQ.data || []).map(c => c.name) };
+  renderReservationDetail();
+}
+
+function rdGoBack() {
+  showScreen(_rdBack || 'all-reservations');
+}
+
+function renderReservationDetail() {
+  const r = _rd;
+  const cancelled = r.status === 'Cancelled';
+  const nights = r.room_night || nightsBetween(r.arrival_date, r.departure_date);
+  const root = document.getElementById('rd-root');
+
+  const header = `
+    <div class="rd-crumb">
+      <a onclick="rdGoBack()">Reservations</a><span class="mso" style="font-size:14px">chevron_right</span><b>${escHtml(r.confirmation_number || '')}</b>
+    </div>
+    <div class="rd-head">
+      <div>
+        <div class="rd-title">${escHtml(r.guest_name || 'Guest')}</div>
+        <div class="rd-sub">
+          ${statusChip(r.status)} ${paymentChip(r.payment_status)}
+          <span><span class="mso">bed</span> ${escHtml(r.room_name || '—')}</span>
+          <span><span class="mso">hub</span> ${escHtml(r.channel || '—')}</span>
+        </div>
+      </div>
+      <div class="rd-actions">
+        <button class="btn-ghost" onclick="rdGoBack()"><span class="mso" style="font-size:16px">arrow_back</span>Back</button>
+        ${_rdMode === 'edit' ? '' : `<button class="btn-soft" onclick="rdStartEdit()" ${cancelled ? 'disabled title="Cancelled reservations cannot be edited"' : ''}><span class="mso">edit</span>Edit Booking</button>`}
+      </div>
+    </div>`;
+
+  if (_rdMode === 'edit') {
+    root.innerHTML = header + renderEditForm(r);
+    rdRecalc();
+    return;
+  }
+
+  // ── Guest card
+  const info = (icon, label, val, href) => `
+    <div class="rd-info">
+      <div class="rd-info-icon"><span class="mso">${icon}</span></div>
+      <div style="min-width:0"><div class="rd-label">${label}</div>
+        <div class="rd-info-val ${val ? '' : 'empty'}">${val ? (href ? `<a href="${href}">${escHtml(val)}</a>` : escHtml(val)) : 'Not added'}</div></div>
+    </div>`;
+  const guestCard = `
+    <div class="rd-card tint">
+      <div class="rd-label">Guest Profile</div>
+      <div class="rd-guest">
+        <div class="rd-avatar">${escHtml(initials(r.guest_name))}</div>
+        <h3>${escHtml(r.guest_name || '—')}</h3>
+        <p>${escHtml(r.country || 'Country not added')}</p>
+      </div>
+      ${info('mail', 'Email Address', r.guest_email, r.guest_email ? 'mailto:' + encodeURIComponent(r.guest_email) : '')}
+      ${info('call', 'Phone Number', r.guest_phone, r.guest_phone ? 'tel:' + String(r.guest_phone).replace(/[^\d+]/g, '') : '')}
+      ${info('group', 'Occupancy', (r.guests || 1) + ' Guest' + ((r.guests || 1) > 1 ? 's' : ''))}
+    </div>`;
+
+  // ── Stay status actions
+  const btn = (to, icon, label, subtle) =>
+    `<button class="rd-status-btn ${subtle ? 'subtle' : ''}" onclick="rdSetStatus('${to}')"><span class="mso">${icon}</span>${label}</button>`;
+  let statusBtns = '';
+  switch (r.status || 'New Reservation') {
+    case 'New Reservation': statusBtns = btn('Checked-in','login','Check in') + btn('No-show','person_off','No-show'); break;
+    case 'Checked-in':      statusBtns = btn('Checked-out','logout','Check out') + btn('New Reservation','undo','Undo check-in', true); break;
+    case 'Checked-out':     statusBtns = btn('Checked-in','undo','Undo check-out', true); break;
+    case 'No-show':         statusBtns = btn('New Reservation','undo','Undo no-show', true); break;
+  }
+  const statusCard = `
+    <div class="rd-card tint">
+      <div class="rd-label">Stay Status</div>
+      <div style="margin-top:12px">${statusChip(r.status)}</div>
+      ${cancelled
+        ? `<p class="rd-muted">This booking is cancelled and locked. To bring the guest back, create a new booking.</p>`
+        : `<div class="rd-status-btns">${statusBtns}</div>`}
+    </div>`;
+
+  // ── Stay card
+  const stayCard = `
+    <div class="rd-stay">
+      <div class="rd-room">
+        <span class="mso bg">bed</span>
+        <small>Room</small>
+        <div><div class="rd-room-name">${escHtml(r.room_name || '—')}</div>
+          <small>via ${escHtml(r.channel || '—')}</small></div>
+      </div>
+      <div class="rd-period">
+        <div class="rd-period-top">
+          <div><div class="rd-label">Reservation Period</div>
+            <div class="rd-dates">${fmtDateLong(r.arrival_date)} –<br>${fmtDateLong(r.departure_date)}</div></div>
+          <div class="rd-nights"><b>${nights}</b><span>Night${nights === 1 ? '' : 's'}</span></div>
+        </div>
+        <div class="rd-inout">
+          <div><div class="rd-label">Arrival</div><div class="rd-inout-val"><span class="mso">login</span>${fmtDateLong(r.arrival_date)}</div></div>
+          <div><div class="rd-label">Departure</div><div class="rd-inout-val"><span class="mso">logout</span>${fmtDateLong(r.departure_date)}</div></div>
+        </div>
+        <div class="rd-meta">
+          <span>Conf. No. <b>${escHtml(r.confirmation_number || '—')}</b></span>
+          <span>Booked <b>${fmtDateLong(r.created_date)}</b></span>
+          ${r.updated_at ? `<span>Last edit <b>${fmtDateTime(r.updated_at)}</b></span>` : ''}
+        </div>
+      </div>
+    </div>`;
+
+  // ── Finance
+  const finCard = `
+    <div class="rd-card tint">
+      <div class="rd-label" style="display:flex;justify-content:space-between">Financial Overview <span class="mso" style="font-size:20px">payments</span></div>
+      <div class="rd-fin-row"><span>Room rate (${idr(r.rate)} × ${nights})</span><b>${idr(r.room_revenue)}</b></div>
+      <div class="rd-fin-row"><span>Payment status</span>${paymentChip(r.payment_status)}</div>
+      <div class="rd-fin-total"><span>Total Revenue</span><b>${idr(cancelled ? 0 : r.room_revenue)}</b></div>
+      ${cancelled ? `<p class="rd-muted">Cancelled — not counted as revenue. Original value: ${idr(r.room_revenue)}.</p>` : ''}
+      <button class="rd-mini-btn" onclick="document.getElementById('rd-history').scrollIntoView({behavior:'smooth'})"><span class="mso">history</span>History</button>
+    </div>`;
+
+  // ── Notes
+  const notesCard = _rdMode === 'note'
+    ? `<div class="rd-notes">
+        <div class="rd-label">Operation Notes</div>
+        <textarea id="rd-note-input" placeholder="Special requests, arrival time, etc.">${escHtml(r.notes || '')}</textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <button class="rd-notes-btn" onclick="_rdMode='view';renderReservationDetail()">Discard</button>
+          <button class="rd-notes-btn solid" onclick="rdSaveNote()">Save Note</button>
+        </div>
+      </div>`
+    : `<div class="rd-notes">
+        <div class="rd-label">Operation Notes</div>
+        <div class="rd-label" style="margin-top:20px;color:#a7f3d0;opacity:.8">Internal Notes</div>
+        <div class="rd-notes-text ${r.notes ? '' : 'empty'}">${r.notes ? '“' + escHtml(r.notes) + '”' : 'No notes yet.'}</div>
+        <button class="rd-notes-btn" onclick="_rdMode='note';renderReservationDetail();setTimeout(()=>document.getElementById('rd-note-input')?.focus(),50)">${r.notes ? 'Edit Note' : 'Add Note'}</button>
+      </div>`;
+
+  // ── History
+  const histCard = `
+    <div class="rd-card" id="rd-history">
+      <div class="rd-label">Change History</div>
+      <div style="margin-top:8px">${renderHistory()}</div>
+    </div>`;
+
+  // ── Cancellation
+  const cancelBox = cancelled
+    ? `<div class="rd-cancel done"><div><h4>Reservation cancelled</h4>
+        <p>${rdCancelledInfo()} This booking can no longer be changed. To rebook this guest, create a new booking.</p></div>
+        <button class="btn-ghost" onclick="showScreen('new-booking')"><span class="mso" style="font-size:16px">add</span>New Booking</button></div>`
+    : (r.status === 'New Reservation' || r.status === 'No-show' || !r.status)
+      ? `<div class="rd-cancel"><div><h4>Cancellation</h4>
+          <p>Cancelling frees the room for these dates. A cancelled booking cannot be reopened — the guest would need a new booking.</p></div>
+          <button class="rd-cancel-btn" onclick="rdCancel()"><span class="mso">cancel</span>Cancel Reservation</button></div>`
+      : `<div class="rd-cancel"><div><h4>Cancellation</h4>
+          <p>This guest has already ${r.status === 'Checked-in' ? 'checked in' : 'checked out'}, so the booking can't be cancelled. Use “Undo” under Stay Status if the status was set by mistake.</p></div></div>`;
+
+  root.innerHTML = header + `
+    <div class="rd-grid">
+      <div class="rd-col">${guestCard}${statusCard}</div>
+      <div class="rd-col">
+        ${stayCard}
+        <div class="rd-two">${finCard}${notesCard}</div>
+        ${histCard}
+        ${cancelBox}
+      </div>
+    </div>`;
+}
+
+function rdCancelledInfo() {
+  const h = _rdHistory.find(x => x.action === 'Cancelled');
+  return h ? `Cancelled on ${fmtDateTime(h.changed_at)} by ${escHtml(h.changed_by || 'unknown')}.` : '';
+}
+
+/* ── History rendering ───────────────────────────────────── */
+const HIST_LABELS = {
+  guest_name:'Guest name', country:'Country', guest_email:'Email', guest_phone:'Phone', guests:'Guests',
+  arrival_date:'Arrival', departure_date:'Departure', room_name:'Room', rate:'Rate / night', channel:'Channel',
+  status:'Status', payment_status:'Payment', notes:'Notes', room_night:'Nights', room_revenue:'Revenue'
+};
+const HIST_ORDER = Object.keys(HIST_LABELS);
+function histVal(field, v) {
+  if (v === null || v === undefined || v === '') return '—';
+  if (field === 'arrival_date' || field === 'departure_date') return fmtDateLong(v);
+  if (field === 'rate' || field === 'room_revenue') return idr(v);
+  let s = String(v);
+  if (field === 'notes' && s.length > 90) s = s.slice(0, 90) + '…';
+  return escHtml(s);
+}
+function renderHistory() {
+  const items = _rdHistory.map(h => {
+    const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz' : 'edit';
+    const ch = h.changes || {};
+    const lines = HIST_ORDER.filter(k => k in ch).map(k =>
+      `<div>${HIST_LABELS[k]}: <s>${histVal(k, ch[k].old)}</s> → <em>${histVal(k, ch[k].new)}</em></div>`).join('');
+    return `<div class="rd-hist-item">
+      <div class="rd-hist-dot ${h.action === 'Cancelled' ? 'cancel' : ''}"><span class="mso">${icon}</span></div>
+      <div><div class="rd-hist-head"><b>${escHtml(h.action)}</b><span>${fmtDateTime(h.changed_at)}</span></div>
+        <div class="rd-hist-who">by ${escHtml(h.changed_by || 'unknown')}</div>
+        ${lines ? `<div class="rd-hist-changes">${lines}</div>` : ''}</div>
+    </div>`;
+  });
+  // Bookings made before the history log existed have no "Created" entry
+  if (!_rdHistory.some(h => h.action === 'Created')) {
+    items.push(`<div class="rd-hist-item">
+      <div class="rd-hist-dot"><span class="mso">add_circle</span></div>
+      <div><div class="rd-hist-head"><b>Created</b><span>${fmtDateLong(_rd.created_date)}</span></div>
+        <div class="rd-hist-who">Booked before the change history started</div></div>
+    </div>`);
+  }
+  return items.join('');
+}
+
+/* ── Status changes & cancel ─────────────────────────────── */
+async function rdUpdate(payload, okMsg) {
+  const { error } = await db.from('reservations').update(payload).eq('id', _rd.id);
+  if (error) { showToast('Error: ' + error.message); return false; }
+  showToast(okMsg);
+  _rdMode = 'view';
+  await loadReservationDetail(_rd.id);
+  return true;
+}
+
+async function rdSetStatus(to) {
+  const labels = { 'Checked-in':'Check in', 'Checked-out':'Check out', 'No-show':'Mark as no-show', 'New Reservation':'Undo' };
+  const ok = await showModal(labels[to] || 'Change status', `Change status of ${_rd.guest_name} from "${_rd.status || 'New Reservation'}" to "${to}"?`);
+  if (!ok) return;
+  await rdUpdate({ status: to }, `Status: ${to} ✓`);
+}
+
+async function rdCancel() {
+  const ok = await showModal('Cancel Reservation',
+    `Cancel ${_rd.guest_name}'s booking (${_rd.confirmation_number}, ${fmtDateLong(_rd.arrival_date)} – ${fmtDateLong(_rd.departure_date)})? This cannot be undone — to rebook, you'll need to create a new booking.`);
+  if (!ok) return;
+  await rdUpdate({ status: 'Cancelled' }, 'Reservation cancelled');
+}
+
+async function rdSaveNote() {
+  const v = document.getElementById('rd-note-input').value.trim();
+  if ((v || null) === (_rd.notes || null)) { _rdMode = 'view'; renderReservationDetail(); return; }
+  await rdUpdate({ notes: v || null }, 'Note saved ✓');
+}
+
+/* ── Edit booking ────────────────────────────────────────── */
+function rdStartEdit() {
+  if (_rd.status === 'Cancelled') return;
+  _rdMode = 'edit';
+  renderReservationDetail();
+}
+
+function renderEditForm(r) {
+  const opts = (list, cur) => {
+    const all = list.includes(cur) || !cur ? list : [cur, ...list];
+    return all.map(v => `<option ${v === cur ? 'selected' : ''} value="${escHtml(v)}">${escHtml(v)}</option>`).join('');
+  };
+  const f = (id, label, input) => `<div class="form-group"><label for="${id}">${label}</label>${input}</div>`;
+  return `
+  <div class="form-card rd-edit">
+    <div class="rd-edit-section">
+      <h3><span class="mso">person</span>Guest</h3>
+      <div class="form-grid-3">
+        ${f('ed-guest','Guest Name *',`<input id="ed-guest" type="text" value="${escHtml(r.guest_name || '')}">`)}
+        ${f('ed-country','Country',`<input id="ed-country" type="text" value="${escHtml(r.country || '')}">`)}
+        ${f('ed-guests','Number of Guests',`<input id="ed-guests" type="number" min="1" value="${r.guests || 1}">`)}
+        ${f('ed-email','Email',`<input id="ed-email" type="email" value="${escHtml(r.guest_email || '')}" placeholder="guest@email.com">`)}
+        ${f('ed-phone','Phone',`<input id="ed-phone" type="tel" value="${escHtml(r.guest_phone || '')}" placeholder="+62 …">`)}
+      </div>
+    </div>
+    <div class="rd-edit-section">
+      <h3><span class="mso">date_range</span>Stay</h3>
+      <div class="form-grid-3">
+        ${f('ed-arrival','Arrival *',`<input id="ed-arrival" type="date" value="${r.arrival_date || ''}" onchange="rdRecalc()">`)}
+        ${f('ed-departure','Departure *',`<input id="ed-departure" type="date" value="${r.departure_date || ''}" onchange="rdRecalc()">`)}
+        ${f('ed-room','Room *',`<select id="ed-room" onchange="rdRecalc()">${opts(_rdOptions.rooms, r.room_name)}</select>`)}
+        ${f('ed-channel','Channel *',`<select id="ed-channel">${opts(_rdOptions.channels, r.channel)}</select>`)}
+        ${f('ed-rate','Rate / Night (IDR) *',`<input id="ed-rate" type="number" min="0" value="${r.rate ?? ''}" oninput="rdRecalc()">`)}
+        ${f('ed-payment','Payment Status',`<select id="ed-payment">${opts(['Unpaid','Deposit','Paid'], r.payment_status || 'Unpaid')}</select>`)}
+      </div>
+      <div class="rd-edit-summary">
+        <span class="st-chip st-out" id="ed-summary">—</span>
+        <div class="avail-notice" id="ed-avail" style="flex:1;min-width:240px"><span class="mso">info</span><p>Availability will be checked when dates or room change.</p></div>
+      </div>
+    </div>
+    <div class="rd-edit-actions">
+      <button class="btn-ghost" onclick="_rdMode='view';renderReservationDetail()">Discard</button>
+      <button class="btn-primary" id="ed-save" onclick="rdSaveEdit()"><span class="mso">save</span>Save Changes</button>
+    </div>
+    <p class="rd-muted" style="text-align:right">Every change is recorded in the change history with your name and the time.</p>
+  </div>`;
+}
+
+let _rdAvailTimer = null;
+function rdRecalc() {
+  const a = document.getElementById('ed-arrival')?.value;
+  const d = document.getElementById('ed-departure')?.value;
+  const rate = parseFloat(document.getElementById('ed-rate')?.value) || 0;
+  const room = document.getElementById('ed-room')?.value;
+  const n = nightsBetween(a, d);
+  const sum = document.getElementById('ed-summary');
+  if (sum) sum.textContent = n > 0 ? `${n} night${n === 1 ? '' : 's'} · ${idr(n * rate)}` : 'Check dates';
+  clearTimeout(_rdAvailTimer);
+  _rdAvailTimer = setTimeout(() => rdCheckAvail(a, d, room), 250);
+}
+
+async function rdCheckAvail(a, d, room) {
+  const el = document.getElementById('ed-avail');
+  if (!el) return true;
+  if (!a || !d || !room) { el.className = 'avail-notice'; el.innerHTML = '<span class="mso">info</span><p>Select dates and a room.</p>'; return false; }
+  if (d <= a) { el.className = 'avail-notice error'; el.innerHTML = '<span class="mso">error</span><p>Departure must be after arrival.</p>'; return false; }
+  const { data } = await db.from('reservations').select('confirmation_number')
+    .eq('room_name', room).neq('status', 'Cancelled').neq('id', _rd.id)
+    .lt('arrival_date', d).gt('departure_date', a);
+  if (data && data.length) {
+    el.className = 'avail-notice error';
+    el.innerHTML = `<span class="mso">block</span><p>${escHtml(room)} is already booked for these dates (${data.map(x => escHtml(x.confirmation_number)).join(', ')}).</p>`;
+    return false;
+  }
+  el.className = 'avail-notice success';
+  el.innerHTML = `<span class="mso">check_circle</span><p>${escHtml(room)} is available for these dates.</p>`;
+  return true;
+}
+
+async function rdSaveEdit() {
+  const v = id => document.getElementById(id).value.trim();
+  const guest = v('ed-guest'), a = v('ed-arrival'), d = v('ed-departure'), room = v('ed-room'), channel = v('ed-channel');
+  const rate = parseFloat(v('ed-rate'));
+  if (!guest || !a || !d || !room || !channel || !(rate >= 0) || v('ed-rate') === '') return showToast('Please fill in all required fields');
+  if (d <= a) return showToast('Departure must be after arrival');
+
+  const btn = document.getElementById('ed-save'); btn.disabled = true;
+  const free = await rdCheckAvail(a, d, room);
+  if (!free) { btn.disabled = false; return showToast('Room not available for these dates'); }
+
+  const nights = nightsBetween(a, d);
+  const payload = {
+    guest_name: guest,
+    country: v('ed-country') || null,
+    guests: parseInt(v('ed-guests'), 10) || 1,
+    guest_email: v('ed-email') || null,
+    guest_phone: v('ed-phone') || null,
+    arrival_date: a,
+    departure_date: d,
+    room_name: room,
+    channel,
+    rate,
+    payment_status: v('ed-payment') || 'Unpaid',
+    room_night: nights,
+    room_revenue: nights * rate,
+    arrival_month: new Date(a + 'T00:00:00').toLocaleString('default', { month:'long', year:'numeric' }),
+  };
+  const saved = await rdUpdate(payload, 'Changes saved ✓');
+  if (!saved) btn.disabled = false;
 }
 </script>
 </body>
