@@ -1067,7 +1067,6 @@
             <button onclick="setDashThisMonth()">This month</button>
             <button onclick="shiftDashMonth(1)" title="Next month"><span class="mso">chevron_right</span></button>
           </div>
-          <div class="dash-period-note" id="dash-period-note">Counted by stay night. Cancelled and no-show bookings are excluded.</div>
         </div>
 
         <!-- KPI Bento -->
@@ -1675,11 +1674,9 @@ async function loadDashboard() {
   document.getElementById('kpi-active-badge').textContent = arrivals ? plural(arrivals, 'arrival') : '';
   document.getElementById('kpi-total-sub').textContent    = cancelled ? `${plural(cancelled, 'cancellation')} in this period` : 'Bookings staying in this period';
   document.getElementById('kpi-nights').textContent       = String(nights).padStart(2, '0');
-  document.getElementById('kpi-nights-sub').textContent   = `Occupancy ${occ}% · ${plural(roomCount, 'room')} × ${plural(periodDays, 'day')}`;
+  document.getElementById('kpi-nights-sub').textContent   = `Occupancy ${occ}%`;
   document.getElementById('kpi-revenue').textContent      = revenue.toLocaleString('id-ID');
   document.getElementById('kpi-revenue-sub').textContent  = `ADR IDR ${adr.toLocaleString('id-ID')}`;
-  document.getElementById('dash-period-note').textContent =
-    `${fmtDateLong(_dashFrom)} – ${fmtDateLong(_dashTo)} · counted by stay night (a booking spanning two months is split between them). Cancelled and no-show bookings are excluded.`;
 
   const active = all.filter(r => r.status !== 'Cancelled');
 
