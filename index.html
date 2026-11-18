@@ -1361,7 +1361,7 @@
               <div class="form-section-header"><span class="mso">person</span><h3>Guest Information</h3></div>
               <div class="form-grid-2">
                 <div class="form-group"><label>Guest Name</label><input type="text" id="guest-name" placeholder="e.g. James Whitmore" /></div>
-                <div class="form-group"><label>Country</label><input type="text" id="country" placeholder="e.g. Indonesia" /></div>
+                <div class="form-group"><label>Country</label><select id="country"><option value="">Select country…</option></select></div>
                 <div class="form-group"><label>Email (Optional)</label><input type="email" id="guest-email" placeholder="guest@email.com" /></div>
                 <div class="form-group"><label>Phone (Optional)</label><input type="tel" id="guest-phone" placeholder="+62 812 3456 7890" /></div>
                 <div class="form-group"><label>Number of Guests</label><input type="number" id="guest-count" min="1" value="1" /></div>
@@ -2422,6 +2422,25 @@ function _doExport() {
 }
 
 /* ══════════════════════════════════════════════════════════
+   COUNTRY LIST (dropdown on New Booking + Edit Booking)
+══════════════════════════════════════════════════════════ */
+const COMMON_COUNTRIES = ["Indonesia", "Australia", "Singapore", "Malaysia", "China", "Japan", "South Korea", "India", "United States", "United Kingdom", "Germany", "France", "Netherlands", "Russia"];
+const COUNTRIES = ["Afghanistan", "Åland Islands", "Albania", "Algeria", "American Samoa", "Andorra", "Angola", "Anguilla", "Antarctica", "Antigua and Barbuda", "Argentina", "Armenia", "Aruba", "Australia", "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bermuda", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Bouvet Island", "Brazil", "British Indian Ocean Territory", "British Virgin Islands", "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cambodia", "Cameroon", "Canada", "Cape Verde", "Caribbean Netherlands", "Cayman Islands", "Central African Republic", "Chad", "Chile", "China", "Christmas Island", "Cocos (Keeling) Islands", "Colombia", "Comoros", "Congo", "Cook Islands", "Costa Rica", "Croatia", "Cuba", "Curaçao", "Cyprus", "Czechia", "Côte d'Ivoire", "DR Congo", "Denmark", "Djibouti", "Dominica", "Dominican Republic", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia", "Falkland Islands", "Faroe Islands", "Fiji", "Finland", "France", "French Guiana", "French Polynesia", "French Southern Territories", "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Gibraltar", "Greece", "Greenland", "Grenada", "Guadeloupe", "Guam", "Guatemala", "Guernsey", "Guinea", "Guinea-Bissau", "Guyana", "Haiti", "Heard and McDonald Islands", "Honduras", "Hong Kong", "Hungary", "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Isle of Man", "Israel", "Italy", "Jamaica", "Japan", "Jersey", "Jordan", "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg", "Macau", "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Martinique", "Mauritania", "Mauritius", "Mayotte", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Montserrat", "Morocco", "Mozambique", "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands", "New Caledonia", "New Zealand", "Nicaragua", "Niger", "Nigeria", "Niue", "Norfolk Island", "North Korea", "North Macedonia", "Northern Mariana Islands", "Norway", "Oman", "Pakistan", "Palau", "Palestine", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Pitcairn", "Poland", "Portugal", "Puerto Rico", "Qatar", "Romania", "Russia", "Rwanda", "Réunion", "Saint Barthélemy", "Saint Helena", "Saint Kitts and Nevis", "Saint Lucia", "Saint Martin (French)", "Saint Pierre and Miquelon", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Sint Maarten (Dutch)", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Georgia & South Sandwich Islands", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Svalbard and Jan Mayen", "Sweden", "Switzerland", "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Timor-Leste", "Togo", "Tokelau", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkmenistan", "Turks and Caicos Islands", "Tuvalu", "Türkiye", "U.S. Outlying Islands", "U.S. Virgin Islands", "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States", "Uruguay", "Uzbekistan", "Vanuatu", "Vatican City", "Venezuela", "Vietnam", "Wallis and Futuna", "Western Sahara", "Yemen", "Zambia", "Zimbabwe"];
+function countryOptions(current) {
+  const cur = (current || '').trim();
+  const opt = (c, sel) => `<option value="${escHtml(c)}"${sel ? ' selected' : ''}>${escHtml(c)}</option>`;
+  const inCommon = COMMON_COUNTRIES.includes(cur);
+  const known = inCommon || COUNTRIES.includes(cur);
+  let html = `<option value=""${cur ? '' : ' selected'}>Select country…</option>`;
+  // Keep an older free-text value (e.g. typed before the dropdown existed)
+  if (cur && !known) html += `<optgroup label="Current value">${opt(cur, true)}</optgroup>`;
+  html += `<optgroup label="Common">${COMMON_COUNTRIES.map(c => opt(c, c === cur)).join('')}</optgroup>`;
+  html += `<optgroup label="All countries">${COUNTRIES.map(c => opt(c, !inCommon && c === cur)).join('')}</optgroup>`;
+  return html;
+}
+document.getElementById('country').innerHTML = countryOptions('');
+
+/* ══════════════════════════════════════════════════════════
    RESERVATION STATUS HELPERS
 ══════════════════════════════════════════════════════════ */
 const RES_STATUSES = {
@@ -2742,7 +2761,7 @@ function renderEditForm(r) {
       <h3><span class="mso">person</span>Guest</h3>
       <div class="form-grid-3">
         ${f('ed-guest','Guest Name *',`<input id="ed-guest" type="text" value="${escHtml(r.guest_name || '')}">`)}
-        ${f('ed-country','Country',`<input id="ed-country" type="text" value="${escHtml(r.country || '')}">`)}
+        ${f('ed-country','Country',`<select id="ed-country">${countryOptions(r.country)}</select>`)}
         ${f('ed-guests','Number of Guests',`<input id="ed-guests" type="number" min="1" value="${r.guests || 1}">`)}
         ${f('ed-email','Email',`<input id="ed-email" type="email" value="${escHtml(r.guest_email || '')}" placeholder="guest@email.com">`)}
         ${f('ed-phone','Phone',`<input id="ed-phone" type="tel" value="${escHtml(r.guest_phone || '')}" placeholder="+62 …">`)}
