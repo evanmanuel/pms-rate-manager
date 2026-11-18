@@ -1,5 +1,5 @@
 # Keeps the free Supabase project from pausing after 7 days without activity.
-# Runs every 3 days and makes one tiny read from the "rooms" table.
+# Runs every 3 days and calls a tiny database function, keepalive(), that returns 1 (no data).
 # You can also run it by hand: GitHub repo > Actions > "Keep Supabase awake" > Run workflow.
 
 name: Keep Supabase awake
@@ -19,8 +19,9 @@ jobs:
           # Same public "anon" key already used in index.html
           SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoeXJkbGFlZXJ1eWlyZW9jZmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MzExNjEsImV4cCI6MjA5MDEwNzE2MX0.QG_6ZV0p51pejAZMbX1gcKbov43jRxDthki2abMMpNs
         run: |
-          code=$(curl -s -o /dev/null -w "%{http_code}" \
-            "$SUPABASE_URL/rest/v1/rooms?select=*&limit=1" \
+          code=$(curl -s -o /dev/null -w "%{http_code}" -X POST \
+            "$SUPABASE_URL/rest/v1/rpc/keepalive" \
+            -H "Content-Type: application/json" -d '{}' \
             -H "apikey: $SUPABASE_ANON_KEY" \
             -H "Authorization: Bearer $SUPABASE_ANON_KEY")
           echo "Supabase responded with HTTP $code"

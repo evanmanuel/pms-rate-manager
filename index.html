@@ -1318,29 +1318,39 @@ document.getElementById('modal-confirm-btn').addEventListener('click', () => {
 /* ══════════════════════════════════════════════════════════
    ADMIN: USER MANAGEMENT
 ══════════════════════════════════════════════════════════ */
+// All user management goes through the "admin-users" Supabase Edge Function.
+// It runs on Supabase's servers with the Service Role key, so that key is never
+// in this website. The function only accepts requests from MASTER_EMAIL.
+async function adminUsers(body) {
+  const { data, error } = await db.functions.invoke('admin-users', { body });
+  if (error) {
+    let msg = error.message;
+    try { const b = await error.context.json(); if (b && b.error) msg = b.error; } catch (_) {}
+    return { data: null, error: msg };
+  }
+  return { data, error: null };
+}
+
+function escHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
 async function inviteUser() {
   const email    = document.getElementById('invite-email').value.trim();
   const password = document.getElementById('invite-password').value.trim();
   const feedback = document.getElementById('invite-feedback');
+  const btn      = document.querySelector('button[onclick="inviteUser()"]');
 
   if (!email || !password) { showToast('Email and password are required'); return; }
   if (password.length < 6) { showToast('Password must be at least 6 characters'); return; }
 
   feedback.style.display = 'none';
+  if (btn) btn.disabled = true;
+  const { error } = await adminUsers({ action: 'create', email, password });
+  if (btn) btn.disabled = false;
 
-  // Create the new user with a separate, temporary Supabase client that does
-  // not save its session. This way the admin stays logged in and no admin
-  // password ever needs to be stored in this file.
-  const signupClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false, storageKey: 'ecl-signup-tmp' }
-  });
-
-  const { error: signUpErr } = await signupClient.auth.signUp({ email, password });
-  if (signUpErr) {
-    showToast('Error: ' + signUpErr.message);
-    return;
-  }
-  showToast('User created — they may need to confirm email ✓');
+  if (error) { showToast('Error: ' + error); return; }
+  showToast('User created — they can sign in now ✓');
 
   document.getElementById('invite-email').value = '';
   document.getElementById('invite-password').value = '';
@@ -1351,52 +1361,39 @@ async function loadUserList() {
   const list = document.getElementById('user-list');
   list.innerHTML = '<div class="empty-state">Loading…</div>';
 
-  // Try admin API first (needs service role key — may not work with anon)
-  const { data, error } = await db.auth.admin.listUsers();
-
-  if (error || !data) {
-    // Fallback: show only current users we know about via a custom table
-    list.innerHTML = renderKnownUsers();
+  const { data, error } = await adminUsers({ action: 'list' });
+  if (error) {
+    list.innerHTML = `<div class="empty-state">Could not load users: ${escHtml(error)}</div>`;
     return;
   }
 
-  const users = data.users || [];
+  const users = (data && data.users) || [];
   if (users.length === 0) {
     list.innerHTML = '<div class="empty-state">No users found.</div>';
     return;
   }
 
+  // Master admin first, then newest first
+  users.sort((a, b) => (b.email === MASTER_EMAIL) - (a.email === MASTER_EMAIL) || String(b.created_at).localeCompare(String(a.created_at)));
+
   list.innerHTML = users.map(u => {
     const isMaster = u.email === MASTER_EMAIL;
+    const lastIn = u.last_sign_in_at ? fmtDate(u.last_sign_in_at.slice(0,10)) : 'Never';
     return `
       <div class="user-card">
         <div class="user-avatar ${isMaster ? 'master' : ''}">
           <span class="mso">person</span>
         </div>
         <div>
-          <div class="user-name">${u.email}</div>
-          <div class="user-email">ID: ${u.id.slice(0,8)}… · Created ${fmtDate(u.created_at?.slice(0,10))}</div>
+          <div class="user-name">${escHtml(u.email)}</div>
+          <div class="user-email">Created ${fmtDate(u.created_at?.slice(0,10))} · Last sign-in ${lastIn}</div>
         </div>
         <span class="user-role-chip ${isMaster ? 'role-master' : 'role-user'}">
           ${isMaster ? 'Master Admin' : 'Staff'}
         </span>
-        ${isMaster ? '' : `<button class="btn-danger" onclick="deleteUser('${u.id}', '${u.email}')"><span class="mso" style="font-size:15px">person_remove</span>Revoke</button>`}
+        ${isMaster ? '' : `<button class="btn-danger" data-id="${escHtml(u.id)}" data-email="${escHtml(u.email)}" onclick="deleteUser(this.dataset.id, this.dataset.email)"><span class="mso" style="font-size:15px">person_remove</span>Revoke</button>`}
       </div>`;
   }).join('');
-}
-
-function renderKnownUsers() {
-  // When admin API isn't available with anon key, show a message
-  return `
-    <div class="section" style="text-align:center;padding:32px">
-      <span class="mso" style="font-size:36px;color:var(--on-surface-variant);display:block;margin-bottom:12px">info</span>
-      <p style="font-size:13px;color:var(--secondary);line-height:1.7;max-width:380px;margin:0 auto">
-        User listing requires the <strong>Supabase Service Role key</strong>. 
-        With the anon key, you can still create users above — they will appear after 
-        you add the service role key to this app, or view them in your 
-        <a href="https://supabase.com/dashboard/project/qhyrdlaeeruyireocfbl/auth/users" target="_blank" style="color:var(--primary);font-weight:600">Supabase dashboard → Auth → Users</a>.
-      </p>
-    </div>`;
 }
 
 async function deleteUser(userId, email) {
@@ -1406,11 +1403,8 @@ async function deleteUser(userId, email) {
   );
   if (!confirmed) return;
 
-  const { error } = await db.auth.admin.deleteUser(userId);
-  if (error) {
-    showToast('Could not delete via anon key — use Supabase dashboard');
-    return;
-  }
+  const { error } = await adminUsers({ action: 'delete', userId });
+  if (error) { showToast('Error: ' + error); return; }
   showToast('User removed ✓');
   loadUserList();
 }
