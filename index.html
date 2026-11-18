@@ -587,6 +587,24 @@
     .kpi-card-dark  .kpi-sub { display:flex; align-items:center; gap:6px; color:var(--primary-fixed); opacity:0.8; background:rgba(255,255,255,0.08); width:max-content; padding:4px 10px; border-radius:6px; font-style:normal; font-weight:600; }
     .kpi-card-dark  .kpi-sub .mso { font-size:14px; }
 
+    /* Dashboard period filter */
+    .dash-period { display:flex; align-items:center; gap:10px; flex-wrap:wrap; background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); border-radius:14px; padding:12px 16px; margin:-12px 0 28px; }
+    .dash-period-label { font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--secondary); margin-right:4px; }
+    .dash-period input[type=date] { background:var(--surface-container-low); border:none; border-radius:8px; padding:9px 10px; font-family:'Inter',sans-serif; font-size:13px; color:var(--on-surface); outline:none; }
+    .dash-period input[type=date]:focus { box-shadow:0 0 0 2px rgba(4,60,44,.2); }
+    .dash-period .to { color:var(--secondary); font-size:12px; }
+    .dash-period-nav { display:flex; gap:4px; margin-left:auto; }
+    .dash-period-nav button { border:none; background:var(--surface-container-high); color:var(--primary); border-radius:8px; height:36px; min-width:36px; padding:0 12px; cursor:pointer; font-family:'Manrope',sans-serif; font-size:11px; font-weight:700; display:flex; align-items:center; justify-content:center; gap:4px; }
+    .dash-period-nav button:hover { background:var(--primary-fixed); }
+    .dash-period-nav .mso { font-size:18px; }
+    .dash-period-note { width:100%; font-size:11px; color:var(--secondary); margin-top:2px; }
+    .arrival-row { cursor:pointer; }
+    @media (max-width: 640px) {
+      .dash-period-nav { margin-left:0; width:100%; }
+      .dash-period-nav button { flex:1; }
+      .dash-period input[type=date] { flex:1; min-width:0; }
+    }
+
     /* upcoming arrivals */
     .dash-section-header {
       display:flex; align-items:center; justify-content:space-between;
@@ -1038,11 +1056,25 @@
           </button>
         </div>
 
+        <!-- Period filter -->
+        <div class="dash-period">
+          <span class="dash-period-label">Period</span>
+          <input type="date" id="dash-from" onchange="onDashPeriodChange()" aria-label="From date" />
+          <span class="to">to</span>
+          <input type="date" id="dash-to" onchange="onDashPeriodChange()" aria-label="To date" />
+          <div class="dash-period-nav">
+            <button onclick="shiftDashMonth(-1)" title="Previous month"><span class="mso">chevron_left</span></button>
+            <button onclick="setDashThisMonth()">This month</button>
+            <button onclick="shiftDashMonth(1)" title="Next month"><span class="mso">chevron_right</span></button>
+          </div>
+          <div class="dash-period-note" id="dash-period-note">Counted by stay night. Cancelled and no-show bookings are excluded.</div>
+        </div>
+
         <!-- KPI Bento -->
         <div class="dash-kpi">
           <div class="kpi-card kpi-card-light">
             <div class="kpi-bg-orb"></div>
-            <span class="kpi-label">Total Reservations</span>
+            <span class="kpi-label">Reservations</span>
             <div class="kpi-value-row">
               <span class="kpi-value" id="kpi-total">—</span>
               <span class="kpi-badge" id="kpi-active-badge"></span>
@@ -1051,7 +1083,7 @@
           </div>
           <div class="kpi-card kpi-card-light">
             <div class="kpi-bg-orb"></div>
-            <span class="kpi-label">Total Room Nights</span>
+            <span class="kpi-label">Room Nights</span>
             <div class="kpi-value-row">
               <span class="kpi-value" id="kpi-nights">—</span>
             </div>
@@ -1059,7 +1091,7 @@
           </div>
           <div class="kpi-card kpi-card-dark">
             <div class="kpi-bg-orb"></div>
-            <span class="kpi-label">Total Revenue</span>
+            <span class="kpi-label">Room Revenue</span>
             <span class="kpi-value">IDR</span>
             <span class="kpi-value-large" id="kpi-revenue">—</span>
             <div class="kpi-sub" style="margin-top:14px">
@@ -1583,34 +1615,76 @@ async function deleteUser(userId, email) {
 /* ══════════════════════════════════════════════════════════
    DASHBOARD
 ══════════════════════════════════════════════════════════ */
-async function loadDashboard() {
-  // Pull all reservations
-  const { data: all } = await db.from('reservations')
-    .select('*')
-    .order('arrival_date', { ascending: true });
+/* ── Dashboard period (default: this month) ─────────────── */
+let _dashFrom = null, _dashTo = null;
+const _pad2 = n => String(n).padStart(2, '0');
+function localISO(d) { return `${d.getFullYear()}-${_pad2(d.getMonth() + 1)}-${_pad2(d.getDate())}`; }
+function dayNum(iso) { const [y, m, d] = iso.split('-').map(Number); return Date.UTC(y, m - 1, d) / 86400000; }
+function monthRange(y, m) { return [localISO(new Date(y, m, 1)), localISO(new Date(y, m + 1, 0))]; }
+function setDashThisMonth() {
+  const t = new Date();
+  [_dashFrom, _dashTo] = monthRange(t.getFullYear(), t.getMonth());
+  loadDashboard();
+}
+function shiftDashMonth(step) {
+  const base = _dashFrom ? new Date(_dashFrom + 'T00:00:00') : new Date();
+  [_dashFrom, _dashTo] = monthRange(base.getFullYear(), base.getMonth() + step);
+  loadDashboard();
+}
+function onDashPeriodChange() {
+  const f = document.getElementById('dash-from').value;
+  const t = document.getElementById('dash-to').value;
+  if (!f || !t) return;
+  if (t < f) { showToast('"To" date must be on or after "From" date'); return; }
+  _dashFrom = f; _dashTo = t;
+  loadDashboard();
+}
 
+async function loadDashboard() {
+  if (!_dashFrom || !_dashTo) { const t = new Date(); [_dashFrom, _dashTo] = monthRange(t.getFullYear(), t.getMonth()); }
+  document.getElementById('dash-from').value = _dashFrom;
+  document.getElementById('dash-to').value   = _dashTo;
+
+  const [{ data: all }, { data: rooms }] = await Promise.all([
+    db.from('reservations').select('*').order('arrival_date', { ascending: true }),
+    db.from('rooms').select('name'),
+  ]);
   if (!all) return;
+
+  // Stay-night counting: a night belongs to the period if its date is between From and To.
+  const pFrom = dayNum(_dashFrom), pEnd = dayNum(_dashTo) + 1;   // end is exclusive
+  const periodDays = pEnd - pFrom;
+  const inPeriod = r => {
+    if (!r.arrival_date || !r.departure_date) return 0;
+    const s = Math.max(dayNum(r.arrival_date), pFrom);
+    const e = Math.min(dayNum(r.departure_date), pEnd);
+    return Math.max(0, e - s);
+  };
+  const counted   = all.filter(r => r.status !== 'Cancelled' && r.status !== 'No-show');
+  const staying   = counted.map(r => ({ r, n: inPeriod(r) })).filter(x => x.n > 0);
+  const nights    = staying.reduce((s, x) => s + x.n, 0);
+  const revenue   = staying.reduce((s, x) => s + x.n * Number(x.r.rate || 0), 0);
+  const arrivals  = counted.filter(r => r.arrival_date >= _dashFrom && r.arrival_date <= _dashTo).length;
+  const cancelled = all.filter(r => r.status === 'Cancelled' && inPeriod(r) > 0).length;
+  const roomCount = (rooms || []).length;
+  const occ       = roomCount ? Math.round((nights / (roomCount * periodDays)) * 100) : 0;
+  const adr       = nights ? Math.round(revenue / nights) : 0;
+  const plural    = (n, w) => `${n} ${w}${n === 1 ? '' : 's'}`;
+
+  document.getElementById('kpi-total').textContent        = String(staying.length).padStart(2, '0');
+  document.getElementById('kpi-active-badge').textContent = arrivals ? plural(arrivals, 'arrival') : '';
+  document.getElementById('kpi-total-sub').textContent    = cancelled ? `${plural(cancelled, 'cancellation')} in this period` : 'Bookings staying in this period';
+  document.getElementById('kpi-nights').textContent       = String(nights).padStart(2, '0');
+  document.getElementById('kpi-nights-sub').textContent   = `Occupancy ${occ}% · ${plural(roomCount, 'room')} × ${plural(periodDays, 'day')}`;
+  document.getElementById('kpi-revenue').textContent      = revenue.toLocaleString('id-ID');
+  document.getElementById('kpi-revenue-sub').textContent  = `ADR IDR ${adr.toLocaleString('id-ID')}`;
+  document.getElementById('dash-period-note').textContent =
+    `${fmtDateLong(_dashFrom)} – ${fmtDateLong(_dashTo)} · counted by stay night (a booking spanning two months is split between them). Cancelled and no-show bookings are excluded.`;
 
   const active = all.filter(r => r.status !== 'Cancelled');
 
-  // KPI: totals
-  const totalCount   = all.length;
-  const activeCount  = active.length;
-  const totalNights  = active.reduce((s, r) => s + (r.room_night || 0), 0);
-  const totalRevenue = active.reduce((s, r) => s + (r.room_revenue || 0), 0);
-
-  document.getElementById('kpi-total').textContent        = String(totalCount).padStart(2, '0');
-  document.getElementById('kpi-active-badge').textContent = activeCount > 0 ? `+${activeCount} active` : '';
-  document.getElementById('kpi-total-sub').textContent    = `${activeCount} confirmed booking${activeCount !== 1 ? 's' : ''}`;
-  document.getElementById('kpi-nights').textContent       = String(totalNights).padStart(2, '0');
-  document.getElementById('kpi-nights-sub').textContent   = `Across ${[...new Set(active.map(r => r.room_name))].length} room${[...new Set(active.map(r => r.room_name))].length !== 1 ? 's' : ''}`;
-  document.getElementById('kpi-revenue').textContent      = totalRevenue > 0
-    ? totalRevenue.toLocaleString('id-ID')
-    : '0';
-  document.getElementById('kpi-revenue-sub').textContent  = `${activeCount} confirmed booking${activeCount !== 1 ? 's' : ''}`;
-
   // Upcoming arrivals: future or today, not cancelled, soonest first, max 4
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localISO(new Date());
   const upcoming = active
     .filter(r => r.arrival_date >= today)
     .sort((a, b) => a.arrival_date.localeCompare(b.arrival_date))
@@ -1634,7 +1708,7 @@ async function loadDashboard() {
     const initials = r.guest_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
     const rateFormatted = Number(r.rate || 0).toLocaleString('id-ID');
     return `
-      <div class="arrival-row">
+      <div class="arrival-row" onclick="showPage('reservations', document.querySelectorAll('.nav-item')[1]); openReservation('${r.id}', 'res-summary')">
         <div class="arrival-conf">
           <div class="lbl">Confirmation</div>
           <div class="val">${r.confirmation_number || '—'}</div>
