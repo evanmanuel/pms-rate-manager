@@ -415,6 +415,15 @@
     .remove-btn { width:28px; height:28px; background:none; border:none; cursor:pointer; color:var(--on-surface-variant); font-size:14px; border-radius:6px; display:flex; align-items:center; justify-content:center; transition:background 0.15s,color 0.15s; opacity:0; }
     .list-item:hover .remove-btn { opacity:1; }
     .remove-btn:hover { background:#fee2e2; color:#dc2626; }
+    .room-item { gap:12px; }
+    .room-count { font-size:11px; color:var(--secondary); font-weight:400; margin-left:8px; }
+    .room-actions { display:flex; align-items:center; gap:6px; }
+    .room-edit-btn { width:28px; height:28px; background:none; border:none; cursor:pointer; color:var(--on-surface-variant); border-radius:6px; display:flex; align-items:center; justify-content:center; opacity:0; transition:background .15s,opacity .15s; }
+    .room-edit-btn .mso { font-size:17px; }
+    .list-item:hover .room-edit-btn { opacity:1; }
+    .room-edit-btn:hover { background:var(--primary-fixed); color:var(--primary); }
+    .room-rename-input { flex:1; background:var(--surface-container-low); border:none; border-bottom:1px solid var(--primary-container); padding:8px 6px; font-size:14px; font-family:'Inter',sans-serif; outline:none; }
+    @media (hover: none) { .room-edit-btn, .remove-btn { opacity:1; } }
     .add-row { display:flex; gap:8px; margin-top:16px; padding:0 12px; }
     .add-row input { flex:1; padding:9px 4px; border:none; border-bottom:1px solid var(--outline-variant); background:transparent; font-size:14px; font-family:'Inter',sans-serif; color:var(--on-surface); outline:none; transition:border-color 0.2s; }
     .add-row input:focus { border-bottom-color:var(--primary); }
@@ -1274,6 +1283,7 @@
         </div>
         <div class="section">
           <div class="section-label">Room Names</div>
+          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Renaming a room also updates every reservation assigned to it.</p>
           <div id="room-list"></div>
           <div class="add-row">
             <input type="text" id="new-room" placeholder="Add new room…" onkeydown="if(event.key==='Enter') addRoom()" />
@@ -1734,22 +1744,75 @@ async function removeChannel(id) { await db.from('channels').delete().eq('id', i
 /* ══════════════════════════════════════════════════════════
    ROOMS
 ══════════════════════════════════════════════════════════ */
+// Rooms: rename updates every reservation in that room (done by the database,
+// see supabase/migrations/20261118_room_rename_cascade.sql). A room with
+// bookings can't be removed.
+let _roomsCache = [];
 async function loadRooms() {
-  const { data } = await db.from('rooms').select('*').order('created_at');
+  const [{ data }, { data: res }] = await Promise.all([
+    db.from('rooms').select('*').order('created_at'),
+    db.from('reservations').select('room_name'),
+  ]);
+  _roomsCache = data || [];
+  const counts = {};
+  (res || []).forEach(r => { counts[r.room_name] = (counts[r.room_name] || 0) + 1; });
   const list = document.getElementById('room-list');
-  list.innerHTML = '';
-  if (!data || data.length === 0) { list.innerHTML = '<p style="padding:8px 12px;font-size:13px;color:var(--on-surface-variant)">No rooms yet</p>'; return; }
-  data.forEach(r => { list.innerHTML += `<div class="list-item"><span>${r.name}</span><button class="remove-btn" onclick="removeRoom('${r.id}')">✕</button></div>`; });
+  if (_roomsCache.length === 0) { list.innerHTML = '<p style="padding:8px 12px;font-size:13px;color:var(--on-surface-variant)">No rooms yet</p>'; return; }
+  list.innerHTML = _roomsCache.map(r => {
+    const n = counts[r.name] || 0;
+    return `<div class="list-item room-item" id="room-row-${r.id}">
+      <span>${escHtml(r.name)} <small class="room-count">${n} booking${n === 1 ? '' : 's'}</small></span>
+      <div class="room-actions">
+        <button class="room-edit-btn" title="Rename" onclick="startRenameRoom('${r.id}')"><span class="mso">edit</span></button>
+        <button class="remove-btn" title="${n ? 'Has bookings — rename instead' : 'Remove'}" onclick="removeRoom('${r.id}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function startRenameRoom(id) {
+  const r = _roomsCache.find(x => x.id === id);
+  const row = document.getElementById('room-row-' + id);
+  if (!r || !row) return;
+  row.innerHTML = `<input type="text" class="room-rename-input" id="room-rename-${id}" value="${escHtml(r.name)}"
+      onkeydown="if(event.key==='Enter') saveRenameRoom('${id}'); if(event.key==='Escape') loadRooms();" />
+    <div class="room-actions" style="opacity:1">
+      <button class="btn-ghost" style="padding:7px 12px" onclick="loadRooms()">Cancel</button>
+      <button class="btn-primary" style="padding:7px 14px" onclick="saveRenameRoom('${id}')">Save</button>
+    </div>`;
+  const inp = document.getElementById('room-rename-' + id);
+  inp.focus(); inp.select();
+}
+async function saveRenameRoom(id) {
+  const r = _roomsCache.find(x => x.id === id);
+  const name = document.getElementById('room-rename-' + id).value.trim();
+  if (!name) return showToast('Enter a room name');
+  if (name === r.name) return loadRooms();
+  const { count } = await db.from('reservations').select('id', { count: 'exact', head: true }).eq('room_name', r.name);
+  if (count) {
+    const ok = await showModal('Rename Room', `Rename "${r.name}" to "${name}"? ${count} reservation${count === 1 ? '' : 's'} in this room will be updated, and the change is recorded in each booking's history.`);
+    if (!ok) return;
+  }
+  const { error } = await db.from('rooms').update({ name }).eq('id', id);
+  if (error) return showToast('Error: ' + error.message);
+  showToast(`Renamed to ${name}${count ? ` — ${count} reservation${count === 1 ? '' : 's'} updated` : ''} ✓`);
+  loadRooms();
 }
 async function addRoom() {
   const input = document.getElementById('new-room');
   const name = input.value.trim();
   if (!name) return showToast('Enter a room name');
   const { error } = await db.from('rooms').insert({ name });
-  if (error) return showToast('Error adding room');
+  if (error) return showToast('Error: ' + error.message);
   input.value = ''; loadRooms(); showToast('Room added ✓');
 }
-async function removeRoom(id) { await db.from('rooms').delete().eq('id', id); loadRooms(); showToast('Room removed'); }
+async function removeRoom(id) {
+  const r = _roomsCache.find(x => x.id === id);
+  const ok = await showModal('Remove Room', `Remove "${r ? r.name : 'this room'}"?`);
+  if (!ok) return;
+  const { error } = await db.from('rooms').delete().eq('id', id);
+  if (error) return showToast('Error: ' + error.message);
+  loadRooms(); showToast('Room removed');
+}
 
 /* ══════════════════════════════════════════════════════════
    DROPDOWNS
