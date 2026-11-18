@@ -929,6 +929,33 @@
       .rd-actions > button { flex:1; justify-content:center; }
     }
     /* ══════════════════════════════════════════════════════════
+       BOOKING CONFIRMED
+    ══════════════════════════════════════════════════════════ */
+    .cf-wrap { max-width:720px; margin:0 auto; }
+    .cf-hero { text-align:center; padding:24px 0 32px; }
+    .cf-check { width:84px; height:84px; border-radius:50%; background:var(--grad-primary); color:var(--primary-fixed); display:flex; align-items:center; justify-content:center; margin:0 auto 22px; box-shadow:0 10px 30px rgba(0,37,25,.25); animation:cfPop .45s cubic-bezier(.2,1.4,.4,1) both; }
+    .cf-check .mso { font-size:44px; font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 48; }
+    @keyframes cfPop { from { transform:scale(.4); opacity:0; } to { transform:scale(1); opacity:1; } }
+    .cf-hero h2 { font-family:'Manrope',sans-serif; font-size:30px; font-weight:800; color:var(--primary); letter-spacing:-0.03em; line-height:1.15; }
+    .cf-hero p { margin-top:10px; font-size:14px; color:var(--secondary); }
+    .cf-conf { display:inline-flex; align-items:center; gap:10px; margin-top:18px; background:var(--primary-fixed); color:var(--primary); border-radius:12px; padding:10px 18px; font-family:'Manrope',sans-serif; }
+    .cf-conf span { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; opacity:.75; }
+    .cf-conf b { font-size:18px; font-weight:800; letter-spacing:.03em; }
+    .cf-card { background:var(--surface-container-lowest); border-radius:18px; box-shadow:var(--shadow-sm); padding:28px; }
+    .cf-guest { display:flex; align-items:center; gap:14px; padding-bottom:20px; border-bottom:1px solid var(--surface-container-high); }
+    .cf-guest .rd-avatar { width:52px; height:52px; border-radius:14px; font-size:18px; margin:0; flex-shrink:0; }
+    .cf-guest h3 { font-family:'Manrope',sans-serif; font-size:18px; font-weight:800; word-break:break-word; }
+    .cf-guest p { font-size:13px; color:var(--secondary); margin-top:2px; }
+    .cf-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; padding:20px 0; border-bottom:1px solid var(--surface-container-high); }
+    .cf-item .rd-label { margin-bottom:6px; }
+    .cf-item div:last-child { font-size:15px; font-weight:600; color:var(--on-surface); word-break:break-word; }
+    .cf-total { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-top:20px; flex-wrap:wrap; }
+    .cf-total small { display:block; font-size:12px; color:var(--secondary); margin-top:4px; }
+    .cf-total b { font-family:'Manrope',sans-serif; font-size:26px; font-weight:800; color:var(--primary-container); white-space:nowrap; }
+    .cf-actions { display:flex; gap:12px; justify-content:center; margin-top:28px; flex-wrap:wrap; }
+    .cf-actions button { min-width:220px; justify-content:center; padding:15px 24px; }
+
+    /* ══════════════════════════════════════════════════════════
        MOBILE & TABLET (Android / iOS)
     ══════════════════════════════════════════════════════════ */
     html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
@@ -1088,6 +1115,14 @@
       .form-grid-4 input[type=date] { min-width:0; }
       .rate-wrap input { padding-left:42px !important; }
       .rate-prefix { left:8px; }
+
+      /* Booking confirmed */
+      .cf-hero { padding:16px 0 24px; }
+      .cf-hero h2 { font-size:24px; }
+      .cf-card { padding:20px 16px; }
+      .cf-grid { grid-template-columns:1fr 1fr; gap:16px; }
+      .cf-actions { flex-direction:column-reverse; }
+      .cf-actions button { width:100%; min-width:0; }
 
       /* Reservation detail */
       .rd-head { margin-bottom:22px; }
@@ -1392,7 +1427,7 @@
               <div class="form-actions-right">
                 <div class="save-chip" id="save-chip"><span class="mso">check_circle</span>Saved</div>
                 <button class="btn-ghost" onclick="showScreen('res-summary')">Cancel</button>
-                <button class="btn-primary" onclick="saveReservation()"><span class="mso">save</span>Save Reservation</button>
+                <button class="btn-primary" id="save-res-btn" onclick="saveReservation()"><span class="mso">save</span>Save Reservation</button>
               </div>
             </div>
           </div>
@@ -1464,6 +1499,11 @@
           <!-- Pagination -->
           <div class="allres-pagination" id="allres-pagination"></div>
         </div>
+      </div>
+
+      <!-- Screen E: Booking confirmed -->
+      <div class="screen" id="screen-res-confirmed">
+        <div class="page-wrap cf-wrap" id="cf-root"></div>
       </div>
 
       <!-- Screen D: Reservation detail (full screen) -->
@@ -2173,20 +2213,57 @@ async function saveReservation() {
     const { data } = await db.from('reservations').select('id').eq('confirmation_number', confNumber);
     exists = data && data.length > 0;
   }
-  const { error } = await db.from('reservations').insert({
+  const saveBtn = document.getElementById('save-res-btn');
+  if (saveBtn.disabled) return;
+  saveBtn.disabled = true;
+  const { data: saved, error } = await db.from('reservations').insert({
     confirmation_number: confNumber, guest_name: guestName, arrival_date: arrivalDate,
     departure_date: departureDate, rate, country, channel, room_name: roomName,
     arrival_month: arrivalMonth, room_night: roomNight, room_revenue: roomRevenue,
     status: 'New Reservation',
     guest_email: guestEmail || null, guest_phone: guestPhone || null, guests: guestCount,
     payment_status: paymentStatus, notes: notes || null
-  });
-  if (error) return showToast('Error saving reservation');
-  const chip = document.getElementById('save-chip');
-  chip.classList.add('show');
-  setTimeout(() => chip.classList.remove('show'), 3000);
-  showToast(`Saved — ${confNumber}`);
+  }).select().single();
+  saveBtn.disabled = false;
+  if (error) return showToast('Error saving reservation: ' + error.message);
   clearForm();
+  showBookingConfirmed(saved);
+}
+
+function showBookingConfirmed(r) {
+  const nights = r.room_night || 0;
+  const item = (label, val) => `<div class="cf-item"><div class="rd-label">${label}</div><div>${val}</div></div>`;
+  document.getElementById('cf-root').innerHTML = `
+    <div class="cf-hero">
+      <div class="cf-check"><span class="mso">check</span></div>
+      <h2>Your reservation has been confirmed</h2>
+      <p>The booking is saved and the room is now blocked for these dates.</p>
+      <div class="cf-conf"><span>Confirmation No.</span><b>${escHtml(r.confirmation_number)}</b></div>
+    </div>
+    <div class="cf-card">
+      <div class="cf-guest">
+        <div class="rd-avatar">${escHtml(initials(r.guest_name))}</div>
+        <div><h3>${escHtml(r.guest_name)}</h3>
+          <p>${escHtml(r.country || 'Country not added')} · ${r.guests || 1} guest${(r.guests || 1) > 1 ? 's' : ''}</p></div>
+      </div>
+      <div class="cf-grid">
+        ${item('Arrival', fmtDateLong(r.arrival_date))}
+        ${item('Departure', fmtDateLong(r.departure_date))}
+        ${item('Nights', nights)}
+        ${item('Room', escHtml(r.room_name || '—'))}
+        ${item('Channel', escHtml(r.channel || '—'))}
+        ${item('Payment', paymentChip(r.payment_status))}
+      </div>
+      <div class="cf-total">
+        <div><div class="rd-label">Total Revenue</div><small>${idr(r.rate)} × ${nights} night${nights === 1 ? '' : 's'}</small></div>
+        <b>${idr(r.room_revenue)}</b>
+      </div>
+    </div>
+    <div class="cf-actions">
+      <button class="btn-ghost" onclick="showScreen('res-summary')"><span class="mso" style="font-size:18px">close</span>Close Page</button>
+      <button class="btn-primary" onclick="clearForm(); showScreen('new-booking')"><span class="mso">add</span>Create New Reservation</button>
+    </div>`;
+  showScreen('res-confirmed');
 }
 
 function clearForm() {
