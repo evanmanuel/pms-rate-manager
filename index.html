@@ -582,6 +582,7 @@
     .kpi-card-light .kpi-value { font-size:48px; color:var(--primary); }
     .kpi-card-dark  .kpi-value { font-size:14px; color:rgba(186,238,214,0.8); }
     .kpi-card-dark  .kpi-value-large { font-size:36px; color:#fff; display:block; margin-top:4px; letter-spacing:-0.03em; font-family:'Manrope',sans-serif; font-weight:800; }
+    .kpi-badge:empty { display:none; }
     .kpi-badge {
       font-size:11px; font-weight:700; color:#059669;
       background:rgba(5,150,105,0.12); border-radius:6px; padding:2px 7px;
@@ -1070,6 +1071,23 @@
       .modal-actions { margin-top:22px; }
       .modal-actions button { flex:1; justify-content:center; min-height:46px; }
       .toast { left:16px; right:16px; bottom:calc(16px + env(safe-area-inset-bottom)); text-align:center; }
+
+      /* Compact header when the only action is Back */
+      .page-header:has(> .btn-ghost) { flex-direction:row; align-items:center; justify-content:space-between; }
+      .page-header > .btn-ghost { flex:0 0 auto; min-height:40px; padding:8px 14px; }
+
+      /* All reservations toolbar: Clear and Export side by side */
+      .allres-toolbar { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+      .allres-search-wrap { grid-column:1 / -1; }
+      .allres-filters { display:contents; }
+      .allres-filters .btn-ghost { grid-column:auto; justify-content:center; }
+      .allres-toolbar > .btn-primary { width:auto; }
+
+      /* New booking: short fields two per row */
+      .form-grid-4 { grid-template-columns:1fr 1fr; gap:18px 12px; }
+      .form-grid-4 input[type=date] { min-width:0; }
+      .rate-wrap input { padding-left:42px !important; }
+      .rate-prefix { left:8px; }
 
       /* Reservation detail */
       .rd-head { margin-bottom:22px; }
