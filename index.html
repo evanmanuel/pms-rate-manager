@@ -851,6 +851,9 @@
     .pay-unpaid { background:#fff1f0; color:#a8382c; }
     .pay-deposit{ background:#fef3c7; color:#92400e; }
     .pay-paid   { background:#d1fae5; color:#065f46; }
+    .pay-secdep { background:#e0e7ff; color:#3730a3; }
+    .sec-field.off input { opacity:.45; cursor:not-allowed; }
+    .sec-field.off label { opacity:.6; }
     .allres-table tbody tr { cursor:pointer; }
     .allres-table td:last-child { padding-left:4px; padding-right:12px; }
     .view-btn { display:inline-flex; align-items:center; gap:4px; border:none; background:var(--surface-container-high); color:var(--primary); border-radius:8px; padding:6px 10px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:0.05em; cursor:pointer; white-space:nowrap; }
@@ -1643,9 +1646,9 @@
                   <small class="pay-hint" id="pay-hint-new"></small></div>
                 <div class="form-group" id="deposit-group-new" style="display:none"><label>Room Payment (IDR)</label>
                   <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="deposit-amount" min="0" placeholder="0" oninput="updatePayHint('new')" /></div></div>
-                <div class="form-group"><label>Refundable Security Deposit (Optional)</label>
-                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="security-deposit" min="0" placeholder="0" /></div>
-                  <small class="pay-hint">Held separately, not part of the room payment</small></div>
+                <div class="form-group sec-field off" id="sec-group-new"><label>Refundable Security Deposit (Optional)</label>
+                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="security-deposit" min="0" placeholder="0" disabled /></div>
+                  <small class="pay-hint" id="sec-hint-new">Available when Payment Status is Paid</small></div>
               </div>
             </div>
             <div class="form-section">
@@ -2627,8 +2630,21 @@ function payCtx(which) {
   return { status: g('ed-payment').value, total: rc && rc.nights > 0 ? rc.total : 0, dep: g('ed-deposit'),
            group: g('deposit-group-ed'), hint: g('pay-hint-ed') };
 }
+// Refundable Security Deposit can only be recorded once the room is fully paid
+function syncSecurityField(which, status) {
+  const grp = document.getElementById(which === 'new' ? 'sec-group-new' : 'sec-group-ed');
+  const inp = document.getElementById(which === 'new' ? 'security-deposit' : 'ed-security');
+  const hint = document.getElementById(which === 'new' ? 'sec-hint-new' : 'sec-hint-ed');
+  if (!grp || !inp) return;
+  const on = status === 'Paid';
+  grp.classList.toggle('off', !on);
+  inp.disabled = !on;
+  if (!on) inp.value = '';
+  hint.textContent = on ? 'Held separately, not part of the room payment' : 'Available when Payment Status is Paid';
+}
 function onPayStatusChange(which) {
   const c = payCtx(which); if (!c) return;
+  syncSecurityField(which, c.status);
   c.group.style.display = c.status === 'Deposit' ? '' : 'none';
   if (c.status === 'Deposit') setTimeout(() => c.dep.focus(), 30);
   updatePayHint(which);
@@ -2663,7 +2679,7 @@ async function saveReservation() {
   const emergencyPhone= document.getElementById('emergency-phone').value.trim();
   const depositAmount = parseFloat(document.getElementById('deposit-amount').value) || 0;
   const secRaw        = document.getElementById('security-deposit').value.trim();
-  const securityDeposit = secRaw === '' ? null : Math.max(0, Math.round(parseFloat(secRaw) || 0));
+  const securityDeposit = (document.getElementById('payment-status').value !== 'Paid' || secRaw === '') ? null : Math.max(0, Math.round(parseFloat(secRaw) || 0));
   if (!guestName || !arrivalDate || !departureDate || !rate || !channel || !roomName) return showToast('Please fill in all required fields');
   if (departureDate <= arrivalDate) return showToast('Departure must be after arrival');
   const { data: conflicts } = await db.from('reservations').select('id').eq('room_name', roomName).neq('status','Cancelled').lt('arrival_date', departureDate).gt('departure_date', arrivalDate);
@@ -2746,6 +2762,7 @@ function showBookingConfirmed(r) {
 function clearForm() {
   ['guest-name','arrival-date','departure-date','rate','country','guest-email','guest-phone','emergency-name','emergency-phone','deposit-amount','security-deposit'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('deposit-group-new').style.display = 'none';
+  syncSecurityField('new', 'Unpaid');
   _rateMode.new = 'per_night'; paintRateMode('new'); document.getElementById('rate-summary-new').textContent = '';
   document.getElementById('pay-hint-new').textContent = '';
   document.getElementById('guest-count').value = '1';
@@ -3513,6 +3530,18 @@ function statusChip(status) {
 // Stored value "Deposit" is shown as "Partially Paid" (kept internally so old bookings and history stay valid)
 const PAY_LABEL = { Unpaid: 'Unpaid', Deposit: 'Partially Paid', Paid: 'Paid' };
 const payLabel = v => PAY_LABEL[v] || v || 'Unpaid';
+// Payment display status for the guest summary page and the invoice:
+// Unpaid · Partially Paid · Fully Paid (paid, no security deposit held) · Deposit (paid + security deposit held)
+function payDisplay(r) {
+  const st = payStatusOf(r);
+  if (st === 'Paid') return Number(r.security_deposit) > 0 ? 'Deposit' : 'Fully Paid';
+  return st === 'Deposit' ? 'Partially Paid' : 'Unpaid';
+}
+function payDisplayChip(r) {
+  const t = payDisplay(r);
+  const cls = { 'Unpaid': 'pay-unpaid', 'Partially Paid': 'pay-deposit', 'Fully Paid': 'pay-paid', 'Deposit': 'pay-secdep' }[t];
+  return `<span class="st-chip ${cls}">${t}</span>`;
+}
 // "Partially Paid" only counts when something was actually paid; otherwise it is Unpaid
 function payStatusOf(r) {
   const st = r.payment_status || 'Unpaid';
@@ -3597,7 +3626,7 @@ function renderReservationDetail() {
       <div>
         <div class="rd-title">${escHtml(r.guest_name || 'Guest')}</div>
         <div class="rd-sub">
-          ${statusChip(r.status)} ${paymentChip(payStatusOf(r))}
+          ${statusChip(r.status)} ${payDisplayChip(r)}
           <span><span class="mso">bed</span> ${escHtml(r.room_name || '—')}</span>
           <span><span class="mso">hub</span> ${escHtml(r.channel || '—')}</span>
         </div>
@@ -3711,7 +3740,7 @@ function renderReservationDetail() {
            <div class="rd-fin-row"><span>≈ Per night</span><b>${idr(nightlyOf(r))}</b></div>`
         : `<div class="rd-fin-row"><span>Room rate (${idr(r.rate)} × ${nights})</span><b>${idr(r.room_revenue)}</b></div>`}
       <div class="rd-fin-row"><span>Sold as</span><b>${r.rate_type === 'total' ? 'Total stay' : 'Per night'}</b></div>
-      <div class="rd-fin-row"><span>Payment status</span>${paymentChip(payStatusOf(r))}</div>
+      <div class="rd-fin-row"><span>Payment status</span>${payDisplayChip(r)}</div>
       <div class="rd-fin-row"><span>Paid by guest</span><b class="rd-paid">${idr(r.amount_paid)}</b></div>
       ${cancelled ? '' : `<div class="rd-fin-row"><span>Balance due</span><b class="${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? 'rd-due' : 'rd-paid'}">${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? idr(Number(r.room_revenue || 0) - Number(r.amount_paid || 0)) : 'Fully paid ✓'}</b></div>`}
       <div class="rd-fin-total"><span>Total Revenue</span><b>${idr(cancelled ? 0 : r.room_revenue)}</b></div>
@@ -3735,7 +3764,7 @@ function renderReservationDetail() {
         : `<div class="rd-sd-amount ${sdHeld ? '' : 'zero'}">${sd === null || sd === undefined ? 'Not added' : sdHeld ? idr(sd) : 'IDR 0 · nothing held'}</div>
            <p class="rd-sd-note">Held separately and not part of the room payment.${sdHeld ? ' Set to 0 once refunded.' : ''}</p>
            ${sdHeld && r.status === 'Checked-in' ? `<div class="rd-sd-alert"><span class="mso">info</span><span>Refund this deposit (less any deductions for damage) and set it to 0 before checking the guest out.</span></div>` : ''}
-           ${cancelled ? '' : `<button class="rd-mini-btn" style="margin-top:16px" onclick="_rdMode='sd';renderReservationDetail();setTimeout(()=>{const i=document.getElementById('sd-input');i&&(i.focus(),i.select())},30)"><span class="mso">edit</span>${sd === null || sd === undefined ? 'Add amount' : 'Update amount'}</button>`}`}
+           ${cancelled ? '' : payStatusOf(r) !== 'Paid' ? `<p class="rd-sd-note" style="margin-top:12px"><span class="mso" style="font-size:15px;vertical-align:-3px">lock</span> Available once Payment Status is Paid.</p>` : `<button class="rd-mini-btn" style="margin-top:16px" onclick="_rdMode='sd';renderReservationDetail();setTimeout(()=>{const i=document.getElementById('sd-input');i&&(i.focus(),i.select())},30)"><span class="mso">edit</span>${sd === null || sd === undefined ? 'Add amount' : 'Update amount'}</button>`}`}
     </div>`;
 
   // ── Notes
@@ -3841,9 +3870,10 @@ function invoiceHTML(r, room, roomIdx, bank) {
   const total = Number(r.room_revenue || 0);
   const paid = Math.min(total, Number(r.amount_paid || 0));
   const due = Math.max(0, total - paid);
-  const st = r.payment_status === 'Paid' || (total > 0 && due === 0) ? { t: 'Fully Paid', bg: '#DCFCE7', fg: '#166534', bd: '#86EFAC', dot: '#16A34A' }
-           : r.payment_status === 'Deposit' && paid > 0 ? { t: 'Partially Paid', bg: '#FEF3C7', fg: '#92400E', bd: '#FCD34D', dot: '#D97706' }
-           : { t: 'Unpaid', bg: '#FEE2E2', fg: '#991B1B', bd: '#FCA5A5', dot: '#DC2626' };
+  const st = { 'Fully Paid':     { t: 'Fully Paid',     bg: '#DCFCE7', fg: '#166534', bd: '#86EFAC', dot: '#16A34A' },
+               'Deposit':        { t: 'Deposit',        bg: '#E0E7FF', fg: '#3730A3', bd: '#A5B4FC', dot: '#4F46E5' },
+               'Partially Paid': { t: 'Partially Paid', bg: '#FEF3C7', fg: '#92400E', bd: '#FCD34D', dot: '#D97706' },
+               'Unpaid':         { t: 'Unpaid',         bg: '#FEE2E2', fg: '#991B1B', bd: '#FCA5A5', dot: '#DC2626' } }[payDisplay(r)];
   const issue = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Makassar' });
   const perNight = r.rate_type !== 'total';
   const desc = room?.description || '';
@@ -4130,6 +4160,7 @@ async function rdUpdate(payload, okMsg) {
 }
 
 async function rdSaveSecurity() {
+  if (payStatusOf(_rd) !== 'Paid') { showToast('Set Payment Status to Paid first'); return; }
   const x = document.getElementById('sd-input').value.trim();
   const val = x === '' ? null : Math.max(0, Math.round(parseFloat(x) || 0));
   const cur = _rd.security_deposit == null ? null : Number(_rd.security_deposit);
@@ -4217,9 +4248,9 @@ function renderEditForm(r) {
         ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${['Unpaid','Deposit','Paid'].map(v => `<option value="${v}" ${v === payStatusOf(r) ? 'selected' : ''}>${payLabel(v)}</option>`).join('')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
         <div class="form-group" id="deposit-group-ed" style="${payStatusOf(r) === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Room Payment (IDR)</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="number" min="0" value="${payStatusOf(r) === 'Deposit' ? Number(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
-        <div class="form-group"><label for="ed-security">Refundable Security Deposit</label>
-          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-security" type="number" min="0" value="${r.security_deposit ?? ''}" placeholder="0"></div>
-          <small class="pay-hint">Held separately, not part of the room payment</small></div>
+        <div class="form-group sec-field ${payStatusOf(r) === 'Paid' ? '' : 'off'}" id="sec-group-ed"><label for="ed-security">Refundable Security Deposit</label>
+          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-security" type="number" min="0" value="${payStatusOf(r) === 'Paid' ? (r.security_deposit ?? '') : ''}" placeholder="0" ${payStatusOf(r) === 'Paid' ? '' : 'disabled'}></div>
+          <small class="pay-hint" id="sec-hint-ed">${payStatusOf(r) === 'Paid' ? 'Held separately, not part of the room payment' : 'Available when Payment Status is Paid'}</small></div>
       </div>
       <div class="rd-edit-summary">
         <span class="st-chip st-out" id="ed-summary">—</span>
@@ -4300,7 +4331,7 @@ async function rdSaveEdit() {
     rate_type: rc.mode,
     payment_status: payStatus,
     amount_paid: payStatus === 'Paid' ? total : payStatus === 'Deposit' ? deposit : 0,
-    security_deposit: (() => { const x = String(v('ed-security') ?? '').trim(); return x === '' ? null : Math.max(0, Math.round(parseFloat(x) || 0)); })(),
+    security_deposit: (() => { const x = String(v('ed-security') ?? '').trim(); return (payStatus !== 'Paid' || x === '') ? null : Math.max(0, Math.round(parseFloat(x) || 0)); })(),
     emergency_contact_name: v('ed-em-name') || null,
     emergency_contact_phone: v('ed-em-phone') || null,
     room_night: nights,
