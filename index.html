@@ -592,6 +592,9 @@
     .kpi-card-dark  .kpi-value { font-size:14px; color:rgba(186,238,214,0.8); }
     .kpi-card-dark  .kpi-value-large { font-size:36px; color:#fff; display:block; margin-top:4px; letter-spacing:-0.03em; font-family:'Manrope',sans-serif; font-weight:800; }
     .kpi-badge:empty { display:none; }
+    .rate-mode { display:inline-flex; background:var(--surface-container-high); border-radius:9px; padding:3px; gap:2px; margin:2px 0 8px; align-self:flex-start; }
+    .rate-mode button { border:none; background:transparent; border-radius:7px; padding:6px 12px; font-family:'Manrope',sans-serif; font-size:11px; font-weight:700; color:var(--on-surface-variant); cursor:pointer; white-space:nowrap; }
+    .rate-mode button.on { background:#fff; color:var(--primary); box-shadow:0 1px 3px rgba(13,28,47,.12); }
     .pay-hint { display:block; font-size:11px; color:var(--secondary); margin-top:6px; min-height:0; }
     .pay-hint:empty { display:none; }
     @media (max-width: 960px) { .rd-grid-spacer { display:none; } }
@@ -1557,10 +1560,15 @@
             <div class="form-section">
               <div class="form-section-header"><span class="mso">date_range</span><h3>Stay Details</h3></div>
               <div class="form-grid-4">
-                <div class="form-group"><label>Arrival</label><input type="date" id="arrival-date" onchange="checkAvailability(); updatePayHint('new')" /></div>
-                <div class="form-group"><label>Departure</label><input type="date" id="departure-date" onchange="checkAvailability(); updatePayHint('new')" /></div>
-                <div class="form-group"><label>Rate / Night (IDR)</label>
-                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="rate" placeholder="0" oninput="updatePayHint('new')" /></div>
+                <div class="form-group"><label>Arrival</label><input type="date" id="arrival-date" onchange="checkAvailability(); updateRateSummary('new')" /></div>
+                <div class="form-group"><label>Departure</label><input type="date" id="departure-date" onchange="checkAvailability(); updateRateSummary('new')" /></div>
+                <div class="form-group"><label id="rate-label-new">Rate / Night (IDR)</label>
+                  <div class="rate-mode" id="rate-mode-new">
+                    <button type="button" class="on" data-mode="per_night" onclick="setRateMode('new','per_night')">Per night</button>
+                    <button type="button" data-mode="total" onclick="setRateMode('new','total')">Total stay</button>
+                  </div>
+                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="rate" placeholder="0" oninput="updateRateSummary('new')" /></div>
+                  <small class="pay-hint" id="rate-summary-new"></small>
                 </div>
                 <div class="form-group"><label>Channel</label><select id="channel-select"><option value="">Select channel…</option></select></div>
               </div>
@@ -2112,7 +2120,7 @@ async function loadDashboard() {
   const counted   = all.filter(r => r.status !== 'Cancelled' && r.status !== 'No-show');
   const staying   = counted.map(r => ({ r, n: inPeriod(r) })).filter(x => x.n > 0);
   const nights    = staying.reduce((s, x) => s + x.n, 0);
-  const revenue   = staying.reduce((s, x) => s + x.n * Number(x.r.rate || 0), 0);
+  const revenue   = staying.reduce((s, x) => s + x.n * nightlyOf(x.r), 0);
   const arrivals  = counted.filter(r => r.arrival_date >= _dashFrom && r.arrival_date <= _dashTo).length;
   const cancelled = all.filter(r => r.status === 'Cancelled' && inPeriod(r) > 0).length;
   const roomCount = (rooms || []).length;
@@ -2153,7 +2161,7 @@ async function loadDashboard() {
 
   list.innerHTML = upcoming.map(r => {
     const initials = r.guest_name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
-    const rateFormatted = Number(r.rate || 0).toLocaleString('id-ID');
+    const rateFormatted = Math.round(nightlyOf(r)).toLocaleString('id-ID');
     return `
       <div class="arrival-row" onclick="showPage('reservations', document.querySelectorAll('.nav-item')[1]); openReservation('${r.id}', 'res-summary')">
         <div class="arrival-conf">
@@ -2414,18 +2422,65 @@ function generateConfNumber() {
   return date + letters;
 }
 
+/* ── Rate: "Per night" or "Total stay" ─────────────────────── */
+const _rateMode = { new: 'per_night', ed: 'per_night' };
+function rateEls(which) {
+  const g = id => document.getElementById(id);
+  return which === 'new'
+    ? { input: g('rate'), a: g('arrival-date'), d: g('departure-date'), label: g('rate-label-new'), mode: g('rate-mode-new'), sum: g('rate-summary-new') }
+    : { input: g('ed-rate'), a: g('ed-arrival'), d: g('ed-departure'), label: g('rate-label-ed'), mode: g('rate-mode-ed'), sum: g('rate-summary-ed') };
+}
+// Returns { mode, nights, entered, total, nightly } for a form
+function rateCalc(which) {
+  const e = rateEls(which); if (!e.input) return null;
+  const mode = _rateMode[which];
+  const nights = nightsBetween(e.a.value, e.d.value);
+  const entered = parseFloat(e.input.value);
+  const has = !isNaN(entered) && e.input.value !== '';
+  const total = !has ? 0 : mode === 'total' ? entered : entered * Math.max(nights, 0);
+  const nightly = !has ? 0 : mode === 'total' ? (nights > 0 ? entered / nights : 0) : entered;
+  return { mode, nights, entered: has ? entered : null, total, nightly };
+}
+function setRateMode(which, mode) {
+  const e = rateEls(which); if (!e.input || _rateMode[which] === mode) return;
+  const c = rateCalc(which);
+  // convert the typed value so the booking keeps the same price
+  if (c.entered !== null && c.nights > 0)
+    e.input.value = mode === 'total' ? Math.round(c.entered * c.nights) : Math.round(c.entered / c.nights);
+  _rateMode[which] = mode;
+  paintRateMode(which);
+  updateRateSummary(which);
+}
+function paintRateMode(which) {
+  const e = rateEls(which); if (!e.mode) return;
+  e.mode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === _rateMode[which]));
+  if (e.label) e.label.textContent = _rateMode[which] === 'total' ? 'Total Stay (IDR)' + (which === 'ed' ? ' *' : '') : 'Rate / Night (IDR)' + (which === 'ed' ? ' *' : '');
+}
+function updateRateSummary(which) {
+  const e = rateEls(which), c = rateCalc(which); if (!c) return;
+  if (e.sum) {
+    if (c.entered === null || c.nights <= 0) e.sum.textContent = '';
+    else if (c.mode === 'total') {
+      let t = `${c.nights} night${c.nights === 1 ? '' : 's'} · ≈ ${idr(c.nightly)} / night`;
+      if (which === 'ed' && _rd && _rd.rate_type === 'total' && Number(_rd.room_revenue) === c.total && c.nights !== Number(_rd.room_night))
+        t = `Total stays ${idr(c.total)} → now ${idr(c.nightly)} / night`;
+      e.sum.textContent = t;
+    } else e.sum.textContent = `${c.nights} night${c.nights === 1 ? '' : 's'} · Total ${idr(c.total)}`;
+  }
+  updatePayHint(which);
+}
+
 /* ── Payment status: deposit amount field + live hint ──────── */
 function payCtx(which) {
   if (which === 'new') {
-    const a = document.getElementById('arrival-date').value, d = document.getElementById('departure-date').value;
-    return { status: document.getElementById('payment-status').value, rate: parseFloat(document.getElementById('rate').value) || 0,
-             nights: nightsBetween(a, d), dep: document.getElementById('deposit-amount'),
+    const rc = rateCalc('new');
+    return { status: document.getElementById('payment-status').value, total: rc.nights > 0 ? rc.total : 0, dep: document.getElementById('deposit-amount'),
              group: document.getElementById('deposit-group-new'), hint: document.getElementById('pay-hint-new') };
   }
   const g = id => document.getElementById(id);
   if (!g('ed-payment')) return null;
-  return { status: g('ed-payment').value, rate: parseFloat(g('ed-rate').value) || 0,
-           nights: nightsBetween(g('ed-arrival').value, g('ed-departure').value), dep: g('ed-deposit'),
+  const rc = rateCalc('ed');
+  return { status: g('ed-payment').value, total: rc && rc.nights > 0 ? rc.total : 0, dep: g('ed-deposit'),
            group: g('deposit-group-ed'), hint: g('pay-hint-ed') };
 }
 function onPayStatusChange(which) {
@@ -2436,7 +2491,7 @@ function onPayStatusChange(which) {
 }
 function updatePayHint(which) {
   const c = payCtx(which); if (!c) return;
-  const total = c.nights > 0 ? c.nights * c.rate : 0;
+  const total = c.total;
   c.hint.classList.remove('warn');
   if (c.status === 'Paid') c.hint.textContent = total ? `Recorded as fully paid: ${idr(total)}` : 'Recorded as fully paid';
   else if (c.status === 'Deposit') {
@@ -2470,7 +2525,10 @@ async function saveReservation() {
   const arrival     = new Date(arrivalDate);
   const departure   = new Date(departureDate);
   const roomNight   = Math.round((departure - arrival) / (1000*60*60*24));
-  const roomRevenue = roomNight * rate;
+  const rc = rateCalc('new');
+  const rateType = rc.mode;
+  const roomRevenue = rateType === 'total' ? rate : roomNight * rate;
+  const nightlyRate = rateType === 'total' ? Math.round((rate / roomNight) * 100) / 100 : rate;
   if (paymentStatus === 'Deposit') {
     if (!(depositAmount > 0)) return showToast('Enter the deposit amount');
     if (depositAmount >= roomRevenue) return showToast('Deposit covers the full total — choose "Paid" instead');
@@ -2488,7 +2546,7 @@ async function saveReservation() {
   saveBtn.disabled = true;
   const { data: saved, error } = await db.from('reservations').insert({
     confirmation_number: confNumber, guest_name: guestName, arrival_date: arrivalDate,
-    departure_date: departureDate, rate, country, channel, room_name: roomName,
+    departure_date: departureDate, rate: nightlyRate, rate_type: rateType, country, channel, room_name: roomName,
     arrival_month: arrivalMonth, room_night: roomNight, room_revenue: roomRevenue,
     status: 'New Reservation',
     guest_email: guestEmail || null, guest_phone: guestPhone || null, guests: guestCount,
@@ -2526,7 +2584,7 @@ function showBookingConfirmed(r) {
         ${item('Payment', paymentChip(r.payment_status))}
       </div>
       <div class="cf-total">
-        <div><div class="rd-label">Total Revenue</div><small>${idr(r.rate)} × ${nights} night${nights === 1 ? '' : 's'}</small>
+        <div><div class="rd-label">Total Revenue</div><small>${r.rate_type === 'total' ? `Total stay price · ${nights} night${nights === 1 ? '' : 's'} (≈ ${idr(nightlyOf(r))} / night)` : `${idr(r.rate)} × ${nights} night${nights === 1 ? '' : 's'}`}</small>
           <small>Paid ${idr(r.amount_paid)} · ${Number(r.room_revenue) - Number(r.amount_paid || 0) > 0 ? 'Balance due ' + idr(Number(r.room_revenue) - Number(r.amount_paid || 0)) : 'Fully paid ✓'}</small></div>
         <b>${idr(r.room_revenue)}</b>
       </div>
@@ -2541,6 +2599,7 @@ function showBookingConfirmed(r) {
 function clearForm() {
   ['guest-name','arrival-date','departure-date','rate','country','guest-email','guest-phone','emergency-name','emergency-phone','deposit-amount'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('deposit-group-new').style.display = 'none';
+  _rateMode.new = 'per_night'; paintRateMode('new'); document.getElementById('rate-summary-new').textContent = '';
   document.getElementById('pay-hint-new').textContent = '';
   document.getElementById('guest-count').value = '1';
   document.getElementById('payment-status').value = 'Unpaid';
@@ -2639,7 +2698,7 @@ function renderAllRes() {
         <td class="c-dep" data-label="Departure">${fmtDateLong(r.departure_date)}</td>
         <td class="c-room" data-label="Room">${escHtml(r.room_name || '—')}</td>
         <td class="c-status">${statusChip(r.status)}</td>
-        <td class="allres-money c-adr" data-label="ADR">IDR ${Number(r.rate || 0).toLocaleString('id-ID')}</td>
+        <td class="allres-money c-adr" data-label="ADR">${idr(nightlyOf(r))}</td>
         <td class="allres-nights c-nights" data-label="Nights">${r.room_night || 0}</td>
         <td class="allres-money c-rev" data-label="Revenue">IDR ${Number(r.room_revenue || 0).toLocaleString('id-ID')}</td>
         <td class="c-view"><button class="view-btn" onclick="event.stopPropagation(); openReservation('${r.id}', 'all-reservations')"><span class="mso">visibility</span>View</button></td>
@@ -2726,6 +2785,7 @@ function _doExport() {
     'Arrival Date',
     'Departure Date',
     'Status',
+    'Sold As',
     'ADR (IDR)',
     'Total Nights',
     'Total Revenue (IDR)',
@@ -2751,7 +2811,8 @@ function _doExport() {
       r.arrival_date        || '',
       r.departure_date      || '',
       r.status              || '',
-      r.rate                || 0,
+      r.rate_type === 'total' ? 'Total stay' : 'Per night',
+      Math.round(nightlyOf(r)),
       r.room_night          || 0,
       r.room_revenue        || 0,
       r.payment_status      || '',
@@ -2769,7 +2830,7 @@ function _doExport() {
   const ws = XLSX.utils.aoa_to_sheet(wsData);
 
   // Column widths
-  ws['!cols'] = [18,22,16,16,16,14,14,18,14,12,18,14,16,16,8,24,18,22,18,40].map(w => ({ wch: w }));
+  ws['!cols'] = [18,22,16,16,16,14,14,18,12,14,12,18,14,16,16,8,24,18,22,18,40].map(w => ({ wch: w }));
 
   // Style header row bold (SheetJS community doesn't support cell styles, just structure)
   const wb = XLSX.utils.book_new();
@@ -2874,7 +2935,7 @@ function renderAvailability() {
   const wholeMonth = _avFrom.endsWith('-01') && _avTo === monthRange(fromD.getFullYear(), fromD.getMonth())[1];
   const mon = fromD.toLocaleString('en-US', { month:'short' });
   const nights = counted.reduce((s, r) => s + inPeriod(r), 0);
-  const revenue = counted.reduce((s, r) => s + inPeriod(r) * Number(r.rate || 0), 0);
+  const revenue = counted.reduce((s, r) => s + inPeriod(r) * nightlyOf(r), 0);
   const cap = _avRooms.length * days;
   const occ = cap ? Math.round(nights / cap * 100) : 0;
   const upcoming = counted.filter(r => r.arrival_date >= today && r.arrival_date <= _avTo && r.status === 'New Reservation')
@@ -2945,7 +3006,7 @@ function renderAvailability() {
         <h4>${escHtml(r.guest_name)}</h4>
         <p>${fmtShort(r.arrival_date)} – ${fmtDateLong(r.departure_date)} (${n} night${n === 1 ? '' : 's'})</p>
         <div style="margin-top:8px">${statusChip(r.status)}</div></div>
-      <div class="av-res-foot"><span>${idr(r.rate)} / night</span><b>Details →</b></div></div>`;
+      <div class="av-res-foot"><span>${r.rate_type === 'total' ? idr(r.room_revenue) + ' total stay' : idr(r.rate) + ' / night'}</span><b>Details →</b></div></div>`;
   }).join('') : '<div class="empty-state" style="grid-column:1/-1">No reservations in this period.</div>';
 }
 
@@ -3143,7 +3204,12 @@ function paymentChip(p) {
   const cls = v === 'Paid' ? 'pay-paid' : v === 'Deposit' ? 'pay-deposit' : 'pay-unpaid';
   return `<span class="st-chip ${cls}">${escHtml(v)}</span>`;
 }
-function idr(n) { return 'IDR ' + Number(n || 0).toLocaleString('id-ID'); }
+function idr(n) { return 'IDR ' + Math.round(Number(n || 0)).toLocaleString('id-ID'); }
+// Revenue per night for reports: total ÷ nights (exact for "Total stay" bookings)
+function nightlyOf(r) {
+  const n = Number(r.room_night) || nightsBetween(r.arrival_date, r.departure_date);
+  return n > 0 && r.room_revenue != null ? Number(r.room_revenue) / n : Number(r.rate || 0);
+}
 function nightsBetween(a, d) {
   if (!a || !d) return 0;
   return Math.round((new Date(d + 'T00:00:00') - new Date(a + 'T00:00:00')) / 86400000);
@@ -3301,7 +3367,11 @@ function renderReservationDetail() {
   const finCard = `
     <div class="rd-card tint">
       <div class="rd-label" style="display:flex;justify-content:space-between">Financial Overview <span class="mso" style="font-size:20px">payments</span></div>
-      <div class="rd-fin-row"><span>Room rate (${idr(r.rate)} × ${nights})</span><b>${idr(r.room_revenue)}</b></div>
+      ${r.rate_type === 'total'
+        ? `<div class="rd-fin-row"><span>Total stay price · ${nights} night${nights === 1 ? '' : 's'}</span><b>${idr(r.room_revenue)}</b></div>
+           <div class="rd-fin-row"><span>≈ Per night</span><b>${idr(nightlyOf(r))}</b></div>`
+        : `<div class="rd-fin-row"><span>Room rate (${idr(r.rate)} × ${nights})</span><b>${idr(r.room_revenue)}</b></div>`}
+      <div class="rd-fin-row"><span>Sold as</span><b>${r.rate_type === 'total' ? 'Total stay' : 'Per night'}</b></div>
       <div class="rd-fin-row"><span>Payment status</span>${paymentChip(r.payment_status)}</div>
       <div class="rd-fin-row"><span>Paid by guest</span><b class="rd-paid">${idr(r.amount_paid)}</b></div>
       ${cancelled ? '' : `<div class="rd-fin-row"><span>Balance due</span><b class="${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? 'rd-due' : 'rd-paid'}">${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? idr(Number(r.room_revenue || 0) - Number(r.amount_paid || 0)) : 'Fully paid ✓'}</b></div>`}
@@ -3368,13 +3438,14 @@ const HIST_LABELS = {
   guest_name:'Guest name', country:'Country', guest_email:'Email', guest_phone:'Phone', guests:'Guests',
   arrival_date:'Arrival', departure_date:'Departure', room_name:'Room', rate:'Rate / night', channel:'Channel',
   status:'Status', payment_status:'Payment', amount_paid:'Amount paid', notes:'Notes', room_night:'Nights', room_revenue:'Revenue',
-  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone'
+  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone', rate_type:'Sold as'
 };
 const HIST_ORDER = Object.keys(HIST_LABELS);
 function histVal(field, v) {
   if (v === null || v === undefined || v === '') return '—';
   if (field === 'arrival_date' || field === 'departure_date') return fmtDateLong(v);
   if (field === 'rate' || field === 'room_revenue' || field === 'amount_paid') return idr(v);
+  if (field === 'rate_type') return v === 'total' ? 'Total stay' : 'Per night';
   let s = String(v);
   if (field === 'notes' && s.length > 90) s = s.slice(0, 90) + '…';
   return escHtml(s);
@@ -3436,6 +3507,7 @@ async function rdSaveNote() {
 /* ── Edit booking ────────────────────────────────────────── */
 function rdStartEdit() {
   if (_rd.status === 'Cancelled') return;
+  _rateMode.ed = _rd.rate_type === 'total' ? 'total' : 'per_night';
   _rdMode = 'edit';
   renderReservationDetail();
 }
@@ -3468,7 +3540,13 @@ function renderEditForm(r) {
         ${f('ed-departure','Departure *',`<input id="ed-departure" type="date" value="${r.departure_date || ''}" onchange="rdRecalc()">`)}
         ${f('ed-room','Room *',`<select id="ed-room" onchange="rdRecalc()">${opts(_rdOptions.rooms, r.room_name)}</select>`)}
         ${f('ed-channel','Channel *',`<select id="ed-channel">${opts(_rdOptions.channels, r.channel)}</select>`)}
-        ${f('ed-rate','Rate / Night (IDR) *',`<input id="ed-rate" type="number" min="0" value="${r.rate ?? ''}" oninput="rdRecalc()">`)}
+        <div class="form-group"><label for="ed-rate" id="rate-label-ed">${(r.rate_type === 'total') ? 'Total Stay (IDR) *' : 'Rate / Night (IDR) *'}</label>
+          <div class="rate-mode" id="rate-mode-ed">
+            <button type="button" class="${r.rate_type === 'total' ? '' : 'on'}" data-mode="per_night" onclick="setRateMode('ed','per_night'); rdRecalc()">Per night</button>
+            <button type="button" class="${r.rate_type === 'total' ? 'on' : ''}" data-mode="total" onclick="setRateMode('ed','total'); rdRecalc()">Total stay</button>
+          </div>
+          <input id="ed-rate" type="number" min="0" value="${r.rate_type === 'total' ? Number(r.room_revenue || 0) : (r.rate ?? '')}" oninput="rdRecalc()">
+          <small class="pay-hint" id="rate-summary-ed"></small></div>
         ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${opts(['Unpaid','Deposit','Paid'], r.payment_status || 'Unpaid')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
         <div class="form-group" id="deposit-group-ed" style="${r.payment_status === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Deposit Amount (IDR)</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="number" min="0" value="${r.payment_status === 'Deposit' && Number(r.amount_paid) ? Number(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
@@ -3490,12 +3568,11 @@ let _rdAvailTimer = null;
 function rdRecalc() {
   const a = document.getElementById('ed-arrival')?.value;
   const d = document.getElementById('ed-departure')?.value;
-  const rate = parseFloat(document.getElementById('ed-rate')?.value) || 0;
   const room = document.getElementById('ed-room')?.value;
-  const n = nightsBetween(a, d);
+  const rc = rateCalc('ed');
   const sum = document.getElementById('ed-summary');
-  if (sum) sum.textContent = n > 0 ? `${n} night${n === 1 ? '' : 's'} · ${idr(n * rate)}` : 'Check dates';
-  updatePayHint('ed');
+  if (sum && rc) sum.textContent = rc.nights > 0 ? `${rc.nights} night${rc.nights === 1 ? '' : 's'} · ${idr(rc.total)}` : 'Check dates';
+  updateRateSummary('ed');
   clearTimeout(_rdAvailTimer);
   _rdAvailTimer = setTimeout(() => rdCheckAvail(a, d, room), 250);
 }
@@ -3530,11 +3607,14 @@ async function rdSaveEdit() {
   if (!free) { btn.disabled = false; return showToast('Room not available for these dates'); }
 
   const nights = nightsBetween(a, d);
+  const rc = rateCalc('ed');
+  const total = rc.mode === 'total' ? rate : nights * rate;
+  const nightlyRate = rc.mode === 'total' ? Math.round((rate / nights) * 100) / 100 : rate;
   const payStatus = v('ed-payment') || 'Unpaid';
   const deposit = parseFloat(v('ed-deposit')) || 0;
   if (payStatus === 'Deposit') {
     if (!(deposit > 0)) { btn.disabled = false; return showToast('Enter the deposit amount'); }
-    if (deposit >= nights * rate) { btn.disabled = false; return showToast('Deposit covers the full total — choose "Paid" instead'); }
+    if (deposit >= total) { btn.disabled = false; return showToast('Deposit covers the full total — choose "Paid" instead'); }
   }
   const payload = {
     guest_name: guest,
@@ -3546,13 +3626,14 @@ async function rdSaveEdit() {
     departure_date: d,
     room_name: room,
     channel,
-    rate,
+    rate: nightlyRate,
+    rate_type: rc.mode,
     payment_status: payStatus,
-    amount_paid: payStatus === 'Paid' ? nights * rate : payStatus === 'Deposit' ? deposit : 0,
+    amount_paid: payStatus === 'Paid' ? total : payStatus === 'Deposit' ? deposit : 0,
     emergency_contact_name: v('ed-em-name') || null,
     emergency_contact_phone: v('ed-em-phone') || null,
     room_night: nights,
-    room_revenue: nights * rate,
+    room_revenue: total,
     arrival_month: new Date(a + 'T00:00:00').toLocaleString('default', { month:'long', year:'numeric' }),
   };
   const saved = await rdUpdate(payload, 'Changes saved ✓');
