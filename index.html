@@ -3967,8 +3967,8 @@ function invoiceHTML(r, room, roomIdx, bank) {
     ${Number(r.security_deposit) > 0 ? `
     <div style="margin-top:22px;display:flex;gap:14px;align-items:flex-start;background:#FFFBEB;border:1px solid #FDE68A;border-radius:12px;padding:14px 16px;font-size:12px;line-height:18px;color:#4B5563">
       <div style="${L}color:#92400E;white-space:nowrap;padding-top:1px">Note</div>
-      <div><b style="color:#111827;font-size:13px">Refundable Security Deposit: IDR ${invNum(r.security_deposit)}</b><br>
-        Held separately and not included in the totals above. Refundable at check-out, less any deductions for damage during the stay.</div>
+      <div><b style="color:#111827;font-size:13px">Refundable Security Deposit: IDR ${invNum(r.security_deposit)}</b>
+        <div style="font-size:10.5px;line-height:15px;margin-top:4px">A refundable security deposit is required upon check-in to cover any additional charges incurred during your stay. If no additional charges apply, the full deposit will be refunded upon check-out. Should there be any additional costs, these may be settled using the security deposit or paid separately in cash. Any remaining deposit balance will be fully refunded.</div></div>
     </div>` : ''}
 
     <div style="flex:1"></div>
