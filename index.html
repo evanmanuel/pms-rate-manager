@@ -3692,15 +3692,18 @@ function renderReservationDetail() {
 let _mailKind = null;
 async function previewGuestEmail(kind) {
   _mailKind = kind;
-  const modal = document.getElementById('mail-modal'), frame = document.getElementById('mail-frame');
+  const modal = document.getElementById('mail-modal');
+  // Fresh frame every time: no leftover scroll position or half-finished load from the last preview
+  const old = document.getElementById('mail-frame'), frame = old.cloneNode(false);
+  frame.removeAttribute('srcdoc'); old.replaceWith(frame);
   document.getElementById('mail-title').textContent = kind === 'confirmation' ? 'Preview confirmation email' : 'Preview cancellation email';
   document.getElementById('mail-meta').textContent = 'Loading preview…';
-  frame.srcdoc = '';
   const sendBtn = document.getElementById('mail-send-btn'); sendBtn.disabled = true;
   modal.classList.add('show');
   try {
     const p = await googleFn('email-preview', { reservation_id: _rd.id, kind });
     document.getElementById('mail-meta').innerHTML = `To: <b>${escHtml(p.to)}</b><br>Subject: <b>${escHtml(p.subject)}</b><br>From: <b>${escHtml(MASTER_EMAIL)}</b>`;
+    if (_mailKind !== kind) return;           // closed or switched while loading
     frame.srcdoc = p.html;
     sendBtn.disabled = false;
   } catch (e) {
