@@ -1334,8 +1334,9 @@
       .allres-toolbar > .btn-primary { width:auto; }
 
       /* New booking: short fields two per row */
-      .form-grid-4 { grid-template-columns:1fr 1fr; gap:18px 12px; }
-      .form-grid-4 input[type=date] { min-width:0; }
+      .form-grid-4 { grid-template-columns:repeat(2, minmax(0, 1fr)); gap:18px 12px; }
+      .form-grid-4 > .form-group { min-width:0; }
+      .form-grid-4 input, .form-grid-4 select { min-width:0; max-width:100%; width:100%; box-sizing:border-box; }
       .rate-wrap input { padding-left:42px !important; }
       .form-grid-4 .rate-group { grid-column:1 / -1; }
       .rate-head { height:auto; }
