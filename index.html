@@ -1666,7 +1666,7 @@
                       <button type="button" class="on" data-mode="per_night" onclick="setRateMode('new','per_night')">Per night</button>
                       <button type="button" data-mode="total" onclick="setRateMode('new','total')">Total stay</button>
                     </div></div>
-                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="rate" placeholder="0" oninput="updateRateSummary('new')" /></div>
+                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="text" inputmode="numeric" autocomplete="off" class="money" id="rate" placeholder="0" oninput="updateRateSummary('new')" /></div>
                   <small class="pay-hint" id="rate-summary-new"></small>
                 </div>
                 <div class="form-group"><label>Channel</label><select id="channel-select"><option value="">Select channel…</option></select></div>
@@ -1685,9 +1685,9 @@
                 <div class="form-group"><label>Payment Status</label><select id="payment-status" onchange="onPayStatusChange('new')"><option value="Unpaid">Unpaid</option><option value="Deposit">Partially Paid</option><option value="Paid">Paid</option></select>
                   <small class="pay-hint" id="pay-hint-new"></small></div>
                 <div class="form-group" id="deposit-group-new" style="display:none"><label>Room Payment (IDR)</label>
-                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="deposit-amount" min="0" placeholder="0" oninput="updatePayHint('new')" /></div></div>
+                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="text" inputmode="numeric" autocomplete="off" class="money" id="deposit-amount" placeholder="0" oninput="updatePayHint('new')" /></div></div>
                 <div class="form-group sec-field off" id="sec-group-new"><label>Refundable Security Deposit (Optional)</label>
-                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="security-deposit" min="0" placeholder="0" disabled /></div>
+                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="text" inputmode="numeric" autocomplete="off" class="money" id="security-deposit" placeholder="0" disabled /></div>
                   <small class="pay-hint" id="sec-hint-new">Available when Payment Status is Paid</small></div>
               </div>
               <div class="form-group" style="margin-top:28px"><label>Notes (Optional)</label><textarea id="notes" placeholder="Special requests, early check-in, etc."></textarea></div>
@@ -2615,7 +2615,7 @@ function rateCalc(which) {
   const e = rateEls(which); if (!e.input) return null;
   const mode = _rateMode[which];
   const nights = nightsBetween(e.a.value, e.d.value);
-  const entered = parseFloat(e.input.value);
+  const entered = parseFloat(unMoney(e.input.value));
   const has = !isNaN(entered) && e.input.value !== '';
   const total = !has ? 0 : mode === 'total' ? entered : entered * Math.max(nights, 0);
   const nightly = !has ? 0 : mode === 'total' ? (nights > 0 ? entered / nights : 0) : entered;
@@ -2626,7 +2626,7 @@ function setRateMode(which, mode) {
   const c = rateCalc(which);
   // convert the typed value so the booking keeps the same price
   if (c.entered !== null && c.nights > 0)
-    e.input.value = mode === 'total' ? Math.round(c.entered * c.nights) : Math.round(c.entered / c.nights);
+    e.input.value = moneyStr(mode === 'total' ? Math.round(c.entered * c.nights) : Math.round(c.entered / c.nights));
   _rateMode[which] = mode;
   paintRateMode(which);
   updateRateSummary(which);
@@ -2688,7 +2688,7 @@ function updatePayHint(which) {
   c.hint.classList.remove('warn');
   if (c.status === 'Paid') c.hint.textContent = total ? `Recorded as fully paid: ${idr(total)}` : 'Recorded as fully paid';
   else if (c.status === 'Deposit') {
-    const dep = parseFloat(c.dep.value) || 0;
+    const dep = parseFloat(unMoney(c.dep.value)) || 0;
     if (!total) c.hint.textContent = 'Enter dates and rate to see the balance';
     else if (dep >= total) { c.hint.textContent = 'Amount paid covers the full total — choose "Paid" instead'; c.hint.classList.add('warn'); }
     else c.hint.textContent = `Total ${idr(total)} · Balance due ${idr(total - dep)}`;
@@ -2699,7 +2699,7 @@ async function saveReservation() {
   const guestName     = document.getElementById('guest-name').value.trim();
   const arrivalDate   = document.getElementById('arrival-date').value;
   const departureDate = document.getElementById('departure-date').value;
-  const rate          = parseFloat(document.getElementById('rate').value);
+  const rate          = parseFloat(unMoney(document.getElementById('rate').value));
   const country       = document.getElementById('country').value.trim();
   const channel       = document.getElementById('channel-select').value;
   const roomName      = document.getElementById('room-select').value;
@@ -2710,8 +2710,8 @@ async function saveReservation() {
   const notes         = document.getElementById('notes').value.trim();
   const emergencyName = document.getElementById('emergency-name').value.trim();
   const emergencyPhone= document.getElementById('emergency-phone').value.trim();
-  const depositAmount = parseFloat(document.getElementById('deposit-amount').value) || 0;
-  const secRaw        = document.getElementById('security-deposit').value.trim();
+  const depositAmount = parseFloat(unMoney(document.getElementById('deposit-amount').value)) || 0;
+  const secRaw        = unMoney(document.getElementById('security-deposit').value);
   const securityDeposit = (document.getElementById('payment-status').value !== 'Paid' || secRaw === '') ? null : Math.max(0, Math.round(parseFloat(secRaw) || 0));
   if (!guestName || !arrivalDate || !departureDate || !rate || !channel || !roomName) return showToast('Please fill in all required fields');
   if (departureDate <= arrivalDate) return showToast('Departure must be after arrival');
@@ -3560,6 +3560,23 @@ function statusChip(status) {
   const s = status || 'New Reservation';
   return `<span class="st-chip ${RES_STATUSES[s] || 'st-new'}">${escHtml(s)}</span>`;
 }
+/* ── Money inputs: show thousand separators while typing (1000000 → 1.000.000) ── */
+const unMoney = s => String(s ?? '').replace(/[^\d]/g, '');
+const moneyStr = n => (n === null || n === undefined || n === '' || isNaN(Number(n))) ? '' : Math.round(Number(n)).toLocaleString('id-ID');
+function fmtMoneyInput(el) {
+  const caret = el.selectionStart ?? el.value.length;
+  const digitsBefore = unMoney(el.value.slice(0, caret)).length;
+  const raw = unMoney(el.value).replace(/^0+(?=\d)/, '');
+  const out = raw ? Number(raw).toLocaleString('id-ID') : '';
+  if (out === el.value) return;
+  el.value = out;
+  let pos = 0, seen = 0;                       // put the cursor back after the same number of digits
+  while (pos < out.length && seen < digitsBefore) { if (/\d/.test(out[pos])) seen++; pos++; }
+  try { el.setSelectionRange(pos, pos); } catch (_) {}
+}
+// Runs before each field's own oninput handler (capture phase), so the handlers see the formatted value
+document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('money')) fmtMoneyInput(e.target); }, true);
+
 // Stored value "Deposit" is shown as "Partially Paid" (kept internally so old bookings and history stay valid)
 const PAY_LABEL = { Unpaid: 'Unpaid', Deposit: 'Partially Paid', Paid: 'Paid' };
 const payLabel = v => PAY_LABEL[v] || v || 'Unpaid';
@@ -3789,7 +3806,7 @@ function renderReservationDetail() {
       <div class="rd-sd-head"><div class="rd-label">Refundable Security Deposit</div><span class="mso" style="font-size:20px;color:var(--secondary)">shield</span></div>
       ${_rdMode === 'sd'
         ? `<div class="rd-sd-edit">
-             <div class="form-group rate-wrap"><span class="rate-prefix">IDR</span><input id="sd-input" type="number" min="0" inputmode="numeric" value="${sd ?? ''}" placeholder="0"></div>
+             <div class="form-group rate-wrap"><span class="rate-prefix">IDR</span><input id="sd-input" type="text" inputmode="numeric" autocomplete="off" class="money" value="${moneyStr(sd)}" placeholder="0"></div>
              <button class="btn-ghost" onclick="_rdMode='view';renderReservationDetail()">Cancel</button>
              <button class="btn-primary" onclick="rdSaveSecurity()">Save</button>
            </div>
@@ -4225,7 +4242,7 @@ async function rdUpdate(payload, okMsg) {
 
 async function rdSaveSecurity() {
   if (payStatusOf(_rd) !== 'Paid') { showToast('Set Payment Status to Paid first'); return; }
-  const x = document.getElementById('sd-input').value.trim();
+  const x = unMoney(document.getElementById('sd-input').value);
   const val = x === '' ? null : Math.max(0, Math.round(parseFloat(x) || 0));
   const cur = _rd.security_deposit == null ? null : Number(_rd.security_deposit);
   if (val === cur) { _rdMode = 'view'; renderReservationDetail(); return; }
@@ -4307,7 +4324,7 @@ function renderEditForm(r) {
               <button type="button" class="${r.rate_type === 'total' ? '' : 'on'}" data-mode="per_night" onclick="setRateMode('ed','per_night'); rdRecalc()">Per night</button>
               <button type="button" class="${r.rate_type === 'total' ? 'on' : ''}" data-mode="total" onclick="setRateMode('ed','total'); rdRecalc()">Total stay</button>
             </div></div>
-          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-rate" type="number" min="0" value="${r.rate_type === 'total' ? Number(r.room_revenue || 0) : (r.rate ?? '')}" oninput="rdRecalc()"></div>
+          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-rate" type="text" inputmode="numeric" autocomplete="off" class="money" value="${moneyStr(r.rate_type === 'total' ? Number(r.room_revenue || 0) : r.rate)}" oninput="rdRecalc()"></div>
           <small class="pay-hint" id="rate-summary-ed"></small></div>
       </div>
       <div class="rd-edit-summary">
@@ -4320,9 +4337,9 @@ function renderEditForm(r) {
       <div class="form-grid-3">
         ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${['Unpaid','Deposit','Paid'].map(v => `<option value="${v}" ${v === payStatusOf(r) ? 'selected' : ''}>${payLabel(v)}</option>`).join('')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
         <div class="form-group" id="deposit-group-ed" style="${payStatusOf(r) === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Room Payment (IDR)</label>
-          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="number" min="0" value="${payStatusOf(r) === 'Deposit' ? Number(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
+          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="text" inputmode="numeric" autocomplete="off" class="money" value="${payStatusOf(r) === 'Deposit' ? moneyStr(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
         <div class="form-group sec-field ${payStatusOf(r) === 'Paid' ? '' : 'off'}" id="sec-group-ed"><label for="ed-security">Refundable Security Deposit</label>
-          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-security" type="number" min="0" value="${payStatusOf(r) === 'Paid' ? (r.security_deposit ?? '') : ''}" placeholder="0" ${payStatusOf(r) === 'Paid' ? '' : 'disabled'}></div>
+          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-security" type="text" inputmode="numeric" autocomplete="off" class="money" value="${payStatusOf(r) === 'Paid' ? moneyStr(r.security_deposit) : ''}" placeholder="0" ${payStatusOf(r) === 'Paid' ? '' : 'disabled'}></div>
           <small class="pay-hint" id="sec-hint-ed">${payStatusOf(r) === 'Paid' ? 'Held separately, not part of the room payment' : 'Available when Payment Status is Paid'}</small></div>
       </div>
     </div>
@@ -4368,7 +4385,7 @@ async function rdCheckAvail(a, d, room) {
 async function rdSaveEdit() {
   const v = id => document.getElementById(id).value.trim();
   const guest = v('ed-guest'), a = v('ed-arrival'), d = v('ed-departure'), room = v('ed-room'), channel = v('ed-channel');
-  const rate = parseFloat(v('ed-rate'));
+  const rate = parseFloat(unMoney(v('ed-rate')));
   if (!guest || !a || !d || !room || !channel || !(rate >= 0) || v('ed-rate') === '') return showToast('Please fill in all required fields');
   if (d <= a) return showToast('Departure must be after arrival');
 
@@ -4381,7 +4398,7 @@ async function rdSaveEdit() {
   const total = rc.mode === 'total' ? rate : nights * rate;
   const nightlyRate = rc.mode === 'total' ? Math.round((rate / nights) * 100) / 100 : rate;
   const payStatus = v('ed-payment') || 'Unpaid';
-  const deposit = parseFloat(v('ed-deposit')) || 0;
+  const deposit = parseFloat(unMoney(v('ed-deposit'))) || 0;
   if (payStatus === 'Deposit') {
     if (!(deposit > 0)) { btn.disabled = false; return showToast('Enter the amount paid'); }
     if (deposit >= total) { btn.disabled = false; return showToast('Amount paid covers the full total — choose "Paid" instead'); }
@@ -4400,7 +4417,7 @@ async function rdSaveEdit() {
     rate_type: rc.mode,
     payment_status: payStatus,
     amount_paid: payStatus === 'Paid' ? total : payStatus === 'Deposit' ? deposit : 0,
-    security_deposit: (() => { const x = String(v('ed-security') ?? '').trim(); return (payStatus !== 'Paid' || x === '') ? null : Math.max(0, Math.round(parseFloat(x) || 0)); })(),
+    security_deposit: (() => { const x = unMoney(v('ed-security')); return (payStatus !== 'Paid' || x === '') ? null : Math.max(0, Math.round(parseFloat(x) || 0)); })(),
     emergency_contact_name: v('ed-em-name') || null,
     emergency_contact_phone: v('ed-em-phone') || null,
     room_night: nights,
