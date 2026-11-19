@@ -524,6 +524,19 @@
     .modal p { font-size:13px; color:var(--secondary); line-height:1.6; }
     .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:28px; }
 
+    /* guest email card + preview */
+    .rd-mail-btns { display:flex; flex-direction:column; gap:10px; margin-top:16px; }
+    .rd-mail-btn { display:flex; align-items:center; gap:10px; width:100%; border:none; border-radius:12px; padding:13px 14px; background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); cursor:pointer; font-family:'Manrope',sans-serif; font-size:12px; font-weight:700; color:var(--on-surface); text-align:left; }
+    .rd-mail-btn .mso { font-size:20px; color:var(--primary); }
+    .rd-mail-btn.cancel .mso { color:#b42318; }
+    .rd-mail-btn:disabled { opacity:.45; cursor:not-allowed; box-shadow:none; }
+    .rd-mail-btn small { display:block; font-family:'Inter',sans-serif; font-weight:400; font-size:11px; color:var(--secondary); margin-top:2px; }
+    .mail-modal { max-width:720px; padding:24px; display:flex; flex-direction:column; max-height:92vh; }
+    .mail-meta { font-size:12px; color:var(--secondary); line-height:1.7; margin-bottom:12px; word-break:break-all; }
+    .mail-meta b { color:var(--on-surface); }
+    .mail-frame { width:100%; flex:1; min-height:420px; border:1px solid var(--surface-container-high); border-radius:12px; background:#F8F8F4; }
+    .mail-modal .modal-actions { margin-top:16px; }
+
     /* TOAST */
     .toast { position:fixed; bottom:28px; right:28px; background:var(--on-surface); color:#fff; padding:12px 20px; border-radius:10px; font-size:13px; font-family:'Inter',sans-serif; opacity:0; transform:translateY(8px); transition:opacity 0.25s,transform 0.25s; z-index:999; box-shadow:0 8px 24px rgba(13,28,47,0.18); }
     .toast.show { opacity:1; transform:translateY(0); }
@@ -1833,6 +1846,18 @@
 </div><!-- /app -->
 
 <!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="mail-modal">
+  <div class="modal mail-modal">
+    <h3 id="mail-title">Preview email</h3>
+    <div class="mail-meta" id="mail-meta"></div>
+    <iframe class="mail-frame" id="mail-frame" sandbox="allow-popups allow-popups-to-escape-sandbox" title="Email preview"></iframe>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeMailPreview()">Cancel</button>
+      <button class="btn-primary" id="mail-send-btn" onclick="sendGuestEmail()"><span class="mso" style="font-size:17px">send</span>Send email</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="confirm-modal">
   <div class="modal">
     <h3 id="modal-title">Confirm Action</h3>
@@ -3550,6 +3575,25 @@ function renderReservationDetail() {
         : `<div class="rd-status-btns">${statusBtns}</div>`}
     </div>`;
 
+  // ── Guest emails
+  const hasEmail = !!String(r.guest_email || '').trim();
+  const lastSent = (act) => {
+    const h = _rdHistory.find(x => x.action === act);
+    return h ? `Last sent ${fmtDateTime(h.changed_at)} by ${escHtml(h.changed_by || 'unknown')}` : '';
+  };
+  const confNote = !hasEmail ? 'Add a guest email to send' : cancelled ? 'Booking is cancelled' : (lastSent('Confirmation email sent') || 'Not sent yet');
+  const cancNote = !hasEmail ? 'Add a guest email to send' : !cancelled ? 'Available after cancelling the booking' : (lastSent('Cancellation email sent') || 'Not sent yet');
+  const mailCard = `
+    <div class="rd-card tint">
+      <div class="rd-label">Guest Emails</div>
+      <div class="rd-mail-btns">
+        <button class="rd-mail-btn" onclick="previewGuestEmail('confirmation')" ${hasEmail && !cancelled ? '' : 'disabled'}>
+          <span class="mso">mark_email_read</span><span>Send Confirmation Email<small>${confNote}</small></span></button>
+        <button class="rd-mail-btn cancel" onclick="previewGuestEmail('cancellation')" ${hasEmail && cancelled ? '' : 'disabled'}>
+          <span class="mso">cancel_schedule_send</span><span>Send Cancellation Email<small>${cancNote}</small></span></button>
+      </div>
+    </div>`;
+
   // ── Stay card
   const stayCard = `
     <div class="rd-stay">
@@ -3633,7 +3677,7 @@ function renderReservationDetail() {
   setTimeout(() => loadDocs(r.id), 0);
   root.innerHTML = header + `
     <div class="rd-grid">
-      <div class="rd-col">${guestCard}${statusCard}</div>
+      <div class="rd-col">${guestCard}${statusCard}${mailCard}</div>
       <div class="rd-col">
         ${stayCard}
         <div class="rd-two">${finCard}${notesCard}</div>
@@ -3642,6 +3686,41 @@ function renderReservationDetail() {
         ${cancelBox}
       </div>
     </div>`;
+}
+
+/* ── Guest emails: preview, then send from the connected Gmail ── */
+let _mailKind = null;
+async function previewGuestEmail(kind) {
+  _mailKind = kind;
+  const modal = document.getElementById('mail-modal'), frame = document.getElementById('mail-frame');
+  document.getElementById('mail-title').textContent = kind === 'confirmation' ? 'Preview confirmation email' : 'Preview cancellation email';
+  document.getElementById('mail-meta').textContent = 'Loading preview…';
+  frame.srcdoc = '';
+  const sendBtn = document.getElementById('mail-send-btn'); sendBtn.disabled = true;
+  modal.classList.add('show');
+  try {
+    const p = await googleFn('email-preview', { reservation_id: _rd.id, kind });
+    document.getElementById('mail-meta').innerHTML = `To: <b>${escHtml(p.to)}</b><br>Subject: <b>${escHtml(p.subject)}</b><br>From: <b>${escHtml(MASTER_EMAIL)}</b>`;
+    frame.srcdoc = p.html;
+    sendBtn.disabled = false;
+  } catch (e) {
+    document.getElementById('mail-meta').innerHTML = `<span style="color:#b42318">${escHtml(e.message)}</span>`;
+  }
+}
+function closeMailPreview() { document.getElementById('mail-modal').classList.remove('show'); _mailKind = null; }
+async function sendGuestEmail() {
+  if (!_mailKind || !_rd) return;
+  const btn = document.getElementById('mail-send-btn'); btn.disabled = true;
+  const label = btn.innerHTML; btn.innerHTML = 'Sending…';
+  try {
+    const r = await googleFn('email-send', { reservation_id: _rd.id, kind: _mailKind });
+    closeMailPreview();
+    showToast('Email sent to ' + r.to + ' ✓');
+    await loadReservationDetail(_rd.id);
+  } catch (e) {
+    showToast('Not sent: ' + e.message);
+    btn.disabled = false;
+  } finally { btn.innerHTML = label; }
 }
 
 function rdCancelledInfo() {
@@ -3654,7 +3733,7 @@ const HIST_LABELS = {
   guest_name:'Guest name', country:'Country', guest_email:'Email', guest_phone:'Phone', guests:'Guests',
   arrival_date:'Arrival', departure_date:'Departure', room_name:'Room', rate:'Rate / night', channel:'Channel',
   status:'Status', payment_status:'Payment', amount_paid:'Amount paid', notes:'Notes', room_night:'Nights', room_revenue:'Revenue',
-  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone', rate_type:'Sold as', file:'File'
+  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone', rate_type:'Sold as', file:'File', sent_to:'Sent to'
 };
 const HIST_ORDER = Object.keys(HIST_LABELS);
 function histVal(field, v) {
@@ -3669,7 +3748,8 @@ function histVal(field, v) {
 function renderHistory() {
   const items = _rdHistory.map(h => {
     const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz'
-               : h.action === 'File uploaded' ? 'upload_file' : h.action === 'File deleted' ? 'delete' : h.action === 'Room renamed' ? 'bed' : 'edit';
+               : h.action === 'File uploaded' ? 'upload_file' : h.action === 'File deleted' ? 'delete' : h.action === 'Room renamed' ? 'bed'
+               : h.action === 'Confirmation email sent' ? 'mark_email_read' : h.action === 'Cancellation email sent' ? 'cancel_schedule_send' : 'edit';
     const ch = h.changes || {};
     const lines = HIST_ORDER.filter(k => k in ch).map(k =>
       `<div>${HIST_LABELS[k]}: <s>${histVal(k, ch[k].old)}</s> → <em>${histVal(k, ch[k].new)}</em></div>`).join('');
