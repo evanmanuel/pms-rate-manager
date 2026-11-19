@@ -1642,13 +1642,6 @@
                 <div class="form-group"><label>Emergency Contact Name (Optional)</label><input type="text" id="emergency-name" placeholder="e.g. Sarah Whitmore (sister)" /></div>
                 <div class="form-group"><label>Emergency Contact Phone (Optional)</label><input type="tel" id="emergency-phone" placeholder="+61 412 345 678" /></div>
                 <div class="form-group"><label>Number of Guests</label><input type="number" id="guest-count" min="1" value="1" /></div>
-                <div class="form-group"><label>Payment Status</label><select id="payment-status" onchange="onPayStatusChange('new')"><option value="Unpaid">Unpaid</option><option value="Deposit">Partially Paid</option><option value="Paid">Paid</option></select>
-                  <small class="pay-hint" id="pay-hint-new"></small></div>
-                <div class="form-group" id="deposit-group-new" style="display:none"><label>Room Payment (IDR)</label>
-                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="deposit-amount" min="0" placeholder="0" oninput="updatePayHint('new')" /></div></div>
-                <div class="form-group sec-field off" id="sec-group-new"><label>Refundable Security Deposit (Optional)</label>
-                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="security-deposit" min="0" placeholder="0" disabled /></div>
-                  <small class="pay-hint" id="sec-hint-new">Available when Payment Status is Paid</small></div>
               </div>
             </div>
             <div class="form-section">
@@ -1673,6 +1666,18 @@
               <div class="form-grid-2">
                 <div class="form-group"><label>Room / Unit</label><select id="room-select" onchange="checkAvailability()"><option value="">Select room…</option></select></div>
                 <div class="avail-notice" id="avail-notice"><span class="mso">info</span><p>Select dates and a room to check availability.</p></div>
+              </div>
+            </div>
+            <div class="form-section">
+              <div class="form-section-header"><span class="mso">payments</span><h3>Payment</h3></div>
+              <div class="form-grid-2">
+                <div class="form-group"><label>Payment Status</label><select id="payment-status" onchange="onPayStatusChange('new')"><option value="Unpaid">Unpaid</option><option value="Deposit">Partially Paid</option><option value="Paid">Paid</option></select>
+                  <small class="pay-hint" id="pay-hint-new"></small></div>
+                <div class="form-group" id="deposit-group-new" style="display:none"><label>Room Payment (IDR)</label>
+                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="deposit-amount" min="0" placeholder="0" oninput="updatePayHint('new')" /></div></div>
+                <div class="form-group sec-field off" id="sec-group-new"><label>Refundable Security Deposit (Optional)</label>
+                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="security-deposit" min="0" placeholder="0" disabled /></div>
+                  <small class="pay-hint" id="sec-hint-new">Available when Payment Status is Paid</small></div>
               </div>
               <div class="form-group" style="margin-top:28px"><label>Notes (Optional)</label><textarea id="notes" placeholder="Special requests, early check-in, etc."></textarea></div>
             </div>
@@ -4245,16 +4250,21 @@ function renderEditForm(r) {
             </div></div>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-rate" type="number" min="0" value="${r.rate_type === 'total' ? Number(r.room_revenue || 0) : (r.rate ?? '')}" oninput="rdRecalc()"></div>
           <small class="pay-hint" id="rate-summary-ed"></small></div>
+      </div>
+      <div class="rd-edit-summary">
+        <span class="st-chip st-out" id="ed-summary">—</span>
+        <div class="avail-notice" id="ed-avail" style="flex:1;min-width:240px"><span class="mso">info</span><p>Availability will be checked when dates or room change.</p></div>
+      </div>
+    </div>
+    <div class="rd-edit-section">
+      <h3><span class="mso">payments</span>Payment</h3>
+      <div class="form-grid-3">
         ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${['Unpaid','Deposit','Paid'].map(v => `<option value="${v}" ${v === payStatusOf(r) ? 'selected' : ''}>${payLabel(v)}</option>`).join('')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
         <div class="form-group" id="deposit-group-ed" style="${payStatusOf(r) === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Room Payment (IDR)</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="number" min="0" value="${payStatusOf(r) === 'Deposit' ? Number(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
         <div class="form-group sec-field ${payStatusOf(r) === 'Paid' ? '' : 'off'}" id="sec-group-ed"><label for="ed-security">Refundable Security Deposit</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-security" type="number" min="0" value="${payStatusOf(r) === 'Paid' ? (r.security_deposit ?? '') : ''}" placeholder="0" ${payStatusOf(r) === 'Paid' ? '' : 'disabled'}></div>
           <small class="pay-hint" id="sec-hint-ed">${payStatusOf(r) === 'Paid' ? 'Held separately, not part of the room payment' : 'Available when Payment Status is Paid'}</small></div>
-      </div>
-      <div class="rd-edit-summary">
-        <span class="st-chip st-out" id="ed-summary">—</span>
-        <div class="avail-notice" id="ed-avail" style="flex:1;min-width:240px"><span class="mso">info</span><p>Availability will be checked when dates or room change.</p></div>
       </div>
     </div>
     <div class="rd-edit-actions">
