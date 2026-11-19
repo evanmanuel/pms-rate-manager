@@ -1371,9 +1371,6 @@
       <button class="nav-item" onclick="showPage('calendar',this)">
         <span class="mso">calendar_month</span><span class="label">Calendar</span>
       </button>
-      <button class="nav-item" onclick="showPage('rates',this)">
-        <span class="mso">payments</span><span class="label">Rates</span>
-      </button>
       <button class="nav-item" onclick="showPage('settings',this)">
         <span class="mso">settings</span><span class="label">Settings</span>
       </button>
@@ -1708,13 +1705,6 @@
       </div>
     </div>
 
-    <!-- RATES -->
-    <div class="page" id="page-rates">
-      <div class="page-wrap">
-        <div class="page-header"><div class="page-header-text"><h2>Rates</h2><p>Rate management — coming soon</p></div></div>
-      </div>
-    </div>
-
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="page-wrap">
@@ -1877,7 +1867,7 @@ function enterApp() {
 /* ══════════════════════════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════════════════════════ */
-const PAGE_TITLES = { dashboard:'Overview', reservations:'Reservations', calendar:'Availability', rates:'Rates', settings:'Settings', admin:'Administration' };
+const PAGE_TITLES = { dashboard:'Overview', reservations:'Reservations', calendar:'Availability', settings:'Settings', admin:'Administration' };
 
 /* ── Where did the user come from? (Back buttons return there) ── */
 let _bookingOrigin = 'reservations';   // 'reservations' | 'availability'
