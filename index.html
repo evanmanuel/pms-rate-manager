@@ -1111,6 +1111,36 @@
       .av-cards { grid-template-columns:1fr; }
     }
     /* ══════════════════════════════════════════════════════════
+       GOOGLE ACCOUNT (Settings) + DOCUMENTS (booking detail)
+    ══════════════════════════════════════════════════════════ */
+    .g-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:6px 4px; }
+    .g-row > .mso { font-size:26px; }
+    .g-row > div:nth-child(2) { flex:1; min-width:180px; }
+    .g-row b { display:block; font-size:14px; font-weight:600; word-break:break-all; }
+    .g-row small { display:block; font-size:12px; color:var(--secondary); margin-top:2px; }
+    .g-actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .doc-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+    .doc-upload { display:flex; gap:8px; align-items:center; }
+    .doc-upload select { background:var(--surface-container-low); border:none; border-radius:8px; padding:10px; font-family:'Inter',sans-serif; font-size:13px; color:var(--on-surface); outline:none; }
+    .doc-upload .btn-soft { padding:10px 16px; }
+    .doc-list { display:flex; flex-direction:column; }
+    .doc-item { display:flex; align-items:center; gap:6px; border-top:1px solid var(--surface-container-high); }
+    .doc-item:first-child { border-top:none; }
+    .doc-open { flex:1; min-width:0; display:flex; align-items:center; gap:12px; background:none; border:none; padding:12px 4px; cursor:pointer; text-align:left; font-family:inherit; color:inherit; border-radius:10px; }
+    .doc-open:hover { background:#f6f7f3; }
+    .doc-ic { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .doc-ic.pdf { background:#fde8e8; color:#b42318; }
+    .doc-ic.img { background:#e1eef8; color:#1e4b72; }
+    .doc-ic.other { background:var(--surface-container-high); color:var(--on-surface-variant); }
+    .doc-txt { min-width:0; }
+    .doc-txt b { display:block; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .doc-txt small { display:block; font-size:11px; color:var(--secondary); margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .doc-cat { display:inline-block; background:var(--primary-fixed); color:var(--primary); border-radius:5px; padding:1px 6px; font-size:10px; font-weight:700; margin-right:4px; }
+    .doc-del { width:38px; height:38px; flex-shrink:0; border:none; background:none; border-radius:10px; color:var(--secondary); cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .doc-del:hover { background:#fee2e2; color:#dc2626; }
+    @media (max-width: 640px) { .doc-upload { width:100%; } .doc-upload select { flex:1; } .doc-txt small { white-space:normal; } }
+
+    /* ══════════════════════════════════════════════════════════
        MOBILE & TABLET (Android / iOS)
     ══════════════════════════════════════════════════════════ */
     html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
@@ -1735,6 +1765,11 @@
     <div class="page" id="page-settings">
       <div class="page-wrap">
         <div class="page-header"><div class="page-header-text"><h2>Settings</h2><p>Manage channels and room names</p></div></div>
+        <div class="section" id="google-section" style="display:none">
+          <div class="section-label">Google Account</div>
+          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Used to store booking documents in Google Drive (folder "ECL Booker Folder") and, later, to send confirmation emails. Only the administrator can connect or disconnect it.</p>
+          <div id="google-status"><div class="empty-state" style="padding:12px">Checking…</div></div>
+        </div>
         <div class="section">
           <div class="section-label">Channels</div>
           <div id="channel-list"></div>
@@ -1879,6 +1914,15 @@ function enterApp() {
 
   // Default to dashboard
   showPage('dashboard', document.querySelector('.nav-item.active'));
+
+  // Back from Google's permission screen?
+  const gp = new URLSearchParams(location.search);
+  if (gp.has('google')) {
+    const ok = gp.get('google') === 'connected';
+    history.replaceState(null, '', location.pathname);
+    showPage('settings', navBtn('settings'));
+    showToast(ok ? 'Google account connected ✓' : 'Google connection failed: ' + (gp.get('msg') || 'unknown error'));
+  }
 }
 
 // Check existing session on load
@@ -1939,7 +1983,7 @@ function showPage(page, btn) {
 
   if (page === 'dashboard')    loadDashboard();
   if (page === 'reservations') { showScreen('res-summary'); loadResSummary(); }
-  if (page === 'settings')     { loadChannels(); loadRooms(); }
+  if (page === 'settings')     { loadChannels(); loadRooms(); loadGoogleStatus(); }
   if (page === 'admin')        loadUserList();
   if (page === 'calendar')     loadAvailability();
 }
@@ -3174,6 +3218,169 @@ document.addEventListener('touchcancel', () => avCancelDrag());
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && _avDrag) avCancelDrag(); });
 
 /* ══════════════════════════════════════════════════════════
+   GOOGLE ACCOUNT + BOOKING DOCUMENTS (Google Drive)
+   All Google calls go through the "google" Supabase Edge Function,
+   which holds the Google secret and the account's access on the server.
+══════════════════════════════════════════════════════════ */
+const GOOGLE_FN_URL = SUPABASE_URL + '/functions/v1/google';
+const DOC_CATEGORIES = ['Passport', 'Payment slip', 'Other'];
+const DOC_EXT = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'doc', 'docx', 'xls', 'xlsx'];
+const DOC_MAX = 10 * 1024 * 1024;
+let _gStatus = null;          // cached { configured, connected, email, can_manage }
+
+async function googleFn(action, data, raw) {
+  const { data: { session } } = await db.auth.getSession();
+  const headers = { Authorization: 'Bearer ' + (session?.access_token || ''), apikey: SUPABASE_ANON_KEY };
+  let body;
+  if (data instanceof FormData) { data.append('action', action); body = data; }
+  else { headers['Content-Type'] = 'application/json'; body = JSON.stringify({ action, ...(data || {}) }); }
+  const r = await fetch(GOOGLE_FN_URL, { method: 'POST', headers, body });
+  if (raw && r.ok) return r;
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || ('Request failed (' + r.status + ')'));
+  return j;
+}
+
+/* ── Settings: connect / disconnect (admin only) ─────────── */
+async function loadGoogleStatus() {
+  const sec = document.getElementById('google-section'), box = document.getElementById('google-status');
+  const isAdmin = currentUser?.email === MASTER_EMAIL;
+  sec.style.display = isAdmin ? '' : 'none';
+  if (!isAdmin) return;
+  try { _gStatus = await googleFn('status'); }
+  catch (e) { box.innerHTML = `<div class="g-row"><span class="mso" style="color:#b42318">error</span><div><b>Could not check the Google connection</b><small>${escHtml(e.message)}</small></div></div>`; return; }
+  const s = _gStatus;
+  box.innerHTML = !s.configured
+    ? `<div class="g-row"><span class="mso" style="color:#92400e">settings</span><div><b>Not set up yet</b><small>The Google client ID and secret still need to be added in Supabase.</small></div></div>`
+    : s.connected
+      ? `<div class="g-row"><span class="mso" style="color:#065f46">check_circle</span><div><b>Connected: ${escHtml(s.email || '')}</b><small>Since ${fmtDateTime(s.connected_at)}</small></div>
+           <div class="g-actions"><button class="btn-ghost" onclick="connectGoogle()">Reconnect</button><button class="btn-danger" onclick="disconnectGoogle()">Disconnect</button></div></div>`
+      : `<div class="g-row"><span class="mso" style="color:var(--secondary)">link_off</span><div><b>Not connected</b><small>Connect ${escHtml(MASTER_EMAIL)} to start storing booking documents.</small></div>
+           <div class="g-actions"><button class="btn-primary" onclick="connectGoogle()"><span class="mso">link</span>Connect Google account</button></div></div>`;
+}
+async function connectGoogle() {
+  try { const { url } = await googleFn('auth-url'); location.href = url; }
+  catch (e) { showToast('Error: ' + e.message); }
+}
+async function disconnectGoogle() {
+  const ok = await showModal('Disconnect Google', 'Disconnect the Google account? Existing files stay in Google Drive, but nobody can upload or open documents from the app until it is connected again.');
+  if (!ok) return;
+  try { await googleFn('disconnect'); showToast('Google account disconnected'); loadGoogleStatus(); }
+  catch (e) { showToast('Error: ' + e.message); }
+}
+
+/* ── Documents card on the booking detail page ───────────── */
+function docIcon(f) {
+  const m = (f.mime_type || '').toLowerCase(), ext = (f.name.split('.').pop() || '').toLowerCase();
+  if (m === 'application/pdf' || ext === 'pdf') return { i: 'picture_as_pdf', c: 'pdf' };
+  if (m.startsWith('image/') || ['jpg', 'jpeg', 'png', 'heic', 'heif'].includes(ext)) return { i: 'image', c: 'img' };
+  return { i: 'description', c: 'other' };
+}
+function fmtSize(b) { b = Number(b || 0); return b >= 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB'; }
+
+async function loadDocs(reservationId) {
+  const box = document.getElementById('rd-docs'); if (!box) return;
+  const [{ data: files }, status] = await Promise.all([
+    db.from('reservation_files').select('*').eq('reservation_id', reservationId).order('uploaded_at', { ascending: false }),
+    _gStatus ? Promise.resolve(_gStatus) : googleFn('status').catch(() => null),
+  ]);
+  _gStatus = status;
+  if (!document.getElementById('rd-docs') || !_rd || _rd.id !== reservationId) return;
+  const ready = status && status.configured && status.connected;
+  const list = files || [];
+  box.innerHTML = `
+    <div class="doc-head">
+      <div class="rd-label">Documents${list.length ? ` · ${list.length}` : ''}</div>
+      ${ready ? `<div class="doc-upload">
+          <select id="doc-cat" aria-label="Category">${DOC_CATEGORIES.map(c => `<option>${c}</option>`).join('')}</select>
+          <button class="btn-soft" onclick="document.getElementById('doc-file').click()"><span class="mso">upload</span>Upload</button>
+          <input type="file" id="doc-file" hidden accept=".pdf,.jpg,.jpeg,.png,.heic,.heif,.doc,.docx,.xls,.xlsx,image/*,application/pdf" onchange="uploadDoc(this)">
+        </div>` : ''}
+    </div>
+    <div id="doc-progress" class="rd-muted" style="display:none"></div>
+    ${!ready ? `<p class="rd-muted">${status && status.configured ? 'Google Drive is not connected yet.' : 'Google Drive is not set up yet.'} ${currentUser?.email === MASTER_EMAIL ? 'Connect it in <a href="#" onclick="showPage(\'settings\', navBtn(\'settings\'));return false">Settings</a>.' : 'Ask the administrator to connect it in Settings.'}</p>` : ''}
+    ${list.length ? `<div class="doc-list">${list.map(f => {
+      const ic = docIcon(f);
+      return `<div class="doc-item">
+        <button class="doc-open" onclick="openDoc('${f.id}')" title="Open">
+          <span class="doc-ic ${ic.c}"><span class="mso">${ic.i}</span></span>
+          <span class="doc-txt"><b>${escHtml(f.name)}</b><small><span class="doc-cat">${escHtml(f.category)}</span> ${fmtSize(f.size_bytes)} · ${fmtDateTime(f.uploaded_at)} · ${escHtml(f.uploaded_by || '')}</small></span>
+        </button>
+        <button class="doc-del" onclick="deleteDoc('${f.id}', ${escHtml(JSON.stringify(f.name))})" title="Move to trash"><span class="mso">delete</span></button>
+      </div>`; }).join('')}</div>`
+      : (ready ? '<p class="rd-muted">No documents yet. Upload a passport scan, payment slip or any other file.</p>' : '')}`;
+}
+
+// Shrink phone photos (max 2000 px, JPEG) before upload; other files are sent as they are.
+function shrinkImage(file) {
+  return new Promise(resolve => {
+    const ext = (file.name.split('.').pop() || '').toLowerCase();
+    if (!['jpg', 'jpeg', 'png', 'heic', 'heif'].includes(ext) && !/^image\/(jpe?g|png|hei[cf])$/.test(file.type)) return resolve(file);
+    const url = URL.createObjectURL(file), img = new Image();
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const scale = Math.min(1, 2000 / Math.max(img.naturalWidth, img.naturalHeight));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.naturalWidth * scale); c.height = Math.round(img.naturalHeight * scale);
+      const ctx = c.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height);
+      ctx.drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => {
+        if (!b || b.size >= file.size) return resolve(file);
+        resolve(new File([b], file.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }));
+      }, 'image/jpeg', 0.82);
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };   // e.g. HEIC on Android/Chrome: upload as is
+    img.src = url;
+  });
+}
+
+async function uploadDoc(input) {
+  const original = input.files && input.files[0]; input.value = '';
+  if (!original || !_rd) return;
+  const ext = (original.name.split('.').pop() || '').toLowerCase();
+  if (!DOC_EXT.includes(ext)) return showToast('File type not allowed — use PDF, JPG, PNG, HEIC, Word or Excel');
+  const prog = document.getElementById('doc-progress');
+  prog.style.display = ''; prog.textContent = 'Preparing…';
+  const file = await shrinkImage(original);
+  if (file.size > DOC_MAX) { prog.style.display = 'none'; return showToast('File is larger than 10 MB'); }
+  prog.textContent = `Uploading ${file.name} (${fmtSize(file.size)})…`;
+  const fd = new FormData();
+  fd.append('reservation_id', _rd.id);
+  fd.append('category', document.getElementById('doc-cat').value);
+  fd.append('file', file, file.name);
+  try {
+    await googleFn('upload', fd);
+    showToast('Uploaded to Google Drive ✓');
+    await loadReservationDetail(_rd.id);       // refresh documents + history
+  } catch (e) { prog.style.display = 'none'; showToast('Upload failed: ' + e.message); }
+}
+
+async function openDoc(id) {
+  const win = window.open('', '_blank');       // open right away so phones don't block the pop-up
+  if (win) win.document.write('<p style="font-family:sans-serif;padding:24px;color:#555">Opening file from Google Drive…</p>');
+  try {
+    const r = await googleFn('download', { file_id: id }, true);
+    const blob = await r.blob();
+    const url = URL.createObjectURL(blob);
+    const viewable = /^(image\/|application\/pdf)/.test(blob.type);
+    if (viewable && win) win.location.href = url;
+    else {
+      if (win) win.close();
+      const name = decodeURIComponent((r.headers.get('content-disposition') || '').split("''")[1] || 'document');
+      const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) { if (win) win.close(); showToast('Could not open file: ' + e.message); }
+}
+
+async function deleteDoc(id, name) {
+  const ok = await showModal('Delete Document', `Move "${name}" to the Google Drive trash? It can be restored from Drive within 30 days.`);
+  if (!ok) return;
+  try { await googleFn('delete', { file_id: id }); showToast('Moved to trash'); await loadReservationDetail(_rd.id); }
+  catch (e) { showToast('Error: ' + e.message); }
+}
+
+/* ══════════════════════════════════════════════════════════
    COUNTRY LIST (dropdown on New Booking + Edit Booking)
 ══════════════════════════════════════════════════════════ */
 const COMMON_COUNTRIES = ["Indonesia", "Australia", "Singapore", "Malaysia", "China", "Japan", "South Korea", "India", "United States", "United Kingdom", "Germany", "France", "Netherlands", "Russia"];
@@ -3423,12 +3630,14 @@ function renderReservationDetail() {
       : `<div class="rd-cancel"><div><h4>Cancellation</h4>
           <p>This guest has already ${r.status === 'Checked-in' ? 'checked in' : 'checked out'}, so the booking can't be cancelled. Use “Undo” under Stay Status if the status was set by mistake.</p></div></div>`;
 
+  setTimeout(() => loadDocs(r.id), 0);
   root.innerHTML = header + `
     <div class="rd-grid">
       <div class="rd-col">${guestCard}${statusCard}</div>
       <div class="rd-col">
         ${stayCard}
         <div class="rd-two">${finCard}${notesCard}</div>
+        <div class="rd-card" id="rd-docs"><div class="rd-label">Documents</div><div class="rd-muted">Loading…</div></div>
         ${histCard}
         ${cancelBox}
       </div>
@@ -3445,7 +3654,7 @@ const HIST_LABELS = {
   guest_name:'Guest name', country:'Country', guest_email:'Email', guest_phone:'Phone', guests:'Guests',
   arrival_date:'Arrival', departure_date:'Departure', room_name:'Room', rate:'Rate / night', channel:'Channel',
   status:'Status', payment_status:'Payment', amount_paid:'Amount paid', notes:'Notes', room_night:'Nights', room_revenue:'Revenue',
-  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone', rate_type:'Sold as'
+  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone', rate_type:'Sold as', file:'File'
 };
 const HIST_ORDER = Object.keys(HIST_LABELS);
 function histVal(field, v) {
@@ -3459,7 +3668,8 @@ function histVal(field, v) {
 }
 function renderHistory() {
   const items = _rdHistory.map(h => {
-    const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz' : 'edit';
+    const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz'
+               : h.action === 'File uploaded' ? 'upload_file' : h.action === 'File deleted' ? 'delete' : h.action === 'Room renamed' ? 'bed' : 'edit';
     const ch = h.changes || {};
     const lines = HIST_ORDER.filter(k => k in ch).map(k =>
       `<div>${HIST_LABELS[k]}: <s>${histVal(k, ch[k].old)}</s> → <em>${histVal(k, ch[k].new)}</em></div>`).join('');
@@ -3644,7 +3854,9 @@ async function rdSaveEdit() {
     room_revenue: total,
     arrival_month: new Date(a + 'T00:00:00').toLocaleString('default', { month:'long', year:'numeric' }),
   };
+  const nameChanged = payload.guest_name !== _rd.guest_name;
   const saved = await rdUpdate(payload, 'Changes saved ✓');
+  if (saved && nameChanged) googleFn('rename-folder', { reservation_id: _rd.id }).catch(() => {});
   if (!saved) btn.disabled = false;
 }
 </script>
