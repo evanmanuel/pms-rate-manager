@@ -1641,7 +1641,7 @@
                 <div class="form-group"><label>Number of Guests</label><input type="number" id="guest-count" min="1" value="1" /></div>
                 <div class="form-group"><label>Payment Status</label><select id="payment-status" onchange="onPayStatusChange('new')"><option value="Unpaid">Unpaid</option><option value="Deposit">Partially Paid</option><option value="Paid">Paid</option></select>
                   <small class="pay-hint" id="pay-hint-new"></small></div>
-                <div class="form-group" id="deposit-group-new" style="display:none"><label>Amount Paid (IDR)</label>
+                <div class="form-group" id="deposit-group-new" style="display:none"><label>Room Payment (IDR)</label>
                   <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="deposit-amount" min="0" placeholder="0" oninput="updatePayHint('new')" /></div></div>
                 <div class="form-group"><label>Refundable Security Deposit (Optional)</label>
                   <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="security-deposit" min="0" placeholder="0" /></div>
@@ -4215,7 +4215,7 @@ function renderEditForm(r) {
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-rate" type="number" min="0" value="${r.rate_type === 'total' ? Number(r.room_revenue || 0) : (r.rate ?? '')}" oninput="rdRecalc()"></div>
           <small class="pay-hint" id="rate-summary-ed"></small></div>
         ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${['Unpaid','Deposit','Paid'].map(v => `<option value="${v}" ${v === payStatusOf(r) ? 'selected' : ''}>${payLabel(v)}</option>`).join('')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
-        <div class="form-group" id="deposit-group-ed" style="${payStatusOf(r) === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Amount Paid (IDR)</label>
+        <div class="form-group" id="deposit-group-ed" style="${payStatusOf(r) === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Room Payment (IDR)</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="number" min="0" value="${payStatusOf(r) === 'Deposit' ? Number(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
         <div class="form-group"><label for="ed-security">Refundable Security Deposit</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-security" type="number" min="0" value="${r.security_deposit ?? ''}" placeholder="0"></div>
