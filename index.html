@@ -550,7 +550,15 @@
     .bank-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; }
     .bank-grid label { display:block; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--secondary); margin-bottom:6px; }
     .bank-grid input { width:100%; border:1px solid var(--surface-container-high); border-radius:10px; padding:10px 12px; font:inherit; font-size:14px; background:var(--surface-container-lowest); }
-    @media (max-width:768px) { .bank-grid { grid-template-columns:1fr; } .bank-grid input { font-size:16px; } }
+    .bank-actions { display:flex; justify-content:flex-end; margin-top:14px; }
+    .inv-modal .modal-actions button, .mail-modal .modal-actions button { white-space:nowrap; justify-content:center; }
+    @media (max-width:768px) {
+      .bank-grid { grid-template-columns:1fr; } .bank-grid input { font-size:16px; }
+      .bank-actions .btn-primary { width:100%; justify-content:center; }
+      .inv-modal, .mail-modal { padding:20px 16px calc(16px + env(safe-area-inset-bottom)); }
+      .inv-modal .modal-actions, .mail-modal .modal-actions { display:grid; grid-template-columns:1fr 1.4fr; }
+      .inv-modal .modal-actions button, .mail-modal .modal-actions button { padding-left:10px; padding-right:10px; }
+    }
 
     /* TOAST */
     .toast { position:fixed; bottom:28px; right:28px; background:var(--on-surface); color:#fff; padding:12px 20px; border-radius:10px; font-size:13px; font-family:'Inter',sans-serif; opacity:0; transform:translateY(8px); transition:opacity 0.25s,transform 0.25s; z-index:999; box-shadow:0 8px 24px rgba(13,28,47,0.18); }
@@ -1144,7 +1152,8 @@
     .g-row { display:flex; align-items:center; gap:14px; flex-wrap:wrap; padding:6px 4px; }
     .g-row > .mso { font-size:26px; }
     .g-row > div:nth-child(2) { flex:1; min-width:180px; }
-    .g-row b { display:block; font-size:14px; font-weight:600; word-break:break-all; }
+    .g-row b { display:block; font-size:14px; font-weight:600; overflow-wrap:anywhere; }
+    .g-row .g-email { display:block; font-size:13px; color:var(--on-surface); margin-top:2px; overflow-wrap:anywhere; }
     .g-row small { display:block; font-size:12px; color:var(--secondary); margin-top:2px; }
     .g-actions { display:flex; gap:8px; flex-wrap:wrap; }
     .doc-head { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
@@ -1796,7 +1805,7 @@
         <div class="page-header"><div class="page-header-text"><h2>Settings</h2><p>Manage channels and room names</p></div></div>
         <div class="section" id="google-section" style="display:none">
           <div class="section-label">Google Account</div>
-          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Used to store booking documents in Google Drive (folder "ECL Booker Folder") and, later, to send confirmation emails. Only the administrator can connect or disconnect it.</p>
+          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Used to store booking documents and invoices in Google Drive (folder "ECL Booker Folder") and to send guest confirmation and cancellation emails. Only the administrator can connect or disconnect it.</p>
           <div id="google-status"><div class="empty-state" style="padding:12px">Checking…</div></div>
         </div>
         <div class="section" id="bank-section">
@@ -1806,9 +1815,9 @@
             <div><label for="bank-name">Bank</label><input id="bank-name" type="text" placeholder="Bank Mandiri" maxlength="60"></div>
             <div><label for="bank-acc-name">Account Name</label><input id="bank-acc-name" type="text" placeholder="Account holder name" maxlength="80"></div>
             <div><label for="bank-acc-no">Account Number</label><input id="bank-acc-no" type="text" inputmode="numeric" placeholder="e.g. 1234567890" maxlength="40"></div>
-            <div><label for="bank-swift">SWIFT Code</label><input id="bank-swift" type="text" placeholder="e.g. BMRIIDJA" maxlength="20" style="text-transform:uppercase"></div>
+            <div><label for="bank-swift">SWIFT Code</label><input id="bank-swift" type="text" placeholder="BMRIIDJA" maxlength="20" style="text-transform:uppercase"></div>
           </div>
-          <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn-primary" id="bank-save-btn" onclick="saveBankSettings()">Save Bank Details</button></div>
+          <div class="bank-actions"><button class="btn-primary" id="bank-save-btn" onclick="saveBankSettings()">Save Bank Details</button></div>
         </div>
         <div class="section">
           <div class="section-label">Channels</div>
@@ -3317,7 +3326,7 @@ async function loadGoogleStatus() {
   box.innerHTML = !s.configured
     ? `<div class="g-row"><span class="mso" style="color:#92400e">settings</span><div><b>Not set up yet</b><small>The Google client ID and secret still need to be added in Supabase.</small></div></div>`
     : s.connected
-      ? `<div class="g-row"><span class="mso" style="color:#065f46">check_circle</span><div><b>Connected: ${escHtml(s.email || '')}</b><small>Since ${fmtDateTime(s.connected_at)}</small></div>
+      ? `<div class="g-row"><span class="mso" style="color:#065f46">check_circle</span><div><b>Connected</b><span class="g-email">${escHtml(s.email || '')}</span><small>Since ${fmtDateTime(s.connected_at)}</small></div>
            <div class="g-actions"><button class="btn-ghost" onclick="connectGoogle()">Reconnect</button><button class="btn-danger" onclick="disconnectGoogle()">Disconnect</button></div></div>`
       : `<div class="g-row"><span class="mso" style="color:var(--secondary)">link_off</span><div><b>Not connected</b><small>Connect ${escHtml(MASTER_EMAIL)} to start storing booking documents.</small></div>
            <div class="g-actions"><button class="btn-primary" onclick="connectGoogle()"><span class="mso">link</span>Connect Google account</button></div></div>`;
