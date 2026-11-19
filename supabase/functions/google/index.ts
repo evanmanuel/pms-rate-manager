@@ -14,7 +14,7 @@ import * as XLSX from 'npm:xlsx@0.18.5';
 
 const MASTER_EMAIL = 'evansen.coliving@gmail.com';
 const APP_URL = 'https://evanmanuel.github.io/pms-rate-manager/';
-const ROOT_FOLDER_NAME = 'ECL Booker Folder';
+const ROOT_FOLDER_NAME = 'Reservation';
 const SCOPES = ['openid', 'email',
   'https://www.googleapis.com/auth/drive.file',
   'https://www.googleapis.com/auth/gmail.send'];
@@ -584,6 +584,15 @@ Deno.serve(async (req) => {
           changes: { sent_to: { old: null, new: mail.to } },
         });
         return json({ ok: true, id, to: mail.to });
+      }
+
+      case 'rename-root': {
+        // Renames the existing main documents folder to ROOT_FOLDER_NAME (same folder, contents untouched)
+        if (!isAdmin) return fail('Only the administrator can do this.', 403);
+        const at = await accessToken();
+        const id = await rootFolder(at);
+        const f = await drive(at, `files/${id}?fields=id,name`, { method: 'PATCH', body: JSON.stringify({ name: ROOT_FOLDER_NAME }) });
+        return json({ ok: true, id, name: f?.name });
       }
 
       case 'backup-db':
