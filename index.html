@@ -592,6 +592,12 @@
     .kpi-card-dark  .kpi-value { font-size:14px; color:rgba(186,238,214,0.8); }
     .kpi-card-dark  .kpi-value-large { font-size:36px; color:#fff; display:block; margin-top:4px; letter-spacing:-0.03em; font-family:'Manrope',sans-serif; font-weight:800; }
     .kpi-badge:empty { display:none; }
+    .pay-hint { display:block; font-size:11px; color:var(--secondary); margin-top:6px; min-height:0; }
+    .pay-hint:empty { display:none; }
+    @media (max-width: 960px) { .rd-grid-spacer { display:none; } }
+    .pay-hint.warn { color:#b42318; }
+    .rd-paid { color:#065f46 !important; }
+    .rd-due { color:#a8382c !important; }
     .kpi-badge {
       font-size:11px; font-weight:700; color:#059669;
       background:rgba(5,150,105,0.12); border-radius:6px; padding:2px 7px;
@@ -1539,17 +1545,22 @@
                 <div class="form-group"><label>Country</label><select id="country"><option value="">Select country…</option></select></div>
                 <div class="form-group"><label>Email (Optional)</label><input type="email" id="guest-email" placeholder="guest@email.com" /></div>
                 <div class="form-group"><label>Phone (Optional)</label><input type="tel" id="guest-phone" placeholder="+62 812 3456 7890" /></div>
+                <div class="form-group"><label>Emergency Contact Name (Optional)</label><input type="text" id="emergency-name" placeholder="e.g. Sarah Whitmore (sister)" /></div>
+                <div class="form-group"><label>Emergency Contact Phone (Optional)</label><input type="tel" id="emergency-phone" placeholder="+61 412 345 678" /></div>
                 <div class="form-group"><label>Number of Guests</label><input type="number" id="guest-count" min="1" value="1" /></div>
-                <div class="form-group"><label>Payment Status</label><select id="payment-status"><option>Unpaid</option><option>Deposit</option><option>Paid</option></select></div>
+                <div class="form-group"><label>Payment Status</label><select id="payment-status" onchange="onPayStatusChange('new')"><option>Unpaid</option><option>Deposit</option><option>Paid</option></select>
+                  <small class="pay-hint" id="pay-hint-new"></small></div>
+                <div class="form-group" id="deposit-group-new" style="display:none"><label>Deposit Amount (IDR)</label>
+                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="deposit-amount" min="0" placeholder="0" oninput="updatePayHint('new')" /></div></div>
               </div>
             </div>
             <div class="form-section">
               <div class="form-section-header"><span class="mso">date_range</span><h3>Stay Details</h3></div>
               <div class="form-grid-4">
-                <div class="form-group"><label>Arrival</label><input type="date" id="arrival-date" onchange="checkAvailability()" /></div>
-                <div class="form-group"><label>Departure</label><input type="date" id="departure-date" onchange="checkAvailability()" /></div>
+                <div class="form-group"><label>Arrival</label><input type="date" id="arrival-date" onchange="checkAvailability(); updatePayHint('new')" /></div>
+                <div class="form-group"><label>Departure</label><input type="date" id="departure-date" onchange="checkAvailability(); updatePayHint('new')" /></div>
                 <div class="form-group"><label>Rate / Night (IDR)</label>
-                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="rate" placeholder="0" /></div>
+                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="rate" placeholder="0" oninput="updatePayHint('new')" /></div>
                 </div>
                 <div class="form-group"><label>Channel</label><select id="channel-select"><option value="">Select channel…</option></select></div>
               </div>
@@ -2403,6 +2414,39 @@ function generateConfNumber() {
   return date + letters;
 }
 
+/* ── Payment status: deposit amount field + live hint ──────── */
+function payCtx(which) {
+  if (which === 'new') {
+    const a = document.getElementById('arrival-date').value, d = document.getElementById('departure-date').value;
+    return { status: document.getElementById('payment-status').value, rate: parseFloat(document.getElementById('rate').value) || 0,
+             nights: nightsBetween(a, d), dep: document.getElementById('deposit-amount'),
+             group: document.getElementById('deposit-group-new'), hint: document.getElementById('pay-hint-new') };
+  }
+  const g = id => document.getElementById(id);
+  if (!g('ed-payment')) return null;
+  return { status: g('ed-payment').value, rate: parseFloat(g('ed-rate').value) || 0,
+           nights: nightsBetween(g('ed-arrival').value, g('ed-departure').value), dep: g('ed-deposit'),
+           group: g('deposit-group-ed'), hint: g('pay-hint-ed') };
+}
+function onPayStatusChange(which) {
+  const c = payCtx(which); if (!c) return;
+  c.group.style.display = c.status === 'Deposit' ? '' : 'none';
+  if (c.status === 'Deposit') setTimeout(() => c.dep.focus(), 30);
+  updatePayHint(which);
+}
+function updatePayHint(which) {
+  const c = payCtx(which); if (!c) return;
+  const total = c.nights > 0 ? c.nights * c.rate : 0;
+  c.hint.classList.remove('warn');
+  if (c.status === 'Paid') c.hint.textContent = total ? `Recorded as fully paid: ${idr(total)}` : 'Recorded as fully paid';
+  else if (c.status === 'Deposit') {
+    const dep = parseFloat(c.dep.value) || 0;
+    if (!total) c.hint.textContent = 'Enter dates and rate to see the balance';
+    else if (dep >= total) { c.hint.textContent = 'Deposit covers the full total — choose "Paid" instead'; c.hint.classList.add('warn'); }
+    else c.hint.textContent = `Total ${idr(total)} · Balance due ${idr(total - dep)}`;
+  } else c.hint.textContent = total ? `Balance due ${idr(total)}` : '';
+}
+
 async function saveReservation() {
   const guestName     = document.getElementById('guest-name').value.trim();
   const arrivalDate   = document.getElementById('arrival-date').value;
@@ -2416,6 +2460,9 @@ async function saveReservation() {
   const guestCount    = parseInt(document.getElementById('guest-count').value, 10) || 1;
   const paymentStatus = document.getElementById('payment-status').value || 'Unpaid';
   const notes         = document.getElementById('notes').value.trim();
+  const emergencyName = document.getElementById('emergency-name').value.trim();
+  const emergencyPhone= document.getElementById('emergency-phone').value.trim();
+  const depositAmount = parseFloat(document.getElementById('deposit-amount').value) || 0;
   if (!guestName || !arrivalDate || !departureDate || !rate || !channel || !roomName) return showToast('Please fill in all required fields');
   if (departureDate <= arrivalDate) return showToast('Departure must be after arrival');
   const { data: conflicts } = await db.from('reservations').select('id').eq('room_name', roomName).neq('status','Cancelled').lt('arrival_date', departureDate).gt('departure_date', arrivalDate);
@@ -2424,6 +2471,11 @@ async function saveReservation() {
   const departure   = new Date(departureDate);
   const roomNight   = Math.round((departure - arrival) / (1000*60*60*24));
   const roomRevenue = roomNight * rate;
+  if (paymentStatus === 'Deposit') {
+    if (!(depositAmount > 0)) return showToast('Enter the deposit amount');
+    if (depositAmount >= roomRevenue) return showToast('Deposit covers the full total — choose "Paid" instead');
+  }
+  const amountPaid = paymentStatus === 'Paid' ? roomRevenue : paymentStatus === 'Deposit' ? depositAmount : 0;
   const arrivalMonth = arrival.toLocaleString('default', { month:'long', year:'numeric' });
   let confNumber, exists = true;
   while (exists) {
@@ -2440,7 +2492,8 @@ async function saveReservation() {
     arrival_month: arrivalMonth, room_night: roomNight, room_revenue: roomRevenue,
     status: 'New Reservation',
     guest_email: guestEmail || null, guest_phone: guestPhone || null, guests: guestCount,
-    payment_status: paymentStatus, notes: notes || null
+    payment_status: paymentStatus, notes: notes || null, amount_paid: amountPaid,
+    emergency_contact_name: emergencyName || null, emergency_contact_phone: emergencyPhone || null
   }).select().single();
   saveBtn.disabled = false;
   if (error) return showToast('Error saving reservation: ' + error.message);
@@ -2473,7 +2526,8 @@ function showBookingConfirmed(r) {
         ${item('Payment', paymentChip(r.payment_status))}
       </div>
       <div class="cf-total">
-        <div><div class="rd-label">Total Revenue</div><small>${idr(r.rate)} × ${nights} night${nights === 1 ? '' : 's'}</small></div>
+        <div><div class="rd-label">Total Revenue</div><small>${idr(r.rate)} × ${nights} night${nights === 1 ? '' : 's'}</small>
+          <small>Paid ${idr(r.amount_paid)} · ${Number(r.room_revenue) - Number(r.amount_paid || 0) > 0 ? 'Balance due ' + idr(Number(r.room_revenue) - Number(r.amount_paid || 0)) : 'Fully paid ✓'}</small></div>
         <b>${idr(r.room_revenue)}</b>
       </div>
     </div>
@@ -2485,7 +2539,9 @@ function showBookingConfirmed(r) {
 }
 
 function clearForm() {
-  ['guest-name','arrival-date','departure-date','rate','country','guest-email','guest-phone'].forEach(id => document.getElementById(id).value = '');
+  ['guest-name','arrival-date','departure-date','rate','country','guest-email','guest-phone','emergency-name','emergency-phone','deposit-amount'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('deposit-group-new').style.display = 'none';
+  document.getElementById('pay-hint-new').textContent = '';
   document.getElementById('guest-count').value = '1';
   document.getElementById('payment-status').value = 'Unpaid';
   document.getElementById('channel-select').value = '';
@@ -2674,9 +2730,13 @@ function _doExport() {
     'Total Nights',
     'Total Revenue (IDR)',
     'Payment Status',
+    'Amount Paid (IDR)',
+    'Balance Due (IDR)',
     'Guests',
     'Email',
     'Phone',
+    'Emergency Contact',
+    'Emergency Phone',
     'Notes'
   ];
 
@@ -2695,9 +2755,13 @@ function _doExport() {
       r.room_night          || 0,
       r.room_revenue        || 0,
       r.payment_status      || '',
+      Number(r.amount_paid || 0),
+      r.status === 'Cancelled' ? 0 : Math.max(0, Number(r.room_revenue || 0) - Number(r.amount_paid || 0)),
       r.guests              || '',
       r.guest_email         || '',
       r.guest_phone         || '',
+      r.emergency_contact_name  || '',
+      r.emergency_contact_phone || '',
       r.notes               || ''
     ])
   ];
@@ -2705,7 +2769,7 @@ function _doExport() {
   const ws = XLSX.utils.aoa_to_sheet(wsData);
 
   // Column widths
-  ws['!cols'] = [18,22,16,16,16,14,14,18,14,12,18,14,8,24,18,40].map(w => ({ wch: w }));
+  ws['!cols'] = [18,22,16,16,16,14,14,18,14,12,18,14,16,16,8,24,18,22,18,40].map(w => ({ wch: w }));
 
   // Style header row bold (SheetJS community doesn't support cell styles, just structure)
   const wb = XLSX.utils.book_new();
@@ -3183,6 +3247,8 @@ function renderReservationDetail() {
       ${info('mail', 'Email Address', r.guest_email, r.guest_email ? 'mailto:' + encodeURIComponent(r.guest_email) : '')}
       ${info('call', 'Phone Number', r.guest_phone, r.guest_phone ? 'tel:' + String(r.guest_phone).replace(/[^\d+]/g, '') : '')}
       ${info('group', 'Occupancy', (r.guests || 1) + ' Guest' + ((r.guests || 1) > 1 ? 's' : ''))}
+      ${info('emergency', 'Emergency Contact', [r.emergency_contact_name, r.emergency_contact_phone].filter(Boolean).join(' · '),
+             r.emergency_contact_phone ? 'tel:' + String(r.emergency_contact_phone).replace(/[^\d+]/g, '') : '')}
     </div>`;
 
   // ── Stay status actions
@@ -3237,6 +3303,8 @@ function renderReservationDetail() {
       <div class="rd-label" style="display:flex;justify-content:space-between">Financial Overview <span class="mso" style="font-size:20px">payments</span></div>
       <div class="rd-fin-row"><span>Room rate (${idr(r.rate)} × ${nights})</span><b>${idr(r.room_revenue)}</b></div>
       <div class="rd-fin-row"><span>Payment status</span>${paymentChip(r.payment_status)}</div>
+      <div class="rd-fin-row"><span>Paid by guest</span><b class="rd-paid">${idr(r.amount_paid)}</b></div>
+      ${cancelled ? '' : `<div class="rd-fin-row"><span>Balance due</span><b class="${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? 'rd-due' : 'rd-paid'}">${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? idr(Number(r.room_revenue || 0) - Number(r.amount_paid || 0)) : 'Fully paid ✓'}</b></div>`}
       <div class="rd-fin-total"><span>Total Revenue</span><b>${idr(cancelled ? 0 : r.room_revenue)}</b></div>
       ${cancelled ? `<p class="rd-muted">Cancelled — not counted as revenue. Original value: ${idr(r.room_revenue)}.</p>` : ''}
       <button class="rd-mini-btn" onclick="document.getElementById('rd-history').scrollIntoView({behavior:'smooth'})"><span class="mso">history</span>History</button>
@@ -3299,13 +3367,14 @@ function rdCancelledInfo() {
 const HIST_LABELS = {
   guest_name:'Guest name', country:'Country', guest_email:'Email', guest_phone:'Phone', guests:'Guests',
   arrival_date:'Arrival', departure_date:'Departure', room_name:'Room', rate:'Rate / night', channel:'Channel',
-  status:'Status', payment_status:'Payment', notes:'Notes', room_night:'Nights', room_revenue:'Revenue'
+  status:'Status', payment_status:'Payment', amount_paid:'Amount paid', notes:'Notes', room_night:'Nights', room_revenue:'Revenue',
+  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone'
 };
 const HIST_ORDER = Object.keys(HIST_LABELS);
 function histVal(field, v) {
   if (v === null || v === undefined || v === '') return '—';
   if (field === 'arrival_date' || field === 'departure_date') return fmtDateLong(v);
-  if (field === 'rate' || field === 'room_revenue') return idr(v);
+  if (field === 'rate' || field === 'room_revenue' || field === 'amount_paid') return idr(v);
   let s = String(v);
   if (field === 'notes' && s.length > 90) s = s.slice(0, 90) + '…';
   return escHtml(s);
@@ -3387,6 +3456,9 @@ function renderEditForm(r) {
         ${f('ed-guests','Number of Guests',`<input id="ed-guests" type="number" min="1" value="${r.guests || 1}">`)}
         ${f('ed-email','Email',`<input id="ed-email" type="email" value="${escHtml(r.guest_email || '')}" placeholder="guest@email.com">`)}
         ${f('ed-phone','Phone',`<input id="ed-phone" type="tel" value="${escHtml(r.guest_phone || '')}" placeholder="+62 …">`)}
+        <div class="rd-grid-spacer"></div>
+        ${f('ed-em-name','Emergency Contact Name',`<input id="ed-em-name" type="text" value="${escHtml(r.emergency_contact_name || '')}" placeholder="e.g. Sarah (sister)">`)}
+        ${f('ed-em-phone','Emergency Contact Phone',`<input id="ed-em-phone" type="tel" value="${escHtml(r.emergency_contact_phone || '')}" placeholder="+61 …">`)}
       </div>
     </div>
     <div class="rd-edit-section">
@@ -3397,7 +3469,9 @@ function renderEditForm(r) {
         ${f('ed-room','Room *',`<select id="ed-room" onchange="rdRecalc()">${opts(_rdOptions.rooms, r.room_name)}</select>`)}
         ${f('ed-channel','Channel *',`<select id="ed-channel">${opts(_rdOptions.channels, r.channel)}</select>`)}
         ${f('ed-rate','Rate / Night (IDR) *',`<input id="ed-rate" type="number" min="0" value="${r.rate ?? ''}" oninput="rdRecalc()">`)}
-        ${f('ed-payment','Payment Status',`<select id="ed-payment">${opts(['Unpaid','Deposit','Paid'], r.payment_status || 'Unpaid')}</select>`)}
+        ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${opts(['Unpaid','Deposit','Paid'], r.payment_status || 'Unpaid')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
+        <div class="form-group" id="deposit-group-ed" style="${r.payment_status === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Deposit Amount (IDR)</label>
+          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="number" min="0" value="${r.payment_status === 'Deposit' && Number(r.amount_paid) ? Number(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
       </div>
       <div class="rd-edit-summary">
         <span class="st-chip st-out" id="ed-summary">—</span>
@@ -3421,6 +3495,7 @@ function rdRecalc() {
   const n = nightsBetween(a, d);
   const sum = document.getElementById('ed-summary');
   if (sum) sum.textContent = n > 0 ? `${n} night${n === 1 ? '' : 's'} · ${idr(n * rate)}` : 'Check dates';
+  updatePayHint('ed');
   clearTimeout(_rdAvailTimer);
   _rdAvailTimer = setTimeout(() => rdCheckAvail(a, d, room), 250);
 }
@@ -3455,6 +3530,12 @@ async function rdSaveEdit() {
   if (!free) { btn.disabled = false; return showToast('Room not available for these dates'); }
 
   const nights = nightsBetween(a, d);
+  const payStatus = v('ed-payment') || 'Unpaid';
+  const deposit = parseFloat(v('ed-deposit')) || 0;
+  if (payStatus === 'Deposit') {
+    if (!(deposit > 0)) { btn.disabled = false; return showToast('Enter the deposit amount'); }
+    if (deposit >= nights * rate) { btn.disabled = false; return showToast('Deposit covers the full total — choose "Paid" instead'); }
+  }
   const payload = {
     guest_name: guest,
     country: v('ed-country') || null,
@@ -3466,7 +3547,10 @@ async function rdSaveEdit() {
     room_name: room,
     channel,
     rate,
-    payment_status: v('ed-payment') || 'Unpaid',
+    payment_status: payStatus,
+    amount_paid: payStatus === 'Paid' ? nights * rate : payStatus === 'Deposit' ? deposit : 0,
+    emergency_contact_name: v('ed-em-name') || null,
+    emergency_contact_phone: v('ed-em-phone') || null,
     room_night: nights,
     room_revenue: nights * rate,
     arrival_month: new Date(a + 'T00:00:00').toLocaleString('default', { month:'long', year:'numeric' }),
