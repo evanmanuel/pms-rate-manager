@@ -3788,6 +3788,9 @@ function invoiceHTML(r, room, roomIdx, bank) {
   const perNight = r.rate_type !== 'total';
   const desc = room?.description || '';
   const L = 'font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#4B5563;';
+  const FONT = "font-family:Inter,'Segoe UI',Helvetica,Arial,sans-serif;";
+  const TH = L + FONT + 'color:#111827;background:transparent;padding:10px 0;border:none;border-bottom:2px solid #0F382A;position:static;white-space:nowrap;';
+  const TD = FONT + 'font-size:13px;color:#111827;white-space:normal;background:transparent;border:none;border-bottom:1px solid #E5E7EB;padding:16px 0;';
   const bankRow = (k, v) => `<div style="color:#4B5563;margin-top:3px">${k}: <b style="color:#111827;font-weight:600">${e(v || '')}</b></div>`;
   return `
   <div style="width:794px;min-height:1123px;box-sizing:border-box;background:#fff;color:#111827;font-family:Inter,'Segoe UI',Helvetica,Arial,sans-serif;padding:56px 56px 44px;position:relative;display:flex;flex-direction:column;">
@@ -3840,18 +3843,18 @@ function invoiceHTML(r, room, roomIdx, bank) {
     </div>
 
     <table style="width:100%;border-collapse:collapse;margin-top:28px;font-size:13px;">
-      <thead><tr style="border-bottom:2px solid #0F382A">
-        <th style="${L}color:#111827;text-align:left;padding:10px 0">Description</th>
-        <th style="${L}color:#111827;text-align:center;padding:10px 0">Qty / Nights</th>
-        <th style="${L}color:#111827;text-align:right;padding:10px 0">Unit Rate</th>
-        <th style="${L}color:#111827;text-align:right;padding:10px 0">Amount (IDR)</th>
+      <thead><tr>
+        <th style="${TH}text-align:left">Description</th>
+        <th style="${TH}text-align:center">Qty / Nights</th>
+        <th style="${TH}text-align:right">Unit Rate</th>
+        <th style="${TH}text-align:right">Amount (IDR)</th>
       </tr></thead>
-      <tbody><tr style="border-bottom:1px solid #E5E7EB">
-        <td style="padding:16px 16px 16px 0"><div style="font-weight:600">Room Rate (${e(r.room_name || '—')})</div>
+      <tbody><tr>
+        <td style="${TD}padding-right:16px"><div style="font-weight:600">Room Rate (${e(r.room_name || '—')})</div>
           <div style="font-size:11px;color:#4B5563;margin-top:3px">${invDate(r.arrival_date)} – ${invDate(r.departure_date)}${desc ? ' · ' + e(desc) : ''}${perNight ? '' : ' · Total stay price'}</div></td>
-        <td style="text-align:center;font-weight:500">${nights}</td>
-        <td style="text-align:right;font-weight:500">${perNight ? invNum(r.rate) : 'Total stay'}</td>
-        <td style="text-align:right;font-weight:700">${invNum(total)}</td>
+        <td style="${TD}text-align:center;font-weight:500">${nights}</td>
+        <td style="${TD}text-align:right;font-weight:500">${perNight ? invNum(r.rate) : 'Total stay'}</td>
+        <td style="${TD}text-align:right;font-weight:700">${invNum(total)}</td>
       </tr></tbody>
     </table>
 

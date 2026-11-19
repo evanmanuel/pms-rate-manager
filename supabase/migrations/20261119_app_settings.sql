@@ -26,3 +26,8 @@ create policy "Admin can update settings" on public.app_settings
 insert into public.app_settings (key, value)
 values ('bank', '{"bank_name":"Bank Mandiri","account_name":"","account_number":"","swift":""}'::jsonb)
 on conflict (key) do nothing;
+
+-- Allow the "Invoice" document category (generated invoices saved to Google Drive)
+alter table public.reservation_files drop constraint if exists reservation_files_category_check;
+alter table public.reservation_files add constraint reservation_files_category_check
+  check (category in ('Passport', 'Payment slip', 'Other', 'Invoice'));
