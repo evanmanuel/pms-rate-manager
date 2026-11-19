@@ -351,6 +351,8 @@
     .res-list-header span:nth-child(2),.res-list-header span:nth-child(3),.res-list-header span:nth-child(4) { text-align:center; }
     .res-card { background:var(--surface-container-lowest); border-radius:12px; padding:20px 24px; display:grid; grid-template-columns:1fr 200px 160px 140px 40px; align-items:center; gap:16px; box-shadow:var(--shadow-sm); transition:background 0.2s; }
     .res-card:hover { background:var(--surface-container-low); }
+    .chip-stack { display:flex; flex-direction:column; align-items:center; gap:6px; }
+    .allres-table .chip-stack { align-items:flex-start; }
     .res-guest-name { font-family:'Manrope',sans-serif; font-size:15px; font-weight:700; color:var(--on-surface); }
     .res-guest-meta { font-size:12px; color:var(--on-surface-variant); margin-top:2px; }
     .res-dates { text-align:center; }
@@ -1283,6 +1285,7 @@
       .res-card > div:nth-child(2) { grid-column:1; grid-row:2; text-align:left; }
       .res-card > div:nth-child(3) { grid-column:2; grid-row:2; justify-content:flex-end !important; align-self:center; }
       .res-card > div:nth-child(5) { display:none !important; }
+      .res-card .chip-stack, .allres-table .chip-stack { align-items:flex-end; gap:4px; }
       .res-dates { text-align:left; }
       .stats-row { grid-template-columns:1fr 1fr; gap:12px; margin-top:24px; }
       .stat-card { padding:18px; min-height:0; }
@@ -1613,7 +1616,7 @@
             </div>
           </div>
           <div class="res-list-header">
-            <span>Guest</span><span>Dates</span><span>Room</span><span>Status</span><span></span>
+            <span>Guest</span><span>Dates</span><span>Room</span><span>Status · Payment</span><span></span>
           </div>
           <div class="res-list" id="res-card-list"><div class="empty-state">Loading…</div></div>
           <div class="stats-row">
@@ -1753,7 +1756,7 @@
                   <th onclick="sortAllRes('arrival_date')" class="sortable">Arrival <span class="mso sort-icon">unfold_more</span></th>
                   <th onclick="sortAllRes('departure_date')" class="sortable">Departure <span class="mso sort-icon">unfold_more</span></th>
                   <th onclick="sortAllRes('room_name')" class="sortable">Room <span class="mso sort-icon">unfold_more</span></th>
-                  <th>Status</th>
+                  <th>Status · Payment</th>
                   <th onclick="sortAllRes('rate')" class="sortable">ADR <span class="mso sort-icon">unfold_more</span></th>
                   <th onclick="sortAllRes('room_night')" class="sortable">Nights <span class="mso sort-icon">unfold_more</span></th>
                   <th onclick="sortAllRes('room_revenue')" class="sortable">Revenue <span class="mso sort-icon">unfold_more</span></th>
@@ -2403,8 +2406,8 @@ async function loadResSummary() {
             <div class="res-dates-nights">${nights} Night${nights !== 1 ? 's' : ''}</div>
           </div>
           <div style="display:flex;justify-content:center"><span class="res-room">${r.room_name || '—'}</span></div>
-          <div style="display:flex;justify-content:center">
-            ${statusChip(r.status)}
+          <div class="chip-stack">
+            ${statusChip(r.status)}${payDisplayChip(r)}
           </div>
           <div style="display:flex;justify-content:flex-end">
             <button class="icon-btn" title="View details"><span class="mso">chevron_right</span></button>
@@ -2894,7 +2897,7 @@ function renderAllRes() {
         <td class="c-arr" data-label="Arrival">${fmtDateLong(r.arrival_date)}</td>
         <td class="c-dep" data-label="Departure">${fmtDateLong(r.departure_date)}</td>
         <td class="c-room" data-label="Room">${escHtml(r.room_name || '—')}</td>
-        <td class="c-status">${statusChip(r.status)}</td>
+        <td class="c-status"><div class="chip-stack">${statusChip(r.status)}${payDisplayChip(r)}</div></td>
         <td class="allres-money c-adr" data-label="ADR">${idr(nightlyOf(r))}</td>
         <td class="allres-nights c-nights" data-label="Nights">${r.room_night || 0}</td>
         <td class="allres-money c-rev" data-label="Revenue">IDR ${Number(r.room_revenue || 0).toLocaleString('id-ID')}</td>
