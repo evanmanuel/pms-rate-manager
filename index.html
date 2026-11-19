@@ -2728,7 +2728,7 @@ function showBookingConfirmed(r) {
         ${item('Nights', nights)}
         ${item('Room', escHtml(r.room_name || '—'))}
         ${item('Channel', escHtml(r.channel || '—'))}
-        ${item('Payment', paymentChip(r.payment_status))}
+        ${item('Payment', paymentChip(payStatusOf(r)))}
       </div>
       <div class="cf-total">
         <div><div class="rd-label">Total Revenue</div><small>${r.rate_type === 'total' ? `Total stay price · ${nights} night${nights === 1 ? '' : 's'} (≈ ${idr(nightlyOf(r))} / night)` : `${idr(r.rate)} × ${nights} night${nights === 1 ? '' : 's'}`}</small>
@@ -2962,7 +2962,7 @@ function _doExport() {
       Math.round(nightlyOf(r)),
       r.room_night          || 0,
       r.room_revenue        || 0,
-      r.payment_status      || '',
+      payStatusOf(r),
       Number(r.amount_paid || 0),
       r.status === 'Cancelled' ? 0 : Math.max(0, Number(r.room_revenue || 0) - Number(r.amount_paid || 0)),
       r.guests              || '',
@@ -3510,6 +3510,11 @@ function statusChip(status) {
   const s = status || 'New Reservation';
   return `<span class="st-chip ${RES_STATUSES[s] || 'st-new'}">${escHtml(s)}</span>`;
 }
+// "Deposit" only counts when something was actually paid; otherwise it is Unpaid
+function payStatusOf(r) {
+  const st = r.payment_status || 'Unpaid';
+  return st === 'Deposit' && !(Number(r.amount_paid) > 0) ? 'Unpaid' : st;
+}
 function paymentChip(p) {
   const v = p || 'Unpaid';
   const cls = v === 'Paid' ? 'pay-paid' : v === 'Deposit' ? 'pay-deposit' : 'pay-unpaid';
@@ -3589,7 +3594,7 @@ function renderReservationDetail() {
       <div>
         <div class="rd-title">${escHtml(r.guest_name || 'Guest')}</div>
         <div class="rd-sub">
-          ${statusChip(r.status)} ${paymentChip(r.payment_status)}
+          ${statusChip(r.status)} ${paymentChip(payStatusOf(r))}
           <span><span class="mso">bed</span> ${escHtml(r.room_name || '—')}</span>
           <span><span class="mso">hub</span> ${escHtml(r.channel || '—')}</span>
         </div>
@@ -3703,7 +3708,7 @@ function renderReservationDetail() {
            <div class="rd-fin-row"><span>≈ Per night</span><b>${idr(nightlyOf(r))}</b></div>`
         : `<div class="rd-fin-row"><span>Room rate (${idr(r.rate)} × ${nights})</span><b>${idr(r.room_revenue)}</b></div>`}
       <div class="rd-fin-row"><span>Sold as</span><b>${r.rate_type === 'total' ? 'Total stay' : 'Per night'}</b></div>
-      <div class="rd-fin-row"><span>Payment status</span>${paymentChip(r.payment_status)}</div>
+      <div class="rd-fin-row"><span>Payment status</span>${paymentChip(payStatusOf(r))}</div>
       <div class="rd-fin-row"><span>Paid by guest</span><b class="rd-paid">${idr(r.amount_paid)}</b></div>
       ${cancelled ? '' : `<div class="rd-fin-row"><span>Balance due</span><b class="${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? 'rd-due' : 'rd-paid'}">${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? idr(Number(r.room_revenue || 0) - Number(r.amount_paid || 0)) : 'Fully paid ✓'}</b></div>`}
       <div class="rd-fin-total"><span>Total Revenue</span><b>${idr(cancelled ? 0 : r.room_revenue)}</b></div>
@@ -4205,9 +4210,9 @@ function renderEditForm(r) {
             </div></div>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-rate" type="number" min="0" value="${r.rate_type === 'total' ? Number(r.room_revenue || 0) : (r.rate ?? '')}" oninput="rdRecalc()"></div>
           <small class="pay-hint" id="rate-summary-ed"></small></div>
-        ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${opts(['Unpaid','Deposit','Paid'], r.payment_status || 'Unpaid')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
-        <div class="form-group" id="deposit-group-ed" style="${r.payment_status === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Deposit Amount (IDR)</label>
-          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="number" min="0" value="${r.payment_status === 'Deposit' && Number(r.amount_paid) ? Number(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
+        ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${opts(['Unpaid','Deposit','Paid'], payStatusOf(r))}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
+        <div class="form-group" id="deposit-group-ed" style="${payStatusOf(r) === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Deposit Amount (IDR)</label>
+          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="number" min="0" value="${payStatusOf(r) === 'Deposit' ? Number(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
         <div class="form-group"><label for="ed-security">Refundable Security Deposit</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-security" type="number" min="0" value="${r.security_deposit ?? ''}" placeholder="0"></div>
           <small class="pay-hint">Held separately, not part of the room payment</small></div>
