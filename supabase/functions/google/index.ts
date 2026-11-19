@@ -256,7 +256,6 @@ async function buildEmail(reservationId: string, kind: Kind) {
             <div style="${F}font-size:15px;line-height:20px;font-weight:700;color:#111827;"><span style="display:inline-block;width:12px;height:12px;border-radius:6px;background:${col.c};vertical-align:middle;margin-right:8px;"></span>${kind === 'confirmation' ? 'Room Confirmation' : 'Cancelled Booking'} – ${esc(r.room_name)}</div>
             ${room?.description ? `<div style="${F}font-size:11px;line-height:16px;color:#4B5563;padding:2px 0 0 20px;">${esc(room.description)}</div>` : ''}
           </td>
-          <td align="right" valign="middle" style="padding-bottom:12px;"><span style="${F}display:inline-block;background:${col.l};color:${col.c};font-size:10px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;padding:4px 10px;border-radius:12px;white-space:nowrap;">Room ${idx + 1}</span></td>
         </tr></table>
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;"><tr>
           <td width="50%" style="padding-right:6px;"><div style="background:#ffffff;border:1px solid #E5E7EB;border-radius:12px;padding:14px;">${label('Check-in')}<div style="${F}font-size:15px;line-height:20px;font-weight:700;color:#111827;padding-top:4px;">${longDate(r.arrival_date)}</div></div></td>
