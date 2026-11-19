@@ -592,8 +592,11 @@
     .kpi-card-dark  .kpi-value { font-size:14px; color:rgba(186,238,214,0.8); }
     .kpi-card-dark  .kpi-value-large { font-size:36px; color:#fff; display:block; margin-top:4px; letter-spacing:-0.03em; font-family:'Manrope',sans-serif; font-weight:800; }
     .kpi-badge:empty { display:none; }
-    .rate-mode { display:inline-flex; background:var(--surface-container-high); border-radius:9px; padding:3px; gap:2px; margin:2px 0 8px; align-self:flex-start; }
-    .rate-mode button { border:none; background:transparent; border-radius:7px; padding:6px 12px; font-family:'Manrope',sans-serif; font-size:11px; font-weight:700; color:var(--on-surface-variant); cursor:pointer; white-space:nowrap; }
+    /* Label and Per night / Total stay switch share one row, so the input lines up with its neighbours */
+    .rate-head { display:flex; align-items:center; justify-content:space-between; gap:8px; height:14px; }
+    .rate-head label { white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0; }
+    .rate-mode { display:inline-flex; flex-shrink:0; background:var(--surface-container-high); border-radius:8px; padding:2px; gap:2px; }
+    .rate-mode button { border:none; background:transparent; border-radius:6px; padding:4px 9px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; color:var(--on-surface-variant); cursor:pointer; white-space:nowrap; line-height:1.2; }
     .rate-mode button.on { background:#fff; color:var(--primary); box-shadow:0 1px 3px rgba(13,28,47,.12); }
     .pay-hint { display:block; font-size:11px; color:var(--secondary); margin-top:6px; min-height:0; }
     .pay-hint:empty { display:none; }
@@ -1266,6 +1269,8 @@
       .form-grid-4 { grid-template-columns:1fr 1fr; gap:18px 12px; }
       .form-grid-4 input[type=date] { min-width:0; }
       .rate-wrap input { padding-left:42px !important; }
+      .form-grid-4 .rate-group { grid-column:1 / -1; }
+      .rate-mode button { padding:6px 12px; font-size:11px; }
       .rate-prefix { left:8px; }
 
       /* Booking confirmed */
@@ -1562,11 +1567,12 @@
               <div class="form-grid-4">
                 <div class="form-group"><label>Arrival</label><input type="date" id="arrival-date" onchange="checkAvailability(); updateRateSummary('new')" /></div>
                 <div class="form-group"><label>Departure</label><input type="date" id="departure-date" onchange="checkAvailability(); updateRateSummary('new')" /></div>
-                <div class="form-group"><label id="rate-label-new">Rate / Night (IDR)</label>
-                  <div class="rate-mode" id="rate-mode-new">
-                    <button type="button" class="on" data-mode="per_night" onclick="setRateMode('new','per_night')">Per night</button>
-                    <button type="button" data-mode="total" onclick="setRateMode('new','total')">Total stay</button>
-                  </div>
+                <div class="form-group rate-group">
+                  <div class="rate-head"><label id="rate-label-new" for="rate">Rate / Night</label>
+                    <div class="rate-mode" id="rate-mode-new">
+                      <button type="button" class="on" data-mode="per_night" onclick="setRateMode('new','per_night')">Per night</button>
+                      <button type="button" data-mode="total" onclick="setRateMode('new','total')">Total stay</button>
+                    </div></div>
                   <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="rate" placeholder="0" oninput="updateRateSummary('new')" /></div>
                   <small class="pay-hint" id="rate-summary-new"></small>
                 </div>
@@ -2454,7 +2460,7 @@ function setRateMode(which, mode) {
 function paintRateMode(which) {
   const e = rateEls(which); if (!e.mode) return;
   e.mode.querySelectorAll('button').forEach(b => b.classList.toggle('on', b.dataset.mode === _rateMode[which]));
-  if (e.label) e.label.textContent = _rateMode[which] === 'total' ? 'Total Stay (IDR)' + (which === 'ed' ? ' *' : '') : 'Rate / Night (IDR)' + (which === 'ed' ? ' *' : '');
+  if (e.label) e.label.textContent = (_rateMode[which] === 'total' ? 'Total Stay' : 'Rate / Night') + (which === 'ed' ? ' *' : '');
 }
 function updateRateSummary(which) {
   const e = rateEls(which), c = rateCalc(which); if (!c) return;
@@ -3540,12 +3546,13 @@ function renderEditForm(r) {
         ${f('ed-departure','Departure *',`<input id="ed-departure" type="date" value="${r.departure_date || ''}" onchange="rdRecalc()">`)}
         ${f('ed-room','Room *',`<select id="ed-room" onchange="rdRecalc()">${opts(_rdOptions.rooms, r.room_name)}</select>`)}
         ${f('ed-channel','Channel *',`<select id="ed-channel">${opts(_rdOptions.channels, r.channel)}</select>`)}
-        <div class="form-group"><label for="ed-rate" id="rate-label-ed">${(r.rate_type === 'total') ? 'Total Stay (IDR) *' : 'Rate / Night (IDR) *'}</label>
-          <div class="rate-mode" id="rate-mode-ed">
-            <button type="button" class="${r.rate_type === 'total' ? '' : 'on'}" data-mode="per_night" onclick="setRateMode('ed','per_night'); rdRecalc()">Per night</button>
-            <button type="button" class="${r.rate_type === 'total' ? 'on' : ''}" data-mode="total" onclick="setRateMode('ed','total'); rdRecalc()">Total stay</button>
-          </div>
-          <input id="ed-rate" type="number" min="0" value="${r.rate_type === 'total' ? Number(r.room_revenue || 0) : (r.rate ?? '')}" oninput="rdRecalc()">
+        <div class="form-group rate-group">
+          <div class="rate-head"><label for="ed-rate" id="rate-label-ed">${(r.rate_type === 'total') ? 'Total Stay *' : 'Rate / Night *'}</label>
+            <div class="rate-mode" id="rate-mode-ed">
+              <button type="button" class="${r.rate_type === 'total' ? '' : 'on'}" data-mode="per_night" onclick="setRateMode('ed','per_night'); rdRecalc()">Per night</button>
+              <button type="button" class="${r.rate_type === 'total' ? 'on' : ''}" data-mode="total" onclick="setRateMode('ed','total'); rdRecalc()">Total stay</button>
+            </div></div>
+          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-rate" type="number" min="0" value="${r.rate_type === 'total' ? Number(r.room_revenue || 0) : (r.rate ?? '')}" oninput="rdRecalc()"></div>
           <small class="pay-hint" id="rate-summary-ed"></small></div>
         ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${opts(['Unpaid','Deposit','Paid'], r.payment_status || 'Unpaid')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
         <div class="form-group" id="deposit-group-ed" style="${r.payment_status === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Deposit Amount (IDR)</label>
