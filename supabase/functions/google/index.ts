@@ -425,13 +425,7 @@ Deno.serve(async (req) => {
         }).select().single();
         if (error) return fail(error.message, 500);
         if (category === 'Invoice') {
-          // Keep only the newest invoice: older invoice files go to Drive trash
-          const { data: olds } = await db.from('reservation_files').select('id, drive_file_id')
-            .eq('reservation_id', res.id).eq('category', 'Invoice').neq('id', row.id);
-          for (const o of olds || []) {
-            await drive(at, `files/${o.drive_file_id}`, { method: 'PATCH', body: JSON.stringify({ trashed: true }) }).catch(() => null);
-            await db.from('reservation_files').delete().eq('id', o.id);
-          }
+          // Every click adds a new invoice; older ones stay until staff delete them
           await logHistory(res.id, who, 'Invoice generated', row.name);
         } else {
           await logHistory(res.id, who, 'File uploaded', `${category} · ${row.name}`);
