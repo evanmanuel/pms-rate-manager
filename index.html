@@ -1481,7 +1481,8 @@
       <button class="nav-item" onclick="showPage('calendar',this)">
         <span class="mso">calendar_month</span><span class="label">Calendar</span>
       </button>
-      <button class="nav-item" onclick="showPage('settings',this)">
+      <!-- Settings: administrator only — shown/hidden by JS -->
+      <button class="nav-item hidden-nav" id="nav-settings" onclick="showPage('settings',this)">
         <span class="mso">settings</span><span class="label">Settings</span>
       </button>
       <!-- Admin only — shown/hidden by JS -->
@@ -1840,12 +1841,12 @@
         <div class="page-header"><div class="page-header-text"><h2>Settings</h2><p>Manage channels and room names</p></div></div>
         <div class="section" id="google-section" style="display:none">
           <div class="section-label">Google Account</div>
-          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Used to store booking documents and invoices in Google Drive (folder "ECL Booker Folder") and to send guest confirmation and cancellation emails. Only the administrator can connect or disconnect it.</p>
+          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Used to store booking documents and invoices in Google Drive (folder "ECL Booker Folder") and to send guest confirmation and cancellation emails.</p>
           <div id="google-status"><div class="empty-state" style="padding:12px">Checking…</div></div>
         </div>
         <div class="section" id="backup-section" style="display:none">
           <div class="section-label">Backup</div>
-          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Saves a copy to Google Drive in the folder "PMS Backup". Run it when nobody else is using the PMS. Only the administrator can run backups.</p>
+          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Saves a copy to Google Drive in the folder "PMS Backup". Run it when nobody else is using the PMS.</p>
           <div class="bk-grid">
             <div class="bk-item">
               <div class="bk-head"><span class="mso">database</span><div><b>Database</b><small>All bookings, history, rooms, channels, documents list and settings, as Excel + JSON</small></div></div>
@@ -2035,6 +2036,7 @@ function enterApp() {
   const navAdmin = document.getElementById('nav-admin');
   if (isMaster) navAdmin.classList.remove('hidden-nav');
   else navAdmin.classList.add('hidden-nav');
+  document.getElementById('nav-settings').classList.toggle('hidden-nav', !isMaster);
 
   // Default to dashboard
   showPage('dashboard', document.querySelector('.nav-item.active'));
@@ -2095,7 +2097,7 @@ document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleNav(fa
 
 function showPage(page, btn) {
   // Guard admin
-  if (page === 'admin' && currentUser?.email !== MASTER_EMAIL) return;
+  if ((page === 'admin' || page === 'settings') && currentUser?.email !== MASTER_EMAIL) return;
   toggleNav(false);
   window.scrollTo(0, 0);
 
@@ -3443,7 +3445,7 @@ async function loadDocs(reservationId) {
         </div>` : ''}
     </div>
     <div id="doc-progress" class="rd-muted" style="display:none"></div>
-    ${!ready ? `<p class="rd-muted">${status && status.configured ? 'Google Drive is not connected yet.' : 'Google Drive is not set up yet.'} ${currentUser?.email === MASTER_EMAIL ? 'Connect it in <a href="#" onclick="showPage(\'settings\', navBtn(\'settings\'));return false">Settings</a>.' : 'Ask the administrator to connect it in Settings.'}</p>` : ''}
+    ${!ready ? `<p class="rd-muted">${status && status.configured ? 'Google Drive is not connected yet.' : 'Google Drive is not set up yet.'} ${currentUser?.email === MASTER_EMAIL ? 'Connect it in <a href="#" onclick="showPage(\'settings\', navBtn(\'settings\'));return false">Settings</a>.' : 'Ask the administrator to connect it.'}</p>` : ''}
     ${list.length ? `<div class="doc-list">${list.map(f => {
       const ic = docIcon(f);
       return `<div class="doc-item">
@@ -3879,9 +3881,7 @@ async function saveBankSettings() {
    BACKUP (Settings) — saved to Google Drive "PMS Backup", admin only
 ══════════════════════════════════════════════════════════ */
 async function loadBackupInfo() {
-  const sec = document.getElementById('backup-section');
-  if (currentUser?.email !== MASTER_EMAIL) { sec.style.display = 'none'; return; }
-  sec.style.display = '';
+  document.getElementById('backup-section').style.display = '';
   const { data } = await db.from('app_settings').select('value').eq('key', 'backup').maybeSingle();
   const v = data?.value || {};
   const line = e => e ? `Last backup: <b>${escHtml(fmtDateTime(e.at))}</b> by ${escHtml(e.by || '')}<br><a href="https://drive.google.com/drive/folders/${encodeURIComponent(e.folder_id)}" target="_blank" rel="noopener">Open “${escHtml(e.folder_name)}” in Drive ↗</a>` : 'No backup yet.';
