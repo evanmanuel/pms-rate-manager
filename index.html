@@ -536,6 +536,21 @@
     .mail-meta b { color:var(--on-surface); }
     .mail-frame { width:100%; flex:1; min-height:420px; border:1px solid var(--surface-container-high); border-radius:12px; background:#F8F8F4; }
     .mail-modal .modal-actions { margin-top:16px; }
+    .inv-modal { max-width:680px; padding:24px; display:flex; flex-direction:column; max-height:92vh; }
+    .inv-status { font-size:12px; color:var(--secondary); line-height:1.6; margin-bottom:12px; display:flex; align-items:center; gap:6px; }
+    .inv-status .mso { font-size:17px; }
+    .inv-status.ok { color:#1d6b46; } .inv-status.warn { color:#b45309; } .inv-status.err { color:#b42318; }
+    .inv-preview { flex:1; min-height:300px; overflow:auto; border:1px solid var(--surface-container-high); border-radius:12px; background:#eceee9; padding:12px; }
+    .inv-preview img { display:block; width:100%; height:auto; background:#fff; box-shadow:0 4px 16px rgba(13,28,47,.12); border-radius:4px; }
+    .inv-preview .rd-muted { text-align:center; padding:60px 10px; }
+    .inv-render { position:fixed; left:0; top:0; z-index:-1; pointer-events:none; }
+    .rd-inv-btn { display:flex; align-items:center; justify-content:center; gap:8px; width:100%; margin-top:14px; border:none; border-radius:12px; padding:13px 14px; background:var(--primary); color:#fff; cursor:pointer; font-family:'Manrope',sans-serif; font-size:12px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+    .rd-inv-btn .mso { font-size:18px; }
+    .rd-inv-btn:disabled { opacity:.4; cursor:not-allowed; }
+    .bank-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; }
+    .bank-grid label { display:block; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--secondary); margin-bottom:6px; }
+    .bank-grid input { width:100%; border:1px solid var(--surface-container-high); border-radius:10px; padding:10px 12px; font:inherit; font-size:14px; background:var(--surface-container-lowest); }
+    @media (max-width:768px) { .bank-grid { grid-template-columns:1fr; } .bank-grid input { font-size:16px; } }
 
     /* TOAST */
     .toast { position:fixed; bottom:28px; right:28px; background:var(--on-surface); color:#fff; padding:12px 20px; border-radius:10px; font-size:13px; font-family:'Inter',sans-serif; opacity:0; transform:translateY(8px); transition:opacity 0.25s,transform 0.25s; z-index:999; box-shadow:0 8px 24px rgba(13,28,47,0.18); }
@@ -1144,6 +1159,7 @@
     .doc-ic { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
     .doc-ic.pdf { background:#fde8e8; color:#b42318; }
     .doc-ic.img { background:#e1eef8; color:#1e4b72; }
+    .doc-ic.inv { background:#e3efe9; color:#0f382a; }
     .doc-ic.other { background:var(--surface-container-high); color:var(--on-surface-variant); }
     .doc-txt { min-width:0; }
     .doc-txt b { display:block; font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1783,6 +1799,17 @@
           <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Used to store booking documents in Google Drive (folder "ECL Booker Folder") and, later, to send confirmation emails. Only the administrator can connect or disconnect it.</p>
           <div id="google-status"><div class="empty-state" style="padding:12px">Checking…</div></div>
         </div>
+        <div class="section" id="bank-section">
+          <div class="section-label">Invoice · Bank Details</div>
+          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Printed in the "Bank Payment Information" box on every invoice. Leave a field empty to keep it blank on the invoice. <span id="bank-note"></span></p>
+          <div class="bank-grid">
+            <div><label for="bank-name">Bank</label><input id="bank-name" type="text" placeholder="Bank Mandiri" maxlength="60"></div>
+            <div><label for="bank-acc-name">Account Name</label><input id="bank-acc-name" type="text" placeholder="Account holder name" maxlength="80"></div>
+            <div><label for="bank-acc-no">Account Number</label><input id="bank-acc-no" type="text" inputmode="numeric" placeholder="e.g. 1234567890" maxlength="40"></div>
+            <div><label for="bank-swift">SWIFT Code</label><input id="bank-swift" type="text" placeholder="e.g. BMRIIDJA" maxlength="20" style="text-transform:uppercase"></div>
+          </div>
+          <div style="display:flex;justify-content:flex-end;margin-top:14px"><button class="btn-primary" id="bank-save-btn" onclick="saveBankSettings()">Save Bank Details</button></div>
+        </div>
         <div class="section">
           <div class="section-label">Channels</div>
           <div id="channel-list"></div>
@@ -1846,6 +1873,18 @@
 </div><!-- /app -->
 
 <!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="inv-modal">
+  <div class="modal inv-modal">
+    <h3 id="inv-title">Invoice</h3>
+    <div class="inv-status" id="inv-status"></div>
+    <div class="inv-preview" id="inv-preview"></div>
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeInvoice()">Close</button>
+      <button class="btn-primary" id="inv-dl-btn" onclick="downloadInvoice()" disabled><span class="mso" style="font-size:17px">download</span>Download PDF</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="mail-modal">
   <div class="modal mail-modal">
     <h3 id="mail-title">Preview email</h3>
@@ -2008,7 +2047,7 @@ function showPage(page, btn) {
 
   if (page === 'dashboard')    loadDashboard();
   if (page === 'reservations') { showScreen('res-summary'); loadResSummary(); }
-  if (page === 'settings')     { loadChannels(); loadRooms(); loadGoogleStatus(); }
+  if (page === 'settings')     { loadChannels(); loadRooms(); loadGoogleStatus(); loadBankSettings(); }
   if (page === 'admin')        loadUserList();
   if (page === 'calendar')     loadAvailability();
 }
@@ -3297,6 +3336,7 @@ async function disconnectGoogle() {
 /* ── Documents card on the booking detail page ───────────── */
 function docIcon(f) {
   const m = (f.mime_type || '').toLowerCase(), ext = (f.name.split('.').pop() || '').toLowerCase();
+  if (f.category === 'Invoice') return { i: 'receipt_long', c: 'inv' };
   if (m === 'application/pdf' || ext === 'pdf') return { i: 'picture_as_pdf', c: 'pdf' };
   if (m.startsWith('image/') || ['jpg', 'jpeg', 'png', 'heic', 'heif'].includes(ext)) return { i: 'image', c: 'img' };
   return { i: 'description', c: 'other' };
@@ -3554,6 +3594,7 @@ function renderReservationDetail() {
       ${info('group', 'Occupancy', (r.guests || 1) + ' Guest' + ((r.guests || 1) > 1 ? 's' : ''))}
       ${info('emergency', 'Emergency Contact', [r.emergency_contact_name, r.emergency_contact_phone].filter(Boolean).join(' · '),
              r.emergency_contact_phone ? 'tel:' + String(r.emergency_contact_phone).replace(/[^\d+]/g, '') : '')}
+      <button class="rd-inv-btn" onclick="generateInvoice()" ${cancelled ? 'disabled title="No invoice for cancelled bookings"' : ''}><span class="mso">receipt_long</span>Download Invoice</button>
     </div>`;
 
   // ── Stay status actions
@@ -3688,6 +3729,240 @@ function renderReservationDetail() {
     </div>`;
 }
 
+/* ══════════════════════════════════════════════════════════
+   BANK DETAILS (Settings) — printed on invoices
+══════════════════════════════════════════════════════════ */
+const BANK_FIELDS = { bank_name: 'bank-name', account_name: 'bank-acc-name', account_number: 'bank-acc-no', swift: 'bank-swift' };
+async function getBankSettings() {
+  const { data } = await db.from('app_settings').select('value').eq('key', 'bank').maybeSingle();
+  return Object.assign({ bank_name: 'Bank Mandiri', account_name: '', account_number: '', swift: '' }, data?.value || {});
+}
+async function loadBankSettings() {
+  const isAdmin = currentUser?.email === MASTER_EMAIL;
+  const b = await getBankSettings();
+  for (const [k, id] of Object.entries(BANK_FIELDS)) {
+    const el = document.getElementById(id); if (!el) continue;
+    el.value = b[k] || ''; el.disabled = !isAdmin;
+  }
+  document.getElementById('bank-save-btn').style.display = isAdmin ? '' : 'none';
+  document.getElementById('bank-note').textContent = isAdmin ? '' : 'Only the administrator can change these.';
+}
+async function saveBankSettings() {
+  const v = {};
+  for (const [k, id] of Object.entries(BANK_FIELDS)) v[k] = document.getElementById(id).value.trim();
+  v.swift = v.swift.toUpperCase();
+  const { error } = await db.from('app_settings').upsert({ key: 'bank', value: v, updated_at: new Date().toISOString(), updated_by: currentUser?.email || null });
+  showToast(error ? 'Error: ' + error.message : 'Bank details saved ✓');
+}
+
+/* ══════════════════════════════════════════════════════════
+   INVOICE — build, save to Google Drive, preview, download
+══════════════════════════════════════════════════════════ */
+const INV_ADDRESS = ['Gang Palapa Jl. Nusa Dua', 'Ungasan, Badung, Bali 80361'];
+let _inv = null;   // { blob, name, reservationId }
+
+function loadScriptOnce(src, test) {
+  if (test()) return Promise.resolve();
+  return new Promise((res, rej) => {
+    const s = document.createElement('script'); s.src = src;
+    s.onload = () => res(); s.onerror = () => rej(new Error('Could not load ' + src.split('/npm/')[1]));
+    document.head.appendChild(s);
+  });
+}
+const invDate = iso => new Date(iso + 'T00:00:00').toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+const invNum = n => Math.round(Number(n || 0)).toLocaleString('id-ID');
+const invFileName = r => `INV-${r.confirmation_number} - ${String(r.guest_name || 'Guest').replace(/[\\/:*?"<>|]+/g, ' ').trim()}.pdf`;
+
+function invoiceHTML(r, room, roomIdx, bank) {
+  const e = escHtml;
+  const col = ROOM_COLORS[roomIdx % ROOM_COLORS.length];
+  const nights = Number(r.room_night) || nightsBetween(r.arrival_date, r.departure_date);
+  const guests = Number(r.guests) || 1;
+  const total = Number(r.room_revenue || 0);
+  const paid = Math.min(total, Number(r.amount_paid || 0));
+  const due = Math.max(0, total - paid);
+  const st = r.payment_status === 'Paid' || (total > 0 && due === 0) ? { t: 'Fully Paid', bg: '#DCFCE7', fg: '#166534', bd: '#86EFAC', dot: '#16A34A' }
+           : r.payment_status === 'Deposit' && paid > 0 ? { t: 'Deposit Paid', bg: '#FEF3C7', fg: '#92400E', bd: '#FCD34D', dot: '#D97706' }
+           : { t: 'Unpaid', bg: '#FEE2E2', fg: '#991B1B', bd: '#FCA5A5', dot: '#DC2626' };
+  const issue = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Makassar' });
+  const perNight = r.rate_type !== 'total';
+  const desc = room?.description || '';
+  const L = 'font-size:10px;letter-spacing:.08em;text-transform:uppercase;font-weight:700;color:#4B5563;';
+  const bankRow = (k, v) => `<div style="color:#4B5563;margin-top:3px">${k}: <b style="color:#111827;font-weight:600">${e(v || '')}</b></div>`;
+  return `
+  <div style="width:794px;min-height:1123px;box-sizing:border-box;background:#fff;color:#111827;font-family:Inter,'Segoe UI',Helvetica,Arial,sans-serif;padding:56px 56px 44px;position:relative;display:flex;flex-direction:column;">
+    <div style="position:absolute;top:0;left:0;right:0;height:8px;background:#0F382A"></div>
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:28px;border-bottom:1px solid #E5E7EB;">
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <img src="email-logo.png" style="width:64px;height:64px;flex-shrink:0" alt="">
+        <div>
+          <div style="font-size:19px;font-weight:700;color:#0F382A;letter-spacing:-.01em">Evansen Co Living</div>
+          <div style="${L}font-weight:600;letter-spacing:.1em;margin-top:2px">Your safest haven after a long day</div>
+          <div style="font-size:12px;line-height:18px;color:#4B5563;margin-top:8px">${INV_ADDRESS.map(e).join('<br>')}<br>${e(MASTER_EMAIL)}</div>
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div style="font-size:36px;line-height:40px;font-weight:700;color:#0F382A;letter-spacing:-.02em">INVOICE</div>
+        <div style="font-family:Menlo,Consolas,monospace;font-size:12px;color:#4B5563;margin-top:4px;letter-spacing:.04em">#INV-${e(r.confirmation_number)}</div>
+        <div style="display:inline-block;margin-top:12px;padding:5px 12px;border-radius:12px;background:${st.bg};color:${st.fg};border:1px solid ${st.bd};font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase">
+          <span style="display:inline-block;width:8px;height:8px;border-radius:4px;background:${st.dot};margin-right:6px;vertical-align:1px"></span>${st.t}</div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:space-between;gap:32px;padding:24px 0;border-bottom:1px solid #E5E7EB;">
+      <div>
+        <div style="${L}margin-bottom:8px">Billed to (guest):</div>
+        <div style="font-size:16px;font-weight:700">${e(r.guest_name || 'Guest')}</div>
+        <div style="font-size:12px;line-height:19px;color:#4B5563;margin-top:4px">Booking Channel: ${e(r.channel || '—')}${r.guest_email ? `<br>Email: ${e(r.guest_email)}` : ''}${r.guest_phone ? `<br>Phone: ${e(r.guest_phone)}` : ''}</div>
+      </div>
+      <div style="text-align:right;font-size:12px;line-height:21px;color:#4B5563">
+        <div style="${L}margin-bottom:8px">Invoice details:</div>
+        Issue Date: <b style="color:#111827">${issue}</b><br>
+        Confirmation No: <b style="color:#0F382A;font-family:Menlo,Consolas,monospace">${e(r.confirmation_number)}</b><br>
+        Payment Method: <b style="color:#111827">Bank Transfer</b>
+      </div>
+    </div>
+
+    <div style="margin-top:24px;background:#F8F8F4;border:1px solid #E5E7EB;border-radius:16px;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:20px;">
+      <div style="display:flex;align-items:center;gap:14px;">
+        <span style="width:16px;height:16px;border-radius:8px;background:${col.c};flex-shrink:0"></span>
+        <div>
+          <div style="font-size:15px;font-weight:700">Room – ${e(r.room_name || '—')}</div>
+          <div style="font-size:12px;color:#4B5563;margin-top:2px">${desc ? e(desc) + ' · ' : ''}${guests} Guest${guests === 1 ? '' : 's'}</div>
+        </div>
+      </div>
+      <div style="display:flex;background:#fff;border:1px solid #E5E7EB;border-radius:12px;padding:8px 4px;">
+        <div style="padding:2px 14px;border-right:1px solid #E5E7EB"><div style="${L}font-size:9px">Check-in</div><div style="font-size:13px;font-weight:600;white-space:nowrap;margin-top:2px">${invDate(r.arrival_date)}</div></div>
+        <div style="padding:2px 14px;border-right:1px solid #E5E7EB"><div style="${L}font-size:9px">Check-out</div><div style="font-size:13px;font-weight:600;white-space:nowrap;margin-top:2px">${invDate(r.departure_date)}</div></div>
+        <div style="padding:2px 14px"><div style="${L}font-size:9px">Stay</div><div style="font-size:13px;font-weight:700;color:#0F382A;white-space:nowrap;margin-top:2px">${nights} Night${nights === 1 ? '' : 's'}</div></div>
+      </div>
+    </div>
+
+    <table style="width:100%;border-collapse:collapse;margin-top:28px;font-size:13px;">
+      <thead><tr style="border-bottom:2px solid #0F382A">
+        <th style="${L}color:#111827;text-align:left;padding:10px 0">Description</th>
+        <th style="${L}color:#111827;text-align:center;padding:10px 0">Qty / Nights</th>
+        <th style="${L}color:#111827;text-align:right;padding:10px 0">Unit Rate</th>
+        <th style="${L}color:#111827;text-align:right;padding:10px 0">Amount (IDR)</th>
+      </tr></thead>
+      <tbody><tr style="border-bottom:1px solid #E5E7EB">
+        <td style="padding:16px 16px 16px 0"><div style="font-weight:600">Room Rate (${e(r.room_name || '—')})</div>
+          <div style="font-size:11px;color:#4B5563;margin-top:3px">${invDate(r.arrival_date)} – ${invDate(r.departure_date)}${desc ? ' · ' + e(desc) : ''}${perNight ? '' : ' · Total stay price'}</div></td>
+        <td style="text-align:center;font-weight:500">${nights}</td>
+        <td style="text-align:right;font-weight:500">${perNight ? invNum(r.rate) : 'Total stay'}</td>
+        <td style="text-align:right;font-weight:700">${invNum(total)}</td>
+      </tr></tbody>
+    </table>
+
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:24px;padding-top:16px;border-top:1px solid #E5E7EB;">
+      <div style="width:300px">
+        <div style="${L}margin-bottom:8px">Transaction information:</div>
+        <div style="background:#F8F8F4;border:1px solid #E5E7EB;border-radius:12px;padding:12px 14px;font-size:12px;line-height:17px">
+          <div style="font-weight:600;color:#0F382A">Bank Payment Information</div>
+          ${bankRow('Payment Channel', bank.bank_name)}${bankRow('Account Name', bank.account_name)}${bankRow('Account Number', bank.account_number)}${bankRow('SWIFT Code', bank.swift)}
+        </div>
+      </div>
+      <div style="width:300px;font-size:13px;color:#4B5563">
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Room Charges (${nights} night${nights === 1 ? '' : 's'}):</span><b style="color:#111827">IDR ${invNum(total)}</b></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Paid:</span><b style="color:#0F382A">${paid ? '-' : ''}IDR ${invNum(paid)}</b></div>
+        <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid #0F382A;margin-top:8px;padding-top:10px">
+          <span style="font-size:15px;font-weight:700;color:#0F382A">Total Amount Due:</span><span style="font-size:19px;font-weight:700;color:#0F382A">IDR ${invNum(due)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px"><span>Payment Status:</span><b style="color:${st.fg}">${st.t}</b></div>
+      </div>
+    </div>
+
+    <div style="flex:1"></div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:16px;padding-top:24px;margin-top:40px;border-top:1px solid #E5E7EB;font-size:12px;color:#4B5563">
+      <div><div style="font-weight:600;color:#111827">Thank you for choosing Evansen Co Living.</div><div style="margin-top:2px">Official invoice generated by Evansen Co Living.</div></div>
+      <div style="text-align:right;${L}font-weight:600">Questions? Contact our team<div style="text-transform:none;letter-spacing:0;font-size:12px;color:#0F382A;margin-top:2px">${e(MASTER_EMAIL)}</div></div>
+    </div>
+  </div>`;
+}
+
+function setInvStatus(cls, icon, text) {
+  const el = document.getElementById('inv-status');
+  el.className = 'inv-status ' + (cls || '');
+  el.innerHTML = (icon ? `<span class="mso">${icon}</span>` : '') + `<span>${text}</span>`;
+}
+
+async function generateInvoice() {
+  if (!_rd || _rd.status === 'Cancelled') return;
+  const r = _rd, name = invFileName(r);
+  _inv = null;
+  document.getElementById('inv-title').textContent = 'Invoice INV-' + r.confirmation_number;
+  document.getElementById('inv-preview').innerHTML = '<div class="rd-muted">Creating invoice…</div>';
+  document.getElementById('inv-dl-btn').disabled = true;
+  setInvStatus('', 'hourglass_top', 'Creating invoice…');
+  document.getElementById('inv-modal').classList.add('show');
+  let host;
+  try {
+    await Promise.all([
+      loadScriptOnce('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js', () => typeof html2canvas !== 'undefined'),
+      loadScriptOnce('https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js', () => !!window.jspdf),
+    ]);
+    const [bank, roomsRes] = await Promise.all([getBankSettings(), db.from('rooms').select('name, description').order('created_at')]);
+    const rooms = roomsRes.data || [];
+    const idx = Math.max(0, rooms.findIndex(x => x.name === r.room_name));
+
+    host = document.createElement('div');
+    host.className = 'inv-render';
+    host.innerHTML = invoiceHTML(r, rooms[idx], idx, bank);
+    document.body.appendChild(host);
+    const sheet = host.firstElementChild;
+    await Promise.all([document.fonts?.ready, ...[...sheet.querySelectorAll('img')].map(img => img.complete ? null : new Promise(ok => { img.onload = img.onerror = ok; }))]);
+    const canvas = await html2canvas(sheet, { scale: 2, backgroundColor: '#ffffff', useCORS: true, width: 794, windowWidth: 794, scrollX: 0, scrollY: 0, logging: false });
+
+    // A4 PDF (splits onto extra pages only if the invoice is ever taller than one page)
+    const pdf = new window.jspdf.jsPDF({ unit: 'mm', format: 'a4', compress: true });
+    const pageW = 210, pageH = 297, imgH = canvas.height * pageW / canvas.width;
+    const img = canvas.toDataURL('image/jpeg', 0.92);
+    for (let y = 0; y < imgH - 0.5; y += pageH) {
+      if (y > 0) pdf.addPage();
+      pdf.addImage(img, 'JPEG', 0, -y, pageW, imgH);
+    }
+    pdf.setProperties({ title: name.replace(/\.pdf$/, ''), author: 'Evansen Co Living' });
+    const blob = pdf.output('blob');
+    _inv = { blob, name, reservationId: r.id };
+
+    document.getElementById('inv-preview').innerHTML = `<img src="${img}" alt="Invoice preview">`;
+    document.getElementById('inv-dl-btn').disabled = false;
+
+    // Save to the booking's Google Drive folder
+    const st = _gStatus || await googleFn('status').catch(() => null);
+    _gStatus = st;
+    if (!(st && st.configured && st.connected)) {
+      setInvStatus('warn', 'cloud_off', 'Invoice ready. Not saved to Google Drive because Google is not connected.');
+      return;
+    }
+    setInvStatus('', 'cloud_upload', 'Invoice ready · saving to Google Drive…');
+    const fd = new FormData();
+    fd.append('reservation_id', r.id); fd.append('category', 'Invoice');
+    fd.append('file', new File([blob], name, { type: 'application/pdf' }));
+    await googleFn('upload', fd);
+    setInvStatus('ok', 'cloud_done', `Saved to Google Drive as “${escHtml(name)}”`);
+    if (_rd && _rd.id === r.id) loadDocs(r.id);
+  } catch (e) {
+    if (_inv) setInvStatus('err', 'error', 'Invoice ready, but saving to Google Drive failed: ' + escHtml(e.message));
+    else { setInvStatus('err', 'error', 'Could not create the invoice: ' + escHtml(e.message)); document.getElementById('inv-preview').innerHTML = ''; }
+  } finally {
+    host?.remove();
+  }
+}
+
+function downloadInvoice() {
+  if (!_inv) return;
+  const url = URL.createObjectURL(_inv.blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = _inv.name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+function closeInvoice() {
+  document.getElementById('inv-modal').classList.remove('show');
+  if (_rd) loadReservationDetail(_rd.id);
+}
+
 /* ── Guest emails: preview, then send from the connected Gmail ── */
 let _mailKind = null;
 async function previewGuestEmail(kind) {
@@ -3751,7 +4026,7 @@ function histVal(field, v) {
 function renderHistory() {
   const items = _rdHistory.map(h => {
     const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz'
-               : h.action === 'File uploaded' ? 'upload_file' : h.action === 'File deleted' ? 'delete' : h.action === 'Room renamed' ? 'bed'
+               : h.action === 'File uploaded' ? 'upload_file' : h.action === 'File deleted' ? 'delete' : h.action === 'Room renamed' ? 'bed' : h.action === 'Invoice generated' ? 'receipt_long'
                : h.action === 'Confirmation email sent' ? 'mark_email_read' : h.action === 'Cancellation email sent' ? 'cancel_schedule_send' : 'edit';
     const ch = h.changes || {};
     const lines = HIST_ORDER.filter(k => k in ch).map(k =>

@@ -19,7 +19,7 @@ const SCOPES = ['openid', 'email',
   'https://www.googleapis.com/auth/gmail.send'];
 const MAX_BYTES = 10 * 1024 * 1024;
 const ALLOWED_EXT = ['pdf', 'jpg', 'jpeg', 'png', 'heic', 'heif', 'doc', 'docx', 'xls', 'xlsx'];
-const CATEGORIES = ['Passport', 'Payment slip', 'Other'];
+const CATEGORIES = ['Passport', 'Payment slip', 'Other', 'Invoice'];
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
@@ -424,7 +424,18 @@ Deno.serve(async (req) => {
           size_bytes: Number(g.size || file.size), category, uploaded_by: who,
         }).select().single();
         if (error) return fail(error.message, 500);
-        await logHistory(res.id, who, 'File uploaded', `${category} · ${row.name}`);
+        if (category === 'Invoice') {
+          // Keep only the newest invoice: older invoice files go to Drive trash
+          const { data: olds } = await db.from('reservation_files').select('id, drive_file_id')
+            .eq('reservation_id', res.id).eq('category', 'Invoice').neq('id', row.id);
+          for (const o of olds || []) {
+            await drive(at, `files/${o.drive_file_id}`, { method: 'PATCH', body: JSON.stringify({ trashed: true }) }).catch(() => null);
+            await db.from('reservation_files').delete().eq('id', o.id);
+          }
+          await logHistory(res.id, who, 'Invoice generated', row.name);
+        } else {
+          await logHistory(res.id, who, 'File uploaded', `${category} · ${row.name}`);
+        }
         return json({ file: row });
       }
 
