@@ -3217,10 +3217,10 @@ function renderReservationDetail() {
           <span><span class="mso">hub</span> ${escHtml(r.channel || '—')}</span>
         </div>
       </div>
-      <div class="rd-actions">
+      ${_rdMode === 'edit' ? '' : `<div class="rd-actions">
         <button class="btn-ghost" onclick="rdGoBack()"><span class="mso" style="font-size:16px">arrow_back</span>Back</button>
-        ${_rdMode === 'edit' ? '' : `<button class="btn-soft" onclick="rdStartEdit()" ${cancelled ? 'disabled title="Cancelled reservations cannot be edited"' : ''}><span class="mso">edit</span>Edit Booking</button>`}
-      </div>
+        <button class="btn-soft" onclick="rdStartEdit()" ${cancelled ? 'disabled title="Cancelled reservations cannot be edited"' : ''}><span class="mso">edit</span>Edit Booking</button>
+      </div>`}
     </div>`;
 
   if (_rdMode === 'edit') {
