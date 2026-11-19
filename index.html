@@ -2937,7 +2937,7 @@ function _doExport() {
     'Total Nights',
     'Total Revenue (IDR)',
     'Payment Status',
-    'Amount Paid (IDR)',
+    'Room Payment (IDR)',
     'Balance Due (IDR)',
     'Guests',
     'Email',
@@ -3928,7 +3928,7 @@ function invoiceHTML(r, room, roomIdx, bank) {
       </div>
       <div style="width:300px;font-size:13px;color:#4B5563">
         <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Room Charges (${nights} night${nights === 1 ? '' : 's'}):</span><b style="color:#111827">IDR ${invNum(total)}</b></div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Paid:</span><b style="color:#0F382A">${paid ? '-' : ''}IDR ${invNum(paid)}</b></div>
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Room Payment:</span><b style="color:#0F382A">${paid ? '-' : ''}IDR ${invNum(paid)}</b></div>
         <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid #0F382A;margin-top:8px;padding-top:10px">
           <span style="font-size:15px;font-weight:700;color:#0F382A">Total Amount Due:</span><span style="font-size:19px;font-weight:700;color:#0F382A">IDR ${invNum(due)}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px"><span>Payment Status:</span><b style="color:${st.fg}">${st.t}</b></div>
