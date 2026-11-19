@@ -10,6 +10,7 @@
 // checks the signed-in user itself.
 
 import { createClient } from 'npm:@supabase/supabase-js@2';
+import * as XLSX from 'npm:xlsx@0.18.5';
 
 const MASTER_EMAIL = 'evansen.coliving@gmail.com';
 const APP_URL = 'https://evanmanuel.github.io/pms-rate-manager/';
@@ -120,6 +121,110 @@ async function bookingFolder(at: string, res: { id: string; confirmation_number:
   await db.from('reservation_drive_folders').upsert({ reservation_id: res.id, folder_id: id });
   return id;
 }
+/* ── Backups to Google Drive ("PMS Backup" folder, admin only) ── */
+const BACKUP_FOLDER_NAME = 'PMS Backup';
+const BACKUP_TABLES = ['reservations', 'reservation_history', 'rooms', 'channels', 'reservation_files', 'reservation_drive_folders', 'app_settings'];
+const REPO = 'evanmanuel/pms-rate-manager';
+const folderLink = (id: string) => `https://drive.google.com/drive/folders/${id}`;
+
+// "2026 Nov 20 06.37" in Bali time (no colons: they break folder names on Windows)
+function baliStamp(d = new Date()) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Makassar', year: 'numeric', month: 'short', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(d).map(x => [x.type, x.value]));
+  return `${p.year} ${p.month} ${p.day} ${p.hour}.${p.minute}`;
+}
+async function driveUpload(at: string, name: string, parent: string, mime: string, data: Uint8Array | string) {
+  const boundary = 'ecl' + crypto.randomUUID();
+  const payload = new Blob([
+    `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify({ name, parents: [parent] })}\r\n--${boundary}\r\nContent-Type: ${mime}\r\n\r\n`,
+    typeof data === 'string' ? enc.encode(data) : data,
+    `\r\n--${boundary}--`,
+  ]);
+  const up = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,size', {
+    method: 'POST', headers: { Authorization: `Bearer ${at}`, 'Content-Type': `multipart/related; boundary=${boundary}` }, body: payload,
+  });
+  const g = await up.json().catch(() => ({}));
+  if (!up.ok) throw new Error(`Google Drive upload failed for ${name}: ` + (g?.error?.message || up.status));
+  return g;
+}
+async function backupInfo() {
+  const { data } = await db.from('app_settings').select('value').eq('key', 'backup').maybeSingle();
+  return (data?.value || {}) as Record<string, any>;
+}
+async function saveBackupInfo(v: Record<string, unknown>) {
+  await db.from('app_settings').upsert({ key: 'backup', value: v, updated_at: new Date().toISOString() });
+}
+async function backupRoot(at: string) {
+  const info = await backupInfo();
+  if (await folderAlive(at, info.folder_id)) return info.folder_id as string;
+  const id = await createFolder(at, BACKUP_FOLDER_NAME);
+  await saveBackupInfo({ ...info, folder_id: id });
+  return id;
+}
+async function allRows(table: string) {
+  const rows: Record<string, unknown>[] = [];
+  for (let from = 0; ; from += 1000) {
+    const { data, error } = await db.from(table).select('*').range(from, from + 999);
+    if (error) throw new Error(`Could not read ${table}: ${error.message}`);
+    rows.push(...(data || []));
+    if (!data || data.length < 1000) break;
+  }
+  return rows;
+}
+
+async function backupDatabase(at: string, who: string) {
+  const stamp = baliStamp();
+  const folderName = `Backup Database ${stamp}`;
+  const folderId = await createFolder(at, folderName, await backupRoot(at));
+  const counts: Record<string, number> = {};
+  const wb = XLSX.utils.book_new();
+  const readme = [['Evansen Co Living PMS — database backup'], ['Created', `${stamp} (Bali time)`], ['Created by', who], [''], ['Table', 'Rows']];
+  for (const t of BACKUP_TABLES) {
+    const rows = await allRows(t);
+    counts[t] = rows.length;
+    readme.push([t, rows.length]);
+    await driveUpload(at, `${t}.json`, folderId, 'application/json', JSON.stringify(rows, null, 2));
+    const flat = rows.map(r => Object.fromEntries(Object.entries(r).map(([k, v]) => [k, v !== null && typeof v === 'object' ? JSON.stringify(v) : v])));
+    XLSX.utils.book_append_sheet(wb, flat.length ? XLSX.utils.json_to_sheet(flat) : XLSX.utils.aoa_to_sheet([['(no rows)']]), t.slice(0, 31));
+  }
+  readme.push([''], ['Not included on purpose', 'Google sign-in tokens and secret keys; the Drive documents themselves (already in Google Drive).']);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(readme), 'README');
+  wb.SheetNames.unshift(wb.SheetNames.pop()!);   // README first
+  const xlsx = new Uint8Array(XLSX.write(wb, { type: 'array', bookType: 'xlsx' }));
+  await driveUpload(at, `PMS Database ${stamp}.xlsx`, folderId, 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', xlsx);
+  const entry = { at: new Date().toISOString(), by: who, folder_id: folderId, folder_name: folderName, counts };
+  await saveBackupInfo({ ...(await backupInfo()), database: entry });
+  return { ...entry, url: folderLink(folderId) };
+}
+
+async function backupWebsite(at: string, who: string) {
+  const c = await fetch(`https://api.github.com/repos/${REPO}/commits/main`, { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'ecl-pms-backup' } });
+  const commit = await c.json().catch(() => ({}));
+  if (!c.ok) throw new Error('Could not read the website version from GitHub: ' + (commit?.message || c.status));
+  const sha = String(commit.sha || '');
+  const z = await fetch(`https://codeload.github.com/${REPO}/zip/${sha}`, { headers: { 'User-Agent': 'ecl-pms-backup' } });
+  if (!z.ok) throw new Error('Could not download the website code from GitHub (' + z.status + ')');
+  const zip = new Uint8Array(await z.arrayBuffer());
+  const stamp = baliStamp();
+  const folderName = `Backup Website ${stamp}`;
+  const folderId = await createFolder(at, folderName, await backupRoot(at));
+  await driveUpload(at, `pms-rate-manager ${sha.slice(0, 7)}.zip`, folderId, 'application/zip', zip);
+  const info = [
+    'Evansen Co Living PMS — website backup',
+    `Created: ${stamp} (Bali time) by ${who}`,
+    '', `Repository: https://github.com/${REPO}`,
+    `Version (commit): ${sha}`,
+    `Version date: ${commit.commit?.committer?.date || ''}`,
+    `Last change: ${(commit.commit?.message || '').split('\n')[0]}`,
+    '', 'The ZIP holds the whole website, including the Supabase functions and database scripts (supabase/ folder).',
+    'To roll back, restore these files to the GitHub repository or ask for this version by its commit number.',
+  ].join('\n');
+  await driveUpload(at, 'backup-info.txt', folderId, 'text/plain', info);
+  const entry = { at: new Date().toISOString(), by: who, folder_id: folderId, folder_name: folderName, commit: sha, size_bytes: zip.length };
+  await saveBackupInfo({ ...(await backupInfo()), website: entry });
+  return { ...entry, url: folderLink(folderId) };
+}
+
 async function logHistory(reservationId: string, who: string, action: string, file: string, removed = false) {
   await db.from('reservation_history').insert({
     reservation_id: reservationId, changed_by: who, action,
@@ -479,6 +584,14 @@ Deno.serve(async (req) => {
           changes: { sent_to: { old: null, new: mail.to } },
         });
         return json({ ok: true, id, to: mail.to });
+      }
+
+      case 'backup-db':
+      case 'backup-web': {
+        if (!isAdmin) return fail('Only the administrator can run backups.', 403);
+        const at = await accessToken();
+        const result = action === 'backup-db' ? await backupDatabase(at, who) : await backupWebsite(at, who);
+        return json({ ok: true, ...result });
       }
 
       default:

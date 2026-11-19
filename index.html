@@ -521,7 +521,7 @@
       box-shadow: 0 20px 60px rgba(13,28,47,0.15);
     }
     .modal h3 { font-family:'Manrope',sans-serif; font-size:18px; font-weight:800; color:var(--on-surface); margin-bottom:8px; }
-    .modal p { font-size:13px; color:var(--secondary); line-height:1.6; }
+    .modal p { font-size:13px; color:var(--secondary); line-height:1.6; white-space:pre-line; }
     .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:28px; }
 
     /* guest email card + preview */
@@ -550,6 +550,16 @@
     .bank-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px 16px; }
     .bank-grid label { display:block; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--secondary); margin-bottom:6px; }
     .bank-grid input { width:100%; border:1px solid var(--surface-container-high); border-radius:10px; padding:10px 12px; font:inherit; font-size:14px; background:var(--surface-container-lowest); }
+    .bk-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .bk-item { background:var(--surface-container-low); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; }
+    .bk-head { display:flex; gap:12px; align-items:flex-start; }
+    .bk-head .mso { font-size:22px; color:var(--primary); }
+    .bk-head b { display:block; font-size:14px; }
+    .bk-head small { display:block; font-size:12px; color:var(--secondary); line-height:1.5; margin-top:2px; }
+    .bk-item .btn-primary { justify-content:center; width:100%; }
+    .bk-last { font-size:12px; color:var(--secondary); line-height:1.5; }
+    .bk-last a { color:var(--primary); font-weight:600; }
+    @media (max-width:768px) { .bk-grid { grid-template-columns:1fr; } }
     .bank-actions { display:flex; justify-content:flex-end; margin-top:14px; }
     .inv-modal .modal-actions button, .mail-modal .modal-actions button { white-space:nowrap; justify-content:center; }
     @media (max-width:768px) {
@@ -1833,6 +1843,22 @@
           <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Used to store booking documents and invoices in Google Drive (folder "ECL Booker Folder") and to send guest confirmation and cancellation emails. Only the administrator can connect or disconnect it.</p>
           <div id="google-status"><div class="empty-state" style="padding:12px">Checking…</div></div>
         </div>
+        <div class="section" id="backup-section" style="display:none">
+          <div class="section-label">Backup</div>
+          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Saves a copy to Google Drive in the folder "PMS Backup". Run it when nobody else is using the PMS. Only the administrator can run backups.</p>
+          <div class="bk-grid">
+            <div class="bk-item">
+              <div class="bk-head"><span class="mso">database</span><div><b>Database</b><small>All bookings, history, rooms, channels, documents list and settings, as Excel + JSON</small></div></div>
+              <button class="btn-primary" id="bk-db-btn" onclick="runBackup('db')"><span class="mso">backup</span>Backup Database</button>
+              <div class="bk-last" id="bk-db-last">Loading…</div>
+            </div>
+            <div class="bk-item">
+              <div class="bk-head"><span class="mso">code</span><div><b>Website</b><small>The current app version from GitHub, as a ZIP</small></div></div>
+              <button class="btn-primary" id="bk-web-btn" onclick="runBackup('web')"><span class="mso">backup</span>Backup Website</button>
+              <div class="bk-last" id="bk-web-last">Loading…</div>
+            </div>
+          </div>
+        </div>
         <div class="section" id="bank-section">
           <div class="section-label">Invoice · Bank Details</div>
           <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Printed in the "Bank Payment Information" box on every invoice. Leave a field empty to keep it blank on the invoice. <span id="bank-note"></span></p>
@@ -2081,7 +2107,7 @@ function showPage(page, btn) {
 
   if (page === 'dashboard')    loadDashboard();
   if (page === 'reservations') { showScreen('res-summary'); loadResSummary(); }
-  if (page === 'settings')     { loadChannels(); loadRooms(); loadGoogleStatus(); loadBankSettings(); }
+  if (page === 'settings')     { loadChannels(); loadRooms(); loadGoogleStatus(); loadBankSettings(); loadBackupInfo(); }
   if (page === 'admin')        loadUserList();
   if (page === 'calendar')     loadAvailability();
 }
@@ -3847,6 +3873,39 @@ async function saveBankSettings() {
   v.swift = v.swift.toUpperCase();
   const { error } = await db.from('app_settings').upsert({ key: 'bank', value: v, updated_at: new Date().toISOString(), updated_by: currentUser?.email || null });
   showToast(error ? 'Error: ' + error.message : 'Bank details saved ✓');
+}
+
+/* ══════════════════════════════════════════════════════════
+   BACKUP (Settings) — saved to Google Drive "PMS Backup", admin only
+══════════════════════════════════════════════════════════ */
+async function loadBackupInfo() {
+  const sec = document.getElementById('backup-section');
+  if (currentUser?.email !== MASTER_EMAIL) { sec.style.display = 'none'; return; }
+  sec.style.display = '';
+  const { data } = await db.from('app_settings').select('value').eq('key', 'backup').maybeSingle();
+  const v = data?.value || {};
+  const line = e => e ? `Last backup: <b>${escHtml(fmtDateTime(e.at))}</b> by ${escHtml(e.by || '')}<br><a href="https://drive.google.com/drive/folders/${encodeURIComponent(e.folder_id)}" target="_blank" rel="noopener">Open “${escHtml(e.folder_name)}” in Drive ↗</a>` : 'No backup yet.';
+  document.getElementById('bk-db-last').innerHTML = line(v.database);
+  document.getElementById('bk-web-last').innerHTML = line(v.website);
+}
+async function runBackup(kind) {
+  const isDb = kind === 'db';
+  const ok = await showModal(isDb ? 'Backup Database' : 'Backup Website',
+    `${isDb ? 'Save a copy of the whole database' : 'Save a copy of the current website version'} to Google Drive (folder "PMS Backup")?\n\nBefore you start, make sure nobody else is using the PMS, so the backup captures everything.`,
+    'Start Backup', 'btn-primary');
+  if (!ok) return;
+  const btn = document.getElementById(isDb ? 'bk-db-btn' : 'bk-web-btn');
+  const label = btn.innerHTML;
+  btn.disabled = true; btn.innerHTML = '<span class="mso">hourglass_top</span>Backing up…';
+  try {
+    const r = await googleFn(isDb ? 'backup-db' : 'backup-web');
+    showToast(`Backup saved: ${r.folder_name} ✓`);
+  } catch (e) {
+    showToast('Backup failed: ' + e.message);
+  } finally {
+    btn.disabled = false; btn.innerHTML = label;
+    loadBackupInfo();
+  }
 }
 
 /* ══════════════════════════════════════════════════════════
