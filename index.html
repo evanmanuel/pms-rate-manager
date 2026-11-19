@@ -1639,9 +1639,9 @@
                 <div class="form-group"><label>Emergency Contact Name (Optional)</label><input type="text" id="emergency-name" placeholder="e.g. Sarah Whitmore (sister)" /></div>
                 <div class="form-group"><label>Emergency Contact Phone (Optional)</label><input type="tel" id="emergency-phone" placeholder="+61 412 345 678" /></div>
                 <div class="form-group"><label>Number of Guests</label><input type="number" id="guest-count" min="1" value="1" /></div>
-                <div class="form-group"><label>Payment Status</label><select id="payment-status" onchange="onPayStatusChange('new')"><option>Unpaid</option><option>Deposit</option><option>Paid</option></select>
+                <div class="form-group"><label>Payment Status</label><select id="payment-status" onchange="onPayStatusChange('new')"><option value="Unpaid">Unpaid</option><option value="Deposit">Partially Paid</option><option value="Paid">Paid</option></select>
                   <small class="pay-hint" id="pay-hint-new"></small></div>
-                <div class="form-group" id="deposit-group-new" style="display:none"><label>Deposit Amount (IDR)</label>
+                <div class="form-group" id="deposit-group-new" style="display:none"><label>Amount Paid (IDR)</label>
                   <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="deposit-amount" min="0" placeholder="0" oninput="updatePayHint('new')" /></div></div>
                 <div class="form-group"><label>Refundable Security Deposit (Optional)</label>
                   <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="number" id="security-deposit" min="0" placeholder="0" /></div>
@@ -2641,7 +2641,7 @@ function updatePayHint(which) {
   else if (c.status === 'Deposit') {
     const dep = parseFloat(c.dep.value) || 0;
     if (!total) c.hint.textContent = 'Enter dates and rate to see the balance';
-    else if (dep >= total) { c.hint.textContent = 'Deposit covers the full total — choose "Paid" instead'; c.hint.classList.add('warn'); }
+    else if (dep >= total) { c.hint.textContent = 'Amount paid covers the full total — choose "Paid" instead'; c.hint.classList.add('warn'); }
     else c.hint.textContent = `Total ${idr(total)} · Balance due ${idr(total - dep)}`;
   } else c.hint.textContent = total ? `Balance due ${idr(total)}` : '';
 }
@@ -2676,8 +2676,8 @@ async function saveReservation() {
   const roomRevenue = rateType === 'total' ? rate : roomNight * rate;
   const nightlyRate = rateType === 'total' ? Math.round((rate / roomNight) * 100) / 100 : rate;
   if (paymentStatus === 'Deposit') {
-    if (!(depositAmount > 0)) return showToast('Enter the deposit amount');
-    if (depositAmount >= roomRevenue) return showToast('Deposit covers the full total — choose "Paid" instead');
+    if (!(depositAmount > 0)) return showToast('Enter the amount paid');
+    if (depositAmount >= roomRevenue) return showToast('Amount paid covers the full total — choose "Paid" instead');
   }
   const amountPaid = paymentStatus === 'Paid' ? roomRevenue : paymentStatus === 'Deposit' ? depositAmount : 0;
   const arrivalMonth = arrival.toLocaleString('default', { month:'long', year:'numeric' });
@@ -2962,7 +2962,7 @@ function _doExport() {
       Math.round(nightlyOf(r)),
       r.room_night          || 0,
       r.room_revenue        || 0,
-      payStatusOf(r),
+      payLabel(payStatusOf(r)),
       Number(r.amount_paid || 0),
       r.status === 'Cancelled' ? 0 : Math.max(0, Number(r.room_revenue || 0) - Number(r.amount_paid || 0)),
       r.guests              || '',
@@ -3510,7 +3510,10 @@ function statusChip(status) {
   const s = status || 'New Reservation';
   return `<span class="st-chip ${RES_STATUSES[s] || 'st-new'}">${escHtml(s)}</span>`;
 }
-// "Deposit" only counts when something was actually paid; otherwise it is Unpaid
+// Stored value "Deposit" is shown as "Partially Paid" (kept internally so old bookings and history stay valid)
+const PAY_LABEL = { Unpaid: 'Unpaid', Deposit: 'Partially Paid', Paid: 'Paid' };
+const payLabel = v => PAY_LABEL[v] || v || 'Unpaid';
+// "Partially Paid" only counts when something was actually paid; otherwise it is Unpaid
 function payStatusOf(r) {
   const st = r.payment_status || 'Unpaid';
   return st === 'Deposit' && !(Number(r.amount_paid) > 0) ? 'Unpaid' : st;
@@ -3518,7 +3521,7 @@ function payStatusOf(r) {
 function paymentChip(p) {
   const v = p || 'Unpaid';
   const cls = v === 'Paid' ? 'pay-paid' : v === 'Deposit' ? 'pay-deposit' : 'pay-unpaid';
-  return `<span class="st-chip ${cls}">${escHtml(v)}</span>`;
+  return `<span class="st-chip ${cls}">${escHtml(payLabel(v))}</span>`;
 }
 function idr(n) { return 'IDR ' + Math.round(Number(n || 0)).toLocaleString('id-ID'); }
 // Revenue per night for reports: total ÷ nights (exact for "Total stay" bookings)
@@ -3839,7 +3842,7 @@ function invoiceHTML(r, room, roomIdx, bank) {
   const paid = Math.min(total, Number(r.amount_paid || 0));
   const due = Math.max(0, total - paid);
   const st = r.payment_status === 'Paid' || (total > 0 && due === 0) ? { t: 'Fully Paid', bg: '#DCFCE7', fg: '#166534', bd: '#86EFAC', dot: '#16A34A' }
-           : r.payment_status === 'Deposit' && paid > 0 ? { t: 'Deposit Paid', bg: '#FEF3C7', fg: '#92400E', bd: '#FCD34D', dot: '#D97706' }
+           : r.payment_status === 'Deposit' && paid > 0 ? { t: 'Partially Paid', bg: '#FEF3C7', fg: '#92400E', bd: '#FCD34D', dot: '#D97706' }
            : { t: 'Unpaid', bg: '#FEE2E2', fg: '#991B1B', bd: '#FCA5A5', dot: '#DC2626' };
   const issue = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Makassar' });
   const perNight = r.rate_type !== 'total';
@@ -4085,6 +4088,7 @@ function histVal(field, v) {
   if (field === 'arrival_date' || field === 'departure_date') return fmtDateLong(v);
   if (field === 'rate' || field === 'room_revenue' || field === 'amount_paid' || field === 'security_deposit') return idr(v);
   if (field === 'rate_type') return v === 'total' ? 'Total stay' : 'Per night';
+  if (field === 'payment_status') return escHtml(payLabel(v));
   let s = String(v);
   if (field === 'notes' && s.length > 90) s = s.slice(0, 90) + '…';
   return escHtml(s);
@@ -4210,8 +4214,8 @@ function renderEditForm(r) {
             </div></div>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-rate" type="number" min="0" value="${r.rate_type === 'total' ? Number(r.room_revenue || 0) : (r.rate ?? '')}" oninput="rdRecalc()"></div>
           <small class="pay-hint" id="rate-summary-ed"></small></div>
-        ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${opts(['Unpaid','Deposit','Paid'], payStatusOf(r))}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
-        <div class="form-group" id="deposit-group-ed" style="${payStatusOf(r) === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Deposit Amount (IDR)</label>
+        ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${['Unpaid','Deposit','Paid'].map(v => `<option value="${v}" ${v === payStatusOf(r) ? 'selected' : ''}>${payLabel(v)}</option>`).join('')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
+        <div class="form-group" id="deposit-group-ed" style="${payStatusOf(r) === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Amount Paid (IDR)</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="number" min="0" value="${payStatusOf(r) === 'Deposit' ? Number(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
         <div class="form-group"><label for="ed-security">Refundable Security Deposit</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-security" type="number" min="0" value="${r.security_deposit ?? ''}" placeholder="0"></div>
@@ -4279,8 +4283,8 @@ async function rdSaveEdit() {
   const payStatus = v('ed-payment') || 'Unpaid';
   const deposit = parseFloat(v('ed-deposit')) || 0;
   if (payStatus === 'Deposit') {
-    if (!(deposit > 0)) { btn.disabled = false; return showToast('Enter the deposit amount'); }
-    if (deposit >= total) { btn.disabled = false; return showToast('Deposit covers the full total — choose "Paid" instead'); }
+    if (!(deposit > 0)) { btn.disabled = false; return showToast('Enter the amount paid'); }
+    if (deposit >= total) { btn.disabled = false; return showToast('Amount paid covers the full total — choose "Paid" instead'); }
   }
   const payload = {
     guest_name: guest,
