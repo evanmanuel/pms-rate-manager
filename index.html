@@ -1822,12 +1822,12 @@
         <div class="page-wrap">
           <div class="page-header">
             <div class="page-header-text"><h2>Reservations</h2><p>Latest bookings across all rooms</p></div>
-            <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
-              <button class="btn-primary" onclick="startNewBooking('reservations')">
-                <span class="mso">add</span>New Booking
-              </button>
+            <div style="display:flex;gap:10px;align-items:center">
               <button class="btn-primary" style="background:var(--surface-container-high);color:var(--on-surface);box-shadow:none" onclick="showScreen('all-reservations')">
-                <span class="mso">table_rows</span>More Reservations
+                <span class="mso">table_rows</span>All Reservations
+              </button>
+              <button class="btn-primary" onclick="startNewBooking('reservations')">
+                <span class="mso">add</span>New Reservation
               </button>
             </div>
           </div>
@@ -2281,7 +2281,7 @@ function enterApp() {
 /* ══════════════════════════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════════════════════════ */
-const PAGE_TITLES = { dashboard:'Overview', todo:'To Do', report:'Report', reservations:'Reservations', calendar:'Availability', settings:'Settings', admin:'Administration' };
+const PAGE_TITLES = { dashboard:'Dashboard', todo:'To Do', report:'Report', reservations:'Reservations', calendar:'Calendar', settings:'Settings', admin:'Administration' };
 
 /* ── Where did the user come from? (Back buttons return there) ── */
 let _bookingOrigin = 'reservations';   // 'reservations' | 'availability'
@@ -4137,7 +4137,7 @@ function renderReservationDetail() {
   const cancelBox = cancelled
     ? `<div class="rd-cancel done"><div><h4>Reservation cancelled</h4>
         <p>${rdCancelledInfo()} This booking can no longer be changed. To rebook this guest, create a new booking.</p></div>
-        <button class="btn-ghost" onclick="startNewBooking(_rdBack === 'availability' ? 'availability' : 'reservations')"><span class="mso" style="font-size:16px">add</span>New Booking</button></div>`
+        <button class="btn-ghost" onclick="startNewBooking(_rdBack === 'availability' ? 'availability' : 'reservations')"><span class="mso" style="font-size:16px">add</span>New Reservation</button></div>`
     : (r.status === 'New Reservation' || r.status === 'No-show' || !r.status)
       ? `<div class="rd-cancel"><div><h4>Cancellation</h4>
           <p>Cancelling frees the room for these dates. A cancelled booking cannot be reopened — the guest would need a new booking.</p></div>
@@ -4459,7 +4459,7 @@ function rpRender() {
   document.getElementById('rp-ytd').classList.toggle('on', _rp.preset === 'ytd');
   document.getElementById('rp-12m').classList.toggle('on', _rp.preset === '12m');
   document.getElementById('rp-rooms').innerHTML = _rp.rooms.map((n, i) =>
-    `<button class="rp-chip${_rp.sel.has(n) ? '' : ' off'}" style="--rc:${ROOM_COLORS[i % ROOM_COLORS.length]}" onclick="rpToggleRoom(${escHtml(JSON.stringify(n))})"><i></i>${escHtml(n)}</button>`).join('');
+    `<button class="rp-chip${_rp.sel.has(n) ? '' : ' off'}" style="--rc:${ROOM_COLORS[i % ROOM_COLORS.length].c}" onclick="rpToggleRoom(${escHtml(JSON.stringify(n))})"><i></i>${escHtml(n)}</button>`).join('');
 
   const { rows, t } = rpCompute();
   _rp.data = { rows, t };
