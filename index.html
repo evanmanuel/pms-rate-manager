@@ -432,6 +432,8 @@
       .rp-kpi { padding:14px; } .rp-kpi .k-v { font-size:18px; } .rp-kpi .k-i { display:none; }
       .rp-misc-grid { grid-template-columns:1fr; }
       .rp-table th, .rp-table td { padding:10px 12px; }
+      .rp-table th:first-child, .rp-table td:first-child { position:sticky; left:0; z-index:1; background:var(--surface-container-lowest); box-shadow:1px 0 0 var(--surface-container-high); }
+      .rp-table th:first-child, .rp-table tfoot td:first-child { background:var(--surface-container-low); }
     }
     /* To Do */
     .nav-badge { margin-left:auto; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:#dc2626; color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; letter-spacing:0; }
