@@ -351,6 +351,88 @@
     .res-list-header span:nth-child(2),.res-list-header span:nth-child(3),.res-list-header span:nth-child(4) { text-align:center; }
     .res-card { background:var(--surface-container-lowest); border-radius:12px; padding:20px 24px; display:grid; grid-template-columns:1fr 200px 160px 140px 40px; align-items:center; gap:16px; box-shadow:var(--shadow-sm); transition:background 0.2s; }
     .res-card:hover { background:var(--surface-container-low); }
+    /* Report */
+    .rp-wrap { max-width:1200px; margin:0 auto; padding:40px 40px 60px; display:flex; flex-direction:column; gap:24px; }
+    .rp-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+    .rp-head h2 { font-family:'Manrope',sans-serif; font-size:34px; font-weight:800; color:var(--primary); letter-spacing:-.02em; }
+    .rp-head p { font-size:13px; color:var(--secondary); margin-top:4px; line-height:1.6; }
+    .rp-head .btn-primary { white-space:nowrap; flex-shrink:0; }
+    .rp-controls { background:var(--surface-container-lowest); border-radius:20px; padding:16px 20px; box-shadow:var(--shadow-sm); display:flex; flex-wrap:wrap; gap:14px 28px; align-items:center; justify-content:space-between; }
+    .rp-ctrl { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+    .rp-lbl { font-family:'Manrope',sans-serif; font-size:10px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--secondary); }
+    .rp-ctrl select { border:1px solid var(--surface-container-high); background:var(--surface-container-low); border-radius:10px; padding:8px 10px; font:inherit; font-size:13px; font-weight:600; color:var(--on-surface); }
+    .rp-to { font-size:12px; color:var(--secondary); }
+    .rp-seg { display:inline-flex; background:var(--surface-container-low); border-radius:10px; padding:3px; gap:3px; }
+    .rp-seg button { border:none; background:none; border-radius:8px; padding:7px 10px; font-family:'Manrope',sans-serif; font-size:11px; font-weight:700; color:var(--secondary); cursor:pointer; white-space:nowrap; }
+    .rp-seg button.on { background:var(--primary); color:#fff; }
+    .rp-rooms { display:flex; flex-wrap:wrap; gap:6px; }
+    .rp-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--surface-container-high); background:var(--surface-container-lowest); border-radius:999px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; color:var(--on-surface); }
+    .rp-chip i { width:9px; height:9px; border-radius:5px; background:var(--rc); }
+    .rp-chip.off { opacity:.45; text-decoration:line-through; }
+    .rp-kpis { display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; }
+    .rp-kpi { background:var(--surface-container-lowest); border-radius:20px; padding:18px 20px; box-shadow:var(--shadow-sm); display:flex; justify-content:space-between; align-items:center; gap:10px; min-width:0; }
+    .rp-kpi > div { min-width:0; }
+    .rp-kpi .k-l { font-family:'Manrope',sans-serif; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--secondary); }
+    .rp-kpi .k-v { font-family:'Manrope',sans-serif; font-size:24px; font-weight:800; color:var(--on-surface); margin-top:4px; white-space:nowrap; }
+    .rp-kpi .k-s { font-size:12px; font-weight:600; color:var(--secondary); margin-top:2px; }
+    .rp-kpi .k-i { width:46px; height:46px; border-radius:14px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--ib); color:var(--ic); }
+    .rp-kpi.dark { background:var(--primary); }
+    .rp-kpi.dark .k-l, .rp-kpi.dark .k-s { color:#D7E9DE; } .rp-kpi.dark .k-v { color:#fff; }
+    .rp-kpi.dark .k-i { background:#1A523E; color:#D7E9DE; }
+    .rp-card { background:var(--surface-container-lowest); border-radius:20px; box-shadow:var(--shadow-sm); overflow:hidden; }
+    .rp-card-head { padding:16px 22px; border-bottom:1px solid var(--surface-container-high); display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px; }
+    .rp-card-head h3 { font-family:'Manrope',sans-serif; font-size:17px; font-weight:800; }
+    .rp-sub { font-size:12px; color:var(--secondary); }
+    .rp-table-wrap { overflow-x:auto; }
+    .rp-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .rp-table th { background:var(--surface-container-low); text-align:right; padding:11px 18px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:800; letter-spacing:.1em; text-transform:uppercase; color:var(--secondary); white-space:nowrap; position:static; }
+    .rp-table th:first-child, .rp-table td:first-child { text-align:left; }
+    .rp-table td { padding:11px 18px; border-top:1px solid var(--surface-container-high); text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .rp-table td.click { cursor:pointer; }
+    .rp-table td.click span { border-bottom:1px dashed var(--outline-variant, #cbd5e1); }
+    .rp-table td.click:hover { background:var(--surface-container-low); }
+    .rp-table td.sel { background:#E3EFE9; box-shadow:inset 0 0 0 2px var(--primary); }
+    .rp-table tfoot td { background:var(--surface-container-low); border-top:2px solid var(--primary); font-weight:800; color:var(--primary); }
+    .rp-tag { display:inline-block; margin-left:6px; font-size:10px; font-weight:700; letter-spacing:.04em; padding:2px 7px; border-radius:999px; vertical-align:1px; }
+    .rp-tag.cur { background:#E3EFE9; color:var(--primary); }
+    .rp-tag.fut { background:#E1EEF8; color:#1E4B72; }
+    .rp-pos { color:#0F7A4A; } .rp-neg { color:#b42318; }
+    .rp-detail { display:flex; flex-direction:column; gap:16px; }
+    .rp-detail-head { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:10px; }
+    .rp-detail-head h3 { font-family:'Manrope',sans-serif; font-size:17px; font-weight:800; }
+    .rp-detail-head p { font-size:12px; color:var(--secondary); margin-top:2px; }
+    .rp-netpill { display:inline-flex; gap:8px; align-items:center; background:var(--surface-container-lowest); border-radius:12px; padding:8px 14px; box-shadow:var(--shadow-sm); font-size:12px; color:var(--secondary); font-weight:700; }
+    .rp-netpill b { font-size:15px; }
+    .rp-misc-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+    .rp-mcard { background:var(--surface-container-lowest); border-radius:20px; box-shadow:var(--shadow-sm); overflow:hidden; display:flex; flex-direction:column; }
+    .rp-mcard-head { padding:14px 20px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--surface-container-high); }
+    .rp-mcard-head .mso { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+    .rp-mcard-head b { display:block; font-size:14px; }
+    .rp-mcard-head small { font-size:11px; color:var(--secondary); }
+    .rp-mline { padding:12px 20px; display:flex; justify-content:space-between; gap:12px; border-top:1px solid var(--surface-container-high); font-size:13px; }
+    .rp-mline:first-child { border-top:none; }
+    .rp-mline .who { font-weight:700; cursor:pointer; }
+    .rp-mline .who:hover { text-decoration:underline; }
+    .rp-mline small { display:block; font-size:12px; color:var(--secondary); margin-top:2px; overflow-wrap:anywhere; }
+    .rp-mline .amt { font-weight:700; white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .rp-mfoot { margin-top:auto; padding:13px 20px; background:var(--surface-container-low); display:flex; justify-content:space-between; font-weight:800; font-size:13px; }
+    .rp-empty { padding:18px 20px; font-size:13px; color:var(--secondary); }
+    .rp-link { background:none; border:none; color:var(--primary); font-weight:700; font-size:12px; cursor:pointer; text-decoration:underline; }
+    .rp-guest { font-weight:700; cursor:pointer; color:var(--on-surface); }
+    .rp-guest:hover { text-decoration:underline; }
+    @media (max-width:1100px) { .rp-kpis { grid-template-columns:1fr 1fr; } }
+    @media (max-width:768px) {
+      .rp-wrap { padding:20px 16px 40px; gap:18px; }
+      .rp-head { flex-direction:column; }
+      .rp-head h2 { font-size:26px; }
+      .rp-head .btn-primary { width:100%; justify-content:center; }
+      .rp-controls { padding:14px; }
+      .rp-ctrl select { font-size:16px; }
+      .rp-kpis { gap:10px; }
+      .rp-kpi { padding:14px; } .rp-kpi .k-v { font-size:18px; } .rp-kpi .k-i { display:none; }
+      .rp-misc-grid { grid-template-columns:1fr; }
+      .rp-table th, .rp-table td { padding:10px 12px; }
+    }
     /* To Do */
     .nav-badge { margin-left:auto; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:#dc2626; color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; letter-spacing:0; }
     .nav-badge[hidden] { display:none; }
@@ -1554,6 +1636,9 @@
       <button class="nav-item" onclick="showPage('calendar',this)">
         <span class="mso">calendar_month</span><span class="label">Calendar</span>
       </button>
+      <button class="nav-item" onclick="showPage('report',this)">
+        <span class="mso">bar_chart</span><span class="label">Report</span>
+      </button>
       <!-- Settings: administrator only — shown/hidden by JS -->
       <button class="nav-item hidden-nav" id="nav-settings" onclick="showPage('settings',this)">
         <span class="mso">settings</span><span class="label">Settings</span>
@@ -1603,6 +1688,47 @@
           <button class="todo-dis-toggle" id="todo-dis-toggle" onclick="_todoShowDismissed=!_todoShowDismissed;renderTodo()"></button>
           <div id="todo-dis-list"></div>
         </div>
+      </div>
+    </div>
+
+    <div class="page" id="page-report">
+      <div class="rp-wrap">
+        <div class="rp-head">
+          <div>
+            <h2>Performance Report</h2>
+            <p>Room nights, room revenue and misc revenue by month. Click a number in the table to see who it comes from.</p>
+          </div>
+          <button class="btn-primary" onclick="exportReport()"><span class="mso" style="font-size:18px">download</span>Export Excel</button>
+        </div>
+
+        <div class="rp-controls">
+          <div class="rp-ctrl">
+            <span class="rp-lbl">Period</span>
+            <select id="rp-from" onchange="rpSetRange(this.value, null)"></select>
+            <span class="rp-to">to</span>
+            <select id="rp-to" onchange="rpSetRange(null, this.value)"></select>
+            <div class="rp-seg">
+              <button id="rp-ytd" onclick="rpPreset('ytd')">Year to Date</button>
+              <button id="rp-12m" onclick="rpPreset('12m')">Last 12 Months</button>
+            </div>
+          </div>
+          <div class="rp-ctrl">
+            <span class="rp-lbl">Rooms</span>
+            <div id="rp-rooms" class="rp-rooms"></div>
+          </div>
+        </div>
+
+        <div id="rp-kpis" class="rp-kpis"></div>
+
+        <section class="rp-card">
+          <div class="rp-card-head">
+            <h3 id="rp-table-title">Monthly Breakdown</h3>
+            <span id="rp-table-sub" class="rp-sub"></span>
+          </div>
+          <div class="rp-table-wrap"><table class="rp-table" id="rp-table"></table></div>
+        </section>
+
+        <section id="rp-detail" class="rp-detail"></section>
       </div>
     </div>
 
@@ -2154,7 +2280,7 @@ function enterApp() {
 /* ══════════════════════════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════════════════════════ */
-const PAGE_TITLES = { dashboard:'Overview', todo:'To Do', reservations:'Reservations', calendar:'Availability', settings:'Settings', admin:'Administration' };
+const PAGE_TITLES = { dashboard:'Overview', todo:'To Do', report:'Report', reservations:'Reservations', calendar:'Availability', settings:'Settings', admin:'Administration' };
 
 /* ── Where did the user come from? (Back buttons return there) ── */
 let _bookingOrigin = 'reservations';   // 'reservations' | 'availability'
@@ -2200,6 +2326,7 @@ function showPage(page, btn) {
 
   if (page === 'dashboard')    loadDashboard();
   if (page === 'todo')         loadTodo();
+  if (page === 'report')       loadReport();
   else refreshTodoBadge();
   if (page === 'reservations') { showScreen('res-summary'); loadResSummary(); }
   if (page === 'settings')     { loadChannels(); loadRooms(); loadGoogleStatus(); loadBankSettings(); loadBackupInfo(); }
@@ -3747,6 +3874,7 @@ async function openReservation(id, backTo) {
   if (backTo) _rdBack = backTo;
   if (backTo === 'availability') enterReservationsPage('calendar');
   if (backTo === 'todo') enterReservationsPage('todo');
+  if (backTo === 'report') enterReservationsPage('report');
   _rdMode = 'view';
   showScreen('res-detail');
   document.getElementById('rd-root').innerHTML = '<div class="empty-state">Loading reservation…</div>';
@@ -3776,6 +3904,7 @@ async function loadReservationDetail(id) {
 function rdGoBack() {
   if (_rdBack === 'availability') return showPage('calendar', navBtn('calendar'));
   if (_rdBack === 'todo') return showPage('todo', navBtn('todo'));
+  if (_rdBack === 'report') return showPage('report', navBtn('report'));
   showScreen(_rdBack || 'all-reservations');
 }
 
@@ -4216,6 +4345,246 @@ async function refreshTodoBadge() {
   if (_todoBadgeBusy || !currentUser) return;
   _todoBadgeBusy = true;
   try { const t = await buildTodos(); setTodoBadge(t.visible.length); } catch (_) {} finally { _todoBadgeBusy = false; }
+}
+
+/* ═══════════════ REPORT ═══════════════════════════════════════════
+   Room nights / revenue by month (stay-night basis), misc revenue by
+   entry date. Cancelled and No-show never count. Room filter applies
+   to everything, occupancy uses the number of selected rooms. */
+const _rp = { res: [], misc: [], rooms: [], from: null, to: null, sel: null, focus: null, months: [] };
+const RP_MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function rpLabel(ym) { const [y, m] = ym.split('-').map(Number); return RP_MON[m - 1] + ' ' + y; }
+function rpAddMonths(ym, n) { let [y, m] = ym.split('-').map(Number); m += n - 1; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; return `${y}-${_pad2(m + 1)}`; }
+function rpDays(ym) { const [y, m] = ym.split('-').map(Number); return new Date(Date.UTC(y, m, 0)).getUTCDate(); }
+function rpShort(n) {
+  n = Math.round(Number(n) || 0); const a = Math.abs(n), s = n < 0 ? '−' : '';
+  if (a >= 1e9) return s + (a / 1e9).toFixed(2).replace(/\.?0+$/, '') + 'B';
+  if (a >= 1e6) return s + (a / 1e6).toFixed(1).replace(/\.0$/, '') + 'M';
+  if (a >= 1e3) return s + Math.round(a / 1e3) + 'K';
+  return s + a;
+}
+function rpNum(n) { return Math.round(Number(n) || 0).toLocaleString('id-ID'); }
+function rpSigned(n) { n = Math.round(Number(n) || 0); return (n > 0 ? '+' : n < 0 ? '−' : '') + Math.abs(n).toLocaleString('id-ID'); }
+function rpPct(x) { return (x * 100).toFixed(1).replace(/\.0$/, '') + '%'; }
+
+async function loadReport() {
+  document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Loading…</div>';
+  const [resQ, miscQ, roomQ] = await Promise.all([
+    db.from('reservations').select('id, confirmation_number, guest_name, room_name, status, arrival_date, departure_date, room_night, room_revenue, rate'),
+    db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes').order('paid_on'),
+    db.from('rooms').select('name').order('created_at'),
+  ]);
+  if (resQ.error || miscQ.error || roomQ.error) {
+    document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Could not load report data.</div>';
+    return;
+  }
+  _rp.res = resQ.data || [];
+  _rp.misc = miscQ.data || [];
+  _rp.rooms = (roomQ.data || []).map(r => r.name);
+  if (!_rp.sel) _rp.sel = new Set(_rp.rooms);
+  else _rp.sel = new Set([..._rp.sel].filter(n => _rp.rooms.includes(n)));
+
+  // Month options: from the earliest data (or Jan last year) to the latest departure (at least 12 months ahead)
+  const cur = baliToday().slice(0, 7);
+  let lo = (Number(cur.slice(0, 4)) - 1) + '-01', hi = rpAddMonths(cur, 12);
+  _rp.res.forEach(r => { if (r.arrival_date && r.arrival_date.slice(0, 7) < lo) lo = r.arrival_date.slice(0, 7);
+                         if (r.departure_date && r.departure_date.slice(0, 7) > hi) hi = r.departure_date.slice(0, 7); });
+  _rp.misc.forEach(m => { if (m.paid_on && m.paid_on.slice(0, 7) < lo) lo = m.paid_on.slice(0, 7); });
+  _rp.months = []; for (let m = lo; m <= hi; m = rpAddMonths(m, 1)) _rp.months.push(m);
+  const opts = _rp.months.map(m => `<option value="${m}">${rpLabel(m)}${m === cur ? ' (current)' : ''}</option>`).join('');
+  document.getElementById('rp-from').innerHTML = opts;
+  document.getElementById('rp-to').innerHTML = opts;
+  if (!_rp.from) rpPreset('ytd', true); else rpRender();
+}
+
+function rpPreset(kind, silent) {
+  const cur = baliToday().slice(0, 7);
+  _rp.to = cur;
+  _rp.from = kind === '12m' ? rpAddMonths(cur, -11) : cur.slice(0, 4) + '-01';
+  _rp.preset = kind;
+  _rp.focus = null;
+  rpRender();
+}
+function rpSetRange(from, to) {
+  if (from) _rp.from = from;
+  if (to) _rp.to = to;
+  if (_rp.from > _rp.to) { if (from) _rp.to = _rp.from; else _rp.from = _rp.to; }
+  _rp.preset = null; _rp.focus = null;
+  rpRender();
+}
+function rpToggleRoom(name) {
+  if (_rp.sel.has(name)) { if (_rp.sel.size === 1) return showToast('Keep at least one room selected'); _rp.sel.delete(name); }
+  else _rp.sel.add(name);
+  rpRender();
+}
+
+// Everything the page and the export need, for the current filters
+function rpCompute() {
+  const resById = {}; _rp.res.forEach(r => resById[r.id] = r);
+  const months = [];
+  for (let m = _rp.from; m <= _rp.to; m = rpAddMonths(m, 1)) months.push(m);
+  const stays = _rp.res.filter(r => countsAsStay(r) && _rp.sel.has(r.room_name) && r.arrival_date && r.departure_date);
+  const cur = baliToday().slice(0, 7);
+  const rows = months.map(ym => {
+    const start = ym + '-01', end = rpAddMonths(ym, 1) + '-01';
+    const guests = [];
+    stays.forEach(r => {
+      const a = r.arrival_date > start ? r.arrival_date : start;
+      const d = r.departure_date < end ? r.departure_date : end;
+      const n = nightsBetween(a, d);
+      if (n > 0) { const adr = nightlyOf(r); guests.push({ r, nights: n, adr, rev: n * adr, from: a, to: d }); }
+    });
+    guests.sort((x, y) => x.from.localeCompare(y.from) || String(x.r.room_name).localeCompare(String(y.r.room_name)));
+    const misc = _rp.misc.filter(p => p.paid_on && p.paid_on.slice(0, 7) === ym && resById[p.reservation_id] && _rp.sel.has(resById[p.reservation_id].room_name))
+                         .map(p => ({ p, r: resById[p.reservation_id] }));
+    const rns = guests.reduce((s, g) => s + g.nights, 0);
+    const rev = guests.reduce((s, g) => s + g.rev, 0);
+    const add = misc.filter(x => Number(x.p.amount) > 0).reduce((s, x) => s + Number(x.p.amount), 0);
+    const reb = misc.filter(x => Number(x.p.amount) < 0).reduce((s, x) => s + Number(x.p.amount), 0);
+    const avail = rpDays(ym) * _rp.sel.size;
+    return { ym, guests, misc, rns, rev, add, reb, net: add + reb, avail, occ: avail ? rns / avail : 0,
+             when: ym === cur ? 'cur' : ym > cur ? 'fut' : 'past' };
+  });
+  const sum = k => rows.reduce((s, x) => s + x[k], 0);
+  const t = { rns: sum('rns'), rev: sum('rev'), add: sum('add'), reb: sum('reb'), avail: sum('avail') };
+  t.net = t.add + t.reb; t.occ = t.avail ? t.rns / t.avail : 0; t.adr = t.rns ? t.rev / t.rns : 0;
+  return { rows, t };
+}
+
+function rpRender() {
+  if (!_rp.from) return;
+  document.getElementById('rp-from').value = _rp.from;
+  document.getElementById('rp-to').value = _rp.to;
+  document.getElementById('rp-ytd').classList.toggle('on', _rp.preset === 'ytd');
+  document.getElementById('rp-12m').classList.toggle('on', _rp.preset === '12m');
+  document.getElementById('rp-rooms').innerHTML = _rp.rooms.map((n, i) =>
+    `<button class="rp-chip${_rp.sel.has(n) ? '' : ' off'}" style="--rc:${ROOM_COLORS[i % ROOM_COLORS.length]}" onclick="rpToggleRoom(${escHtml(JSON.stringify(n))})"><i></i>${escHtml(n)}</button>`).join('');
+
+  const { rows, t } = rpCompute();
+  _rp.data = { rows, t };
+  const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
+  const kpi = (lbl, val, sub, icon, ib, ic, dark) => `<div class="rp-kpi${dark ? ' dark' : ''}"><div><div class="k-l">${lbl}</div><div class="k-v">${val}</div><div class="k-s">${sub}</div></div><span class="mso k-i" style="--ib:${ib};--ic:${ic}">${icon}</span></div>`;
+  document.getElementById('rp-kpis').innerHTML =
+    kpi('Total RNs', rpNum(t.rns), rpPct(t.occ) + ' avg occupancy', 'bed', '#E3EFE9', '#0B3D2E') +
+    kpi('Room Revenue', rpShort(t.rev), 'ADR ' + rpShort(t.adr), 'payments', '#E1EEF8', '#1E4B72') +
+    kpi('Net Misc Revenue', `<span class="${t.net < 0 ? 'rp-neg' : ''}">${rpShort(t.net)}</span>`, `+${rpShort(t.add)} · ${rpShort(t.reb)}`, 'receipt_long', '#FBEFD9', '#8A5A12') +
+    kpi('Total Net Revenue', rpShort(t.rev + t.net), 'IDR · room + misc', 'account_balance_wallet', '', '', true);
+
+  document.getElementById('rp-table-title').textContent = 'Monthly Breakdown';
+  document.getElementById('rp-table-sub').textContent = `${period} · ${_rp.sel.size} of ${_rp.rooms.length} rooms · IDR`;
+  const f = _rp.focus;
+  const cell = (r, type, html) => {
+    const on = f && f.month === r.ym && f.type === type ? ' sel' : '';
+    return `<td class="click${on}" onclick="rpFocus('${type}','${r.ym}')"><span>${html}</span></td>`;
+  };
+  const tag = w => w === 'cur' ? '<span class="rp-tag cur">Current</span>' : w === 'fut' ? '<span class="rp-tag fut">On the books</span>' : '';
+  document.getElementById('rp-table').innerHTML = `
+    <thead><tr><th>Month</th><th>Total RNs</th><th>Occupancy</th><th>Total Room Revenue</th><th>Misc Revenue (Net)</th><th>Total Revenue</th></tr></thead>
+    <tbody>${rows.map(r => `<tr>
+      <td><b>${rpLabel(r.ym)}</b>${tag(r.when)}</td>
+      ${cell(r, 'rns', rpNum(r.rns))}
+      ${cell(r, 'occ', rpPct(r.occ))}
+      ${cell(r, 'rev', rpNum(r.rev))}
+      ${cell(r, 'misc', `<b class="${r.net > 0 ? 'rp-pos' : r.net < 0 ? 'rp-neg' : ''}">${r.net ? rpSigned(r.net) : '0'}</b>`)}
+      <td><b>${rpNum(r.rev + r.net)}</b></td></tr>`).join('')}</tbody>
+    <tfoot><tr><td>Total</td><td>${rpNum(t.rns)}</td><td>${rpPct(t.occ)}</td><td>${rpNum(t.rev)}</td><td>${rpSigned(t.net)}</td><td>${rpNum(t.rev + t.net)}</td></tr></tfoot>`;
+  rpRenderDetail();
+}
+
+function rpFocus(type, ym) {
+  const kind = type === 'misc' ? 'misc' : 'room';
+  if (_rp.focus && _rp.focus.month === ym && _rp.focus.type === type) _rp.focus = null;
+  else _rp.focus = { type, kind, month: ym };
+  rpRender();
+  const el = document.getElementById('rp-detail');
+  if (el && _rp.focus) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function rpRenderDetail() {
+  const { rows } = _rp.data;
+  const f = _rp.focus;
+  const el = document.getElementById('rp-detail');
+  const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
+  const back = f ? `<button class="rp-link" onclick="_rp.focus=null;rpRender()">Show whole period misc</button>` : '';
+  const openG = r => `onclick="openReservation('${r.id}','report')"`;
+
+  if (f && f.kind === 'room') {
+    const row = rows.find(x => x.ym === f.month);
+    if (!row) { _rp.focus = null; return rpRenderDetail(); }
+    const g = row.guests;
+    el.innerHTML = `
+      <div class="rp-detail-head"><div><h3>Room Breakdown · ${rpLabel(row.ym)}</h3>
+        <p>${rpNum(row.rns)} of ${rpNum(row.avail)} room nights sold (${rpPct(row.occ)}) · ADR ${row.rns ? rpNum(row.rev / row.rns) : 0}</p></div>${back}</div>
+      <section class="rp-card"><div class="rp-table-wrap"><table class="rp-table">
+        <thead><tr><th>Guest</th><th>Room</th><th>Nights in month</th><th>RNs × ADR</th><th>Room Revenue</th></tr></thead>
+        <tbody>${g.length ? g.map(x => `<tr>
+          <td><span class="rp-guest" ${openG(x.r)}>${escHtml(x.r.guest_name)}</span><div style="font-size:11px;color:var(--secondary)">${escHtml(x.r.status || '')}</div></td>
+          <td style="text-align:right">${escHtml(x.r.room_name)}</td>
+          <td>${fmtShort(x.from)} – ${fmtShort(x.to)}</td>
+          <td>${x.nights} × ${rpNum(x.adr)}</td>
+          <td><b>${rpNum(x.rev)}</b></td></tr>`).join('') : `<tr><td colspan="5" style="text-align:center;color:var(--secondary)">No room nights this month</td></tr>`}</tbody>
+        ${g.length ? `<tfoot><tr><td>Total</td><td></td><td></td><td>${rpNum(row.rns)} RNs</td><td>${rpNum(row.rev)}</td></tr></tfoot>` : ''}
+      </table></div></section>`;
+    return;
+  }
+
+  const sel = f ? rows.filter(x => x.ym === f.month) : rows;
+  const items = sel.flatMap(x => x.misc);
+  const add = items.filter(x => Number(x.p.amount) > 0), reb = items.filter(x => Number(x.p.amount) < 0);
+  const tAdd = add.reduce((s, x) => s + Number(x.p.amount), 0), tReb = reb.reduce((s, x) => s + Number(x.p.amount), 0);
+  const net = tAdd + tReb;
+  const line = x => `<div class="rp-mline"><div style="min-width:0"><span class="who" ${openG(x.r)}>${escHtml(x.r.guest_name)}</span> <span style="font-size:11px;color:var(--secondary)">· ${escHtml(x.r.room_name)}</span>
+      <small>${escHtml(x.p.notes || '—')} · ${fmtShort(x.p.paid_on)}</small></div>
+      <span class="amt ${Number(x.p.amount) < 0 ? 'rp-neg' : 'rp-pos'}">${rpSigned(x.p.amount)}</span></div>`;
+  const card = (title, sub, icon, ib, ic, list, total, cls) => `<div class="rp-mcard">
+      <div class="rp-mcard-head"><span class="mso" style="background:${ib};color:${ic}">${icon}</span><div><b>${title}</b><small>${sub}</small></div></div>
+      <div>${list.length ? list.map(line).join('') : '<div class="rp-empty">No entries</div>'}</div>
+      <div class="rp-mfoot"><span>Total</span><span class="${cls}">${rpSigned(total)}</span></div></div>`;
+  el.innerHTML = `
+    <div class="rp-detail-head"><div><h3>Misc Revenue Breakdown · ${f ? rpLabel(f.month) : period}</h3>
+      <p>Counted by entry date. Click a guest to open the booking.</p></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${back}<span class="rp-netpill">Net <b class="${net < 0 ? 'rp-neg' : 'rp-pos'}">${rpSigned(net)}</b></span></div></div>
+    <div class="rp-misc-grid">
+      ${card('Additional Revenue', 'Charges · positive entries', 'add_circle', '#DDF2E6', '#0F7A4A', add, tAdd, 'rp-pos')}
+      ${card('Rebate Revenue', 'Refunds · negative entries', 'remove_circle', '#FBE3E1', '#b42318', reb, tReb, 'rp-neg')}
+    </div>`;
+}
+
+function exportReport() {
+  if (!_rp.data) return;
+  if (typeof XLSX === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = _doExportReport;
+    s.onerror = () => showToast('Could not load the Excel library');
+    document.head.appendChild(s);
+    showToast('Preparing export…');
+  } else _doExportReport();
+}
+function _doExportReport() {
+  const { rows, t } = rpCompute();
+  const R = Math.round;
+  const monthly = rows.map(r => ({ 'Month': rpLabel(r.ym), 'Type': r.when === 'cur' ? 'Current' : r.when === 'fut' ? 'On the books' : 'Actual',
+    'Total RNs': r.rns, 'Available RNs': r.avail, 'Occupancy %': +(r.occ * 100).toFixed(1), 'ADR': r.rns ? R(r.rev / r.rns) : 0,
+    'Total Room Revenue': R(r.rev), 'Additional Revenue': R(r.add), 'Rebate Revenue': R(r.reb), 'Misc Revenue (Net)': R(r.net), 'Total Revenue': R(r.rev + r.net) }));
+  monthly.push({ 'Month': 'Total', 'Type': '', 'Total RNs': t.rns, 'Available RNs': t.avail, 'Occupancy %': +(t.occ * 100).toFixed(1), 'ADR': R(t.adr),
+    'Total Room Revenue': R(t.rev), 'Additional Revenue': R(t.add), 'Rebate Revenue': R(t.reb), 'Misc Revenue (Net)': R(t.net), 'Total Revenue': R(t.rev + t.net) });
+  const rooms = rows.flatMap(r => r.guests.map(g => ({ 'Month': rpLabel(r.ym), 'Confirmation No.': g.r.confirmation_number || '', 'Guest': g.r.guest_name,
+    'Room': g.r.room_name, 'Status': g.r.status, 'Nights From': g.from, 'Nights To': g.to, 'RNs': g.nights, 'ADR': R(g.adr), 'Room Revenue': R(g.rev) })));
+  const misc = rows.flatMap(r => r.misc.map(x => ({ 'Month': rpLabel(r.ym), 'Date': x.p.paid_on, 'Type': Number(x.p.amount) < 0 ? 'Rebate' : 'Additional',
+    'Confirmation No.': x.r.confirmation_number || '', 'Guest': x.r.guest_name, 'Room': x.r.room_name, 'Notes': x.p.notes || '', 'Amount': R(Number(x.p.amount)) })));
+  const wb = XLSX.utils.book_new();
+  const add = (data, name, widths) => {
+    const ws = XLSX.utils.json_to_sheet(data.length ? data : [{ 'Note': 'No data for this period' }]);
+    ws['!cols'] = widths.map(w => ({ wch: w }));
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  };
+  add(monthly, 'Monthly', [12, 13, 10, 13, 12, 12, 18, 18, 16, 18, 16]);
+  add(rooms, 'Room breakdown', [12, 16, 24, 10, 16, 12, 12, 6, 12, 14]);
+  add(misc, 'Misc breakdown', [12, 12, 11, 16, 24, 10, 44, 14]);
+  const name = `Performance Report ${rpLabel(_rp.from)}${_rp.from === _rp.to ? '' : ' - ' + rpLabel(_rp.to)}.xlsx`;
+  XLSX.writeFile(wb, name);
+  showToast('Report exported');
 }
 
 async function loadTodo() {
