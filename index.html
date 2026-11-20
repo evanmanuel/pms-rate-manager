@@ -683,12 +683,12 @@
     .bank-grid input { width:100%; border:1px solid var(--surface-container-high); border-radius:10px; padding:10px 12px; font:inherit; font-size:14px; background:var(--surface-container-lowest); }
     .bk-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
     .bk-item { background:var(--surface-container-low); border-radius:14px; padding:16px; display:flex; flex-direction:column; gap:12px; }
-    .bk-head { display:flex; gap:12px; align-items:flex-start; }
+    .bk-head { display:flex; gap:12px; align-items:flex-start; flex:1; }
     .bk-head .mso { font-size:22px; color:var(--primary); }
     .bk-head b { display:block; font-size:14px; }
     .bk-head small { display:block; font-size:12px; color:var(--secondary); line-height:1.5; margin-top:2px; }
     .bk-item .btn-primary { justify-content:center; width:100%; }
-    .bk-last { font-size:12px; color:var(--secondary); line-height:1.5; }
+    .bk-last { font-size:12px; color:var(--secondary); line-height:1.5; min-height:36px; }
     .bk-last a { color:var(--primary); font-weight:600; }
     @media (max-width:768px) { .bk-grid { grid-template-columns:1fr; } }
     .bank-actions { display:flex; justify-content:flex-end; margin-top:14px; }
@@ -2057,7 +2057,7 @@
     <!-- SETTINGS -->
     <div class="page" id="page-settings">
       <div class="page-wrap">
-        <div class="page-header"><div class="page-header-text"><h2>Settings</h2><p>Manage channels and room names</p></div></div>
+        <div class="page-header"><div class="page-header-text"><h2>Settings</h2><p>Google account, backup, invoice bank details, rooms and channels</p></div></div>
         <div class="section" id="google-section" style="display:none">
           <div class="section-label">Google Account</div>
           <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Used to store booking documents and invoices in Google Drive (folder "Reservation") and to send guest confirmation and cancellation emails.</p>
@@ -2068,12 +2068,12 @@
           <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Saves a copy to Google Drive in the folder "PMS Backup". Run it when nobody else is using the PMS.</p>
           <div class="bk-grid">
             <div class="bk-item">
-              <div class="bk-head"><span class="mso">database</span><div><b>Database</b><small>All bookings, history, rooms, channels, documents list and settings, as Excel + JSON</small></div></div>
+              <div class="bk-head"><span class="mso">database</span><div><b>Database</b><small>All bookings, history and settings, as Excel + JSON</small></div></div>
               <button class="btn-primary" id="bk-db-btn" onclick="runBackup('db')"><span class="mso">backup</span>Backup Database</button>
               <div class="bk-last" id="bk-db-last">Loading…</div>
             </div>
             <div class="bk-item">
-              <div class="bk-head"><span class="mso">code</span><div><b>Website</b><small>The current app version from GitHub, as a ZIP</small></div></div>
+              <div class="bk-head"><span class="mso">code</span><div><b>Website</b><small>The current app code from GitHub, as a ZIP</small></div></div>
               <button class="btn-primary" id="bk-web-btn" onclick="runBackup('web')"><span class="mso">backup</span>Backup Website</button>
               <div class="bk-last" id="bk-web-last">Loading…</div>
             </div>
