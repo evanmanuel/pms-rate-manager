@@ -352,10 +352,10 @@
     .res-card { background:var(--surface-container-lowest); border-radius:12px; padding:20px 24px; display:grid; grid-template-columns:1fr 200px 160px 140px 40px; align-items:center; gap:16px; box-shadow:var(--shadow-sm); transition:background 0.2s; }
     .res-card:hover { background:var(--surface-container-low); }
     /* Report */
-    .rp-wrap { max-width:1200px; margin:0 auto; padding:40px 40px 60px; display:flex; flex-direction:column; gap:24px; }
+    .rp-wrap { max-width:1200px; padding:40px 40px 60px; display:flex; flex-direction:column; gap:24px; }
     .rp-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
-    .rp-head h2 { font-family:'Manrope',sans-serif; font-size:34px; font-weight:800; color:var(--primary); letter-spacing:-.02em; }
-    .rp-head p { font-size:13px; color:var(--secondary); margin-top:4px; line-height:1.6; }
+    .rp-head h2 { font-family:'Manrope',sans-serif; font-size:28px; font-weight:800; color:var(--primary); letter-spacing:-.03em; line-height:1.1; }
+    .rp-head p { font-size:13px; color:var(--secondary); margin-top:6px; line-height:1.6; }
     .rp-head .btn-primary { white-space:nowrap; flex-shrink:0; }
     .rp-controls { background:var(--surface-container-lowest); border-radius:20px; padding:16px 20px; box-shadow:var(--shadow-sm); display:flex; flex-wrap:wrap; gap:14px 28px; align-items:center; justify-content:space-between; }
     .rp-ctrl { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
@@ -424,7 +424,7 @@
     @media (max-width:768px) {
       .rp-wrap { padding:20px 16px 40px; gap:18px; }
       .rp-head { flex-direction:column; }
-      .rp-head h2 { font-size:26px; }
+      .rp-head h2 { font-size:24px; }
       .rp-head .btn-primary { width:100%; justify-content:center; }
       .rp-controls { padding:14px; }
       .rp-ctrl select { font-size:16px; }
@@ -438,10 +438,10 @@
     /* To Do */
     .nav-badge { margin-left:auto; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:#dc2626; color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; letter-spacing:0; }
     .nav-badge[hidden] { display:none; }
-    .todo-wrap { max-width:960px; margin:0 auto; padding:40px 40px 60px; }
+    .todo-wrap { max-width:1000px; padding:40px 40px 60px; }
     .todo-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; }
-    .todo-head h2 { font-family:'Manrope',sans-serif; font-size:34px; font-weight:800; color:var(--primary); letter-spacing:-.02em; }
-    .todo-head p { font-size:13px; color:var(--secondary); margin-top:4px; max-width:560px; line-height:1.6; }
+    .todo-head h2 { font-family:'Manrope',sans-serif; font-size:28px; font-weight:800; color:var(--primary); letter-spacing:-.03em; line-height:1.1; }
+    .todo-head p { font-size:13px; color:var(--secondary); margin-top:6px; max-width:560px; line-height:1.6; }
     .todo-summary { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; }
     .todo-pill { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700; background:var(--surface-container-low); color:var(--on-surface); }
     .todo-pill i { width:8px; height:8px; border-radius:4px; display:inline-block; }
@@ -475,7 +475,7 @@
     @media (max-width:768px) {
       .todo-wrap { padding:20px 16px 40px; }
       .todo-head { flex-direction:column; }
-      .todo-head h2 { font-size:26px; }
+      .todo-head h2 { font-size:24px; }
       .todo-item { padding:14px; gap:12px; }
       .todo-ico { width:34px; height:34px; }
       .todo-btn { flex:1 1 auto; justify-content:center; white-space:nowrap; padding:9px 10px; }
@@ -716,8 +716,8 @@
     }
     .dash-greeting h2 {
       font-family:'Manrope',sans-serif;
-      font-size:32px; font-weight:800;
-      color:var(--primary); letter-spacing:-0.035em; line-height:1.1;
+      font-size:28px; font-weight:800;
+      color:var(--primary); letter-spacing:-0.03em; line-height:1.1;
     }
     .dash-greeting p { margin-top:6px; font-size:13px; color:var(--on-surface-variant); }
     .dash-new-btn {
@@ -1403,7 +1403,7 @@
       /* Dashboard */
       .dash-greeting { margin-bottom:20px; gap:16px; }
       .dash-greeting > div { width:100%; }
-      .dash-greeting h2 { font-size:26px; }
+      .dash-greeting h2 { font-size:24px; }
       .dash-new-btn { width:100%; justify-content:center; padding:14px; }
       .dash-period { margin:0 0 20px; padding:12px; gap:8px; }
       .dash-period-label { width:100%; }
@@ -2007,7 +2007,6 @@
       <div class="page-wrap av-wrap">
         <div class="page-header av-head">
           <div class="page-header-text">
-            <div class="av-eyebrow">Availability Calendar</div>
             <h2>Room Availability</h2>
             <p>Track stay schedules, manage guest arrivals, and check room occupancy.</p>
           </div>
