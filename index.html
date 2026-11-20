@@ -4482,7 +4482,7 @@ function rpRender() {
   const tag = w => w === 'cur' ? '<span class="rp-tag cur">Current</span>' : w === 'fut' ? '<span class="rp-tag fut">On the books</span>' : '';
   document.getElementById('rp-table').innerHTML = `
     <thead><tr><th>Month</th><th>Total RNs</th><th>Occupancy</th><th>Total Room Revenue</th><th>Misc Revenue (Net)</th><th>Total Revenue</th></tr></thead>
-    <tbody>${rows.map(r => `<tr>
+    <tbody>${rows.slice().reverse().map(r => `<tr>
       <td><b>${rpLabel(r.ym)}</b>${tag(r.when)}</td>
       ${cell(r, 'rns', rpNum(r.rns))}
       ${cell(r, 'occ', rpPct(r.occ))}
@@ -4566,7 +4566,7 @@ function exportReport() {
 function _doExportReport() {
   const { rows, t } = rpCompute();
   const R = Math.round;
-  const monthly = rows.map(r => ({ 'Month': rpLabel(r.ym), 'Type': r.when === 'cur' ? 'Current' : r.when === 'fut' ? 'On the books' : 'Actual',
+  const monthly = rows.slice().reverse().map(r => ({ 'Month': rpLabel(r.ym), 'Type': r.when === 'cur' ? 'Current' : r.when === 'fut' ? 'On the books' : 'Actual',
     'Total RNs': r.rns, 'Available RNs': r.avail, 'Occupancy %': +(r.occ * 100).toFixed(1), 'ADR': r.rns ? R(r.rev / r.rns) : 0,
     'Total Room Revenue': R(r.rev), 'Additional Revenue': R(r.add), 'Rebate Revenue': R(r.reb), 'Misc Revenue (Net)': R(r.net), 'Total Revenue': R(r.rev + r.net) }));
   monthly.push({ 'Month': 'Total', 'Type': '', 'Total RNs': t.rns, 'Available RNs': t.avail, 'Occupancy %': +(t.occ * 100).toFixed(1), 'ADR': R(t.adr),
