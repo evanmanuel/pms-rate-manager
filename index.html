@@ -4389,6 +4389,21 @@ async function rdSetStatus(to) {
 }
 
 async function rdCancel() {
+  const paid = Number(_rd.amount_paid) || 0, sec = Number(_rd.security_deposit) || 0;
+  if (paid > 0 || sec > 0) {
+    // Money already received: it must be moved to Misc Payment before the booking can be cancelled
+    const lines = [paid > 0 ? `• Room payment ${idr(paid)} → Misc Payment "Cancellation room charge"` : '',
+                   sec > 0 ? `• Security deposit ${idr(sec)} → Misc Payment "Cancellation security deposit charge"` : ''].filter(Boolean).join('\n');
+    const move = await showModal('Move payments to Misc Payment?',
+      `${_rd.guest_name}'s booking (${_rd.confirmation_number}) already has money received:\n\n${lines}\n\nTo cancel, these amounts must be moved to Misc Payment. Move them and cancel the booking? This cannot be undone.`,
+      'Yes, move & cancel', 'btn-danger', 'No');
+    if (!move) return showToast('Booking not cancelled — payments must be moved to Misc Payment first');
+    const { error } = await db.rpc('cancel_with_misc', { p_id: _rd.id });
+    if (error) return showToast('Error: ' + error.message);
+    showToast('Reservation cancelled · payments moved to Misc Payment');
+    _rdMode = 'view';
+    return loadReservationDetail(_rd.id);
+  }
   const ok = await showModal('Cancel Reservation',
     `Cancel ${_rd.guest_name}'s booking (${_rd.confirmation_number}, ${fmtDateLong(_rd.arrival_date)} – ${fmtDateLong(_rd.departure_date)})? This cannot be undone — to rebook, you'll need to create a new booking.`);
   if (!ok) return;
