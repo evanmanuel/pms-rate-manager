@@ -367,7 +367,7 @@
     .rp-seg button.on { background:var(--primary); color:#fff; }
     .rp-rooms { display:flex; flex-wrap:wrap; gap:6px; }
     .rp-chip { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--surface-container-high); background:var(--surface-container-lowest); border-radius:999px; padding:6px 12px; font-size:12px; font-weight:600; cursor:pointer; color:var(--on-surface); }
-    .rp-chip i { width:9px; height:9px; border-radius:5px; background:var(--rc); }
+    .rp-chip i { display:inline-block; flex-shrink:0; width:9px; height:9px; border-radius:5px; background:var(--rc); }
     .rp-chip.off { opacity:.45; text-decoration:line-through; }
     .rp-kpis { display:grid; grid-template-columns:repeat(4, 1fr); gap:16px; }
     .rp-kpi { background:var(--surface-container-lowest); border-radius:20px; padding:18px 20px; box-shadow:var(--shadow-sm); display:flex; justify-content:space-between; align-items:center; gap:10px; min-width:0; }
