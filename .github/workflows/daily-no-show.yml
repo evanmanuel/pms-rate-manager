@@ -1,4 +1,5 @@
-# Marks guests who did not check in by the day after their arrival as "No Show".
+# Marks guests who did not check in by the day after their arrival as "No Show", and after a No Show's
+# departure date moves its room payment into Misc Payment as a cancellation charge.
 # Runs every day at 16:05 UTC = 00:05 Bali time (GitHub may start it a little late).
 # You can also run it by hand: GitHub repo > Actions > "Daily No Show check" > Run workflow.
 
@@ -25,5 +26,5 @@ jobs:
             -H "apikey: $SUPABASE_ANON_KEY" \
             -H "Authorization: Bearer $SUPABASE_ANON_KEY")
           code=$(echo "$out" | tail -n1)
-          echo "Bookings marked as No Show: $(echo "$out" | head -n1) (HTTP $code)"
+          echo "Changes made (No Shows marked + payments moved): $(echo "$out" | head -n1) (HTTP $code)"
           if [ "$code" != "200" ]; then exit 1; fi

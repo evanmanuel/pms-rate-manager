@@ -3583,8 +3583,9 @@ function statusChip(status) {
 /* ── Dates in Bali time ── */
 const baliToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });   // YYYY-MM-DD
 const isoPlus = (iso, n) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
-// Room nights / revenue count unless cancelled, or a No Show that was not fully paid (those count as 0)
-const countsAsStay = r => r.status !== 'Cancelled' && !(r.status === 'No-show' && payStatusOf(r) !== 'Paid');
+// Room nights / revenue count for every stay except Cancelled and No Show (those count as 0).
+// A No Show's room payment is moved to Misc Payment by the daily job once its departure date has passed.
+const countsAsStay = r => r.status !== 'Cancelled' && r.status !== 'No-show';
 
 // Date pickers: arrival from today, departure at least 1 day after arrival
 function syncDateMins(which) {
@@ -3847,7 +3848,7 @@ function renderReservationDetail() {
       ${cancelled ? '' : `<div class="rd-fin-row"><span>Balance due</span><b class="${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? 'rd-due' : 'rd-paid'}">${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? idr(Number(r.room_revenue || 0) - Number(r.amount_paid || 0)) : 'Fully paid ✓'}</b></div>`}
       <div class="rd-fin-total"><span>Total Revenue</span><b>${idr(countsAsStay(r) ? r.room_revenue : 0)}</b></div>
       ${cancelled ? `<p class="rd-muted">Cancelled — not counted as revenue. Original value: ${idr(r.room_revenue)}.</p>`
-        : !countsAsStay(r) ? `<p class="rd-muted">No Show without full payment — counted as 0 room nights and 0 revenue. Record any money kept under Misc Payment. Original value: ${idr(r.room_revenue)}.</p>` : ''}
+        : !countsAsStay(r) ? `<p class="rd-muted">No Show — counted as 0 room nights and 0 revenue. Once the departure date has passed, any room payment is moved to Misc Payment automatically as a cancellation charge. Original value: ${idr(r.room_revenue)}.</p>` : ''}
       <button class="rd-mini-btn" onclick="document.getElementById('rd-history').scrollIntoView({behavior:'smooth'})"><span class="mso">history</span>History</button>
     </div>`;
 
