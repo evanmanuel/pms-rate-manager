@@ -4206,7 +4206,9 @@ async function loadTodo() {
   document.getElementById('todo-list').innerHTML = '<div class="empty-state">Loading…</div>';
   try {
     const t = await buildTodos();
-    _todoItems = t.visible; _todoDismissed = t.hidden.map(i => ({ item: i, d: t.dismissed.find(x => x.key === i.key) }));
+    _todoItems = t.visible;
+    _todoDismissed = t.hidden.map(i => ({ item: i, d: t.dismissed.find(x => x.key === i.key) }))
+      .sort((a, b) => String(b.d?.dismissed_at || '').localeCompare(String(a.d?.dismissed_at || '')));   // latest dismissed first
     setTodoBadge(_todoItems.length);
     renderTodo();
   } catch (e) {
