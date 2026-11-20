@@ -4350,6 +4350,7 @@ async function rdSaveSecurity() {
 }
 
 async function rdSetStatus(to) {
+  if (!_rd || to === _rd.status) return;
   const today = baliToday();
   if (to === 'Checked-in' && ['New Reservation', 'No-show'].includes(_rd.status) && _rd.arrival_date !== today)
     return showToast('Check-in is only possible on the arrival date');
