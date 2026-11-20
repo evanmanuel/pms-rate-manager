@@ -351,6 +351,51 @@
     .res-list-header span:nth-child(2),.res-list-header span:nth-child(3),.res-list-header span:nth-child(4) { text-align:center; }
     .res-card { background:var(--surface-container-lowest); border-radius:12px; padding:20px 24px; display:grid; grid-template-columns:1fr 200px 160px 140px 40px; align-items:center; gap:16px; box-shadow:var(--shadow-sm); transition:background 0.2s; }
     .res-card:hover { background:var(--surface-container-low); }
+    /* To Do */
+    .nav-badge { margin-left:auto; min-width:20px; height:20px; padding:0 6px; border-radius:10px; background:#dc2626; color:#fff; font-size:11px; font-weight:700; display:inline-flex; align-items:center; justify-content:center; letter-spacing:0; }
+    .nav-badge[hidden] { display:none; }
+    .todo-wrap { max-width:960px; margin:0 auto; padding:40px 40px 60px; }
+    .todo-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; margin-bottom:20px; }
+    .todo-head h2 { font-family:'Manrope',sans-serif; font-size:34px; font-weight:800; color:var(--primary); letter-spacing:-.02em; }
+    .todo-head p { font-size:13px; color:var(--secondary); margin-top:4px; max-width:560px; line-height:1.6; }
+    .todo-summary { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:24px; }
+    .todo-pill { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:999px; font-size:12px; font-weight:700; background:var(--surface-container-low); color:var(--on-surface); }
+    .todo-pill i { width:8px; height:8px; border-radius:4px; display:inline-block; }
+    .todo-group { margin-bottom:28px; }
+    .todo-group h3 { font-family:'Manrope',sans-serif; font-size:11px; font-weight:800; letter-spacing:.12em; text-transform:uppercase; color:var(--secondary); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+    .todo-group h3 i { width:10px; height:10px; border-radius:5px; display:inline-block; }
+    .todo-item { display:flex; gap:14px; background:var(--surface-container-lowest); border-radius:16px; padding:16px 18px; box-shadow:var(--shadow-sm); margin-bottom:10px; border-left:4px solid var(--tc, #94a3b8); }
+    .todo-ico { width:38px; height:38px; border-radius:12px; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:var(--tb, #f1f5f9); color:var(--tc, #475569); }
+    .todo-ico .mso { font-size:20px; }
+    .todo-body { flex:1; min-width:0; }
+    .todo-title { font-weight:700; font-size:14px; color:var(--on-surface); }
+    .todo-sub { font-size:12px; color:var(--secondary); margin-top:2px; }
+    .todo-sub b { color:var(--on-surface); font-weight:600; }
+    .todo-chips { display:flex; gap:6px; flex-wrap:wrap; margin-top:8px; }
+    .todo-line { font-size:12px; color:var(--on-surface-variant); margin-top:6px; line-height:1.5; }
+    .todo-actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+    .todo-btn { display:inline-flex; align-items:center; gap:6px; border:none; border-radius:10px; padding:8px 12px; font-family:'Manrope',sans-serif; font-size:11px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; cursor:pointer; background:var(--surface-container-low); color:var(--on-surface); text-decoration:none; }
+    .todo-btn .mso { font-size:16px; }
+    .todo-btn.primary { background:var(--primary); color:#fff; }
+    .todo-btn.wa { background:#25D366; color:#fff; }
+    .todo-x { background:none; border:none; color:var(--secondary); cursor:pointer; align-self:flex-start; padding:4px; border-radius:8px; }
+    .todo-x:hover { background:var(--surface-container-low); }
+    .todo-empty { text-align:center; padding:48px 20px; background:var(--surface-container-lowest); border-radius:16px; box-shadow:var(--shadow-sm); }
+    .todo-empty .mso { font-size:40px; color:#16a34a; }
+    .todo-empty b { display:block; font-size:16px; margin-top:8px; }
+    .todo-empty p { font-size:13px; color:var(--secondary); margin-top:4px; }
+    .todo-dismissed { margin-top:12px; }
+    .todo-dis-toggle { background:none; border:none; color:var(--secondary); font-size:12px; font-weight:600; cursor:pointer; padding:6px 0; }
+    .todo-dis-item { display:flex; gap:10px; align-items:center; justify-content:space-between; font-size:12px; color:var(--secondary); padding:10px 0; border-top:1px solid var(--surface-container-high); }
+    .todo-dis-item b { color:var(--on-surface); font-weight:600; }
+    @media (max-width:768px) {
+      .todo-wrap { padding:20px 16px 40px; }
+      .todo-head { flex-direction:column; }
+      .todo-head h2 { font-size:26px; }
+      .todo-item { padding:14px; gap:12px; }
+      .todo-ico { width:34px; height:34px; }
+      .todo-btn { flex:1; justify-content:center; }
+    }
     .chip-stack { display:flex; flex-direction:column; align-items:center; gap:6px; }
     .allres-table .chip-stack { align-items:flex-start; }
     .res-guest-name { font-family:'Manrope',sans-serif; font-size:15px; font-weight:700; color:var(--on-surface); }
@@ -1492,6 +1537,9 @@
       <button class="nav-item active" onclick="showPage('dashboard',this)">
         <span class="mso">grid_view</span><span class="label">Dashboard</span>
       </button>
+      <button class="nav-item" onclick="showPage('todo',this)">
+        <span class="mso">checklist</span><span class="label">To Do</span><span class="nav-badge" id="todo-badge" hidden></span>
+      </button>
       <button class="nav-item" onclick="showPage('reservations',this)">
         <span class="mso">book_online</span><span class="label">Reservations</span>
       </button>
@@ -1532,6 +1580,24 @@
   <main class="main">
 
     <!-- DASHBOARD -->
+    <div class="page" id="page-todo">
+      <div class="todo-wrap">
+        <div class="todo-head">
+          <div>
+            <h2>To Do</h2>
+            <p>What needs attention now. Items clear themselves once they're done; dismiss anything that needs no action.</p>
+          </div>
+          <button class="btn-ghost" onclick="loadTodo()"><span class="mso" style="font-size:17px">refresh</span>Refresh</button>
+        </div>
+        <div id="todo-summary" class="todo-summary"></div>
+        <div id="todo-list"><div class="empty-state">Loading…</div></div>
+        <div class="todo-dismissed">
+          <button class="todo-dis-toggle" id="todo-dis-toggle" onclick="_todoShowDismissed=!_todoShowDismissed;renderTodo()"></button>
+          <div id="todo-dis-list"></div>
+        </div>
+      </div>
+    </div>
+
     <div class="page" id="page-dashboard">
       <div class="dash-wrap">
 
@@ -2080,7 +2146,7 @@ function enterApp() {
 /* ══════════════════════════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════════════════════════ */
-const PAGE_TITLES = { dashboard:'Overview', reservations:'Reservations', calendar:'Availability', settings:'Settings', admin:'Administration' };
+const PAGE_TITLES = { dashboard:'Overview', todo:'To Do', reservations:'Reservations', calendar:'Availability', settings:'Settings', admin:'Administration' };
 
 /* ── Where did the user come from? (Back buttons return there) ── */
 let _bookingOrigin = 'reservations';   // 'reservations' | 'availability'
@@ -2125,6 +2191,8 @@ function showPage(page, btn) {
   document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
 
   if (page === 'dashboard')    loadDashboard();
+  if (page === 'todo')         loadTodo();
+  else refreshTodoBadge();
   if (page === 'reservations') { showScreen('res-summary'); loadResSummary(); }
   if (page === 'settings')     { loadChannels(); loadRooms(); loadGoogleStatus(); loadBankSettings(); loadBackupInfo(); }
   if (page === 'admin')        loadUserList();
@@ -3670,6 +3738,7 @@ let _rdOptions = { rooms: [], channels: [] };
 async function openReservation(id, backTo) {
   if (backTo) _rdBack = backTo;
   if (backTo === 'availability') enterReservationsPage('calendar');
+  if (backTo === 'todo') enterReservationsPage('todo');
   _rdMode = 'view';
   showScreen('res-detail');
   document.getElementById('rd-root').innerHTML = '<div class="empty-state">Loading reservation…</div>';
@@ -3698,6 +3767,7 @@ async function loadReservationDetail(id) {
 
 function rdGoBack() {
   if (_rdBack === 'availability') return showPage('calendar', navBtn('calendar'));
+  if (_rdBack === 'todo') return showPage('todo', navBtn('todo'));
   showScreen(_rdBack || 'all-reservations');
 }
 
@@ -3968,6 +4038,242 @@ async function saveBankSettings() {
   v.swift = v.swift.toUpperCase();
   const { error } = await db.from('app_settings').upsert({ key: 'bank', value: v, updated_at: new Date().toISOString(), updated_by: currentUser?.email || null });
   showToast(error ? 'Error: ' + error.message : 'Bank details saved ✓');
+}
+
+/* ══════════════════════════════════════════════════════════
+   TO DO — live reminders built from the bookings.
+   Items clear themselves when done; dismissed items are shared by everyone (todo_dismissals).
+   An item's key contains the dates/amounts it depends on, so it comes back if the booking changes.
+══════════════════════════════════════════════════════════ */
+let _todoItems = [], _todoDismissed = [], _todoShowDismissed = false;
+const TODO_GROUPS = [
+  { id: 'urgent',   label: 'Urgent',        c: '#dc2626', b: '#fee2e2' },
+  { id: 'today',    label: 'Today',         c: '#d97706', b: '#fef3c7' },
+  { id: 'upcoming', label: 'Upcoming',      c: '#2563eb', b: '#dbeafe' },
+  { id: 'info',     label: 'For your info', c: '#64748b', b: '#f1f5f9' },
+];
+function addMonthsISO(iso, k) {
+  const [y, m, d] = iso.split('-').map(Number);
+  const t = new Date(Date.UTC(y, m - 1 + k, 1));
+  const last = new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() + 1, 0)).getUTCDate();
+  t.setUTCDate(Math.min(d, last));
+  return t.toISOString().slice(0, 10);
+}
+function waNumber(phone) {
+  let n = String(phone || '').replace(/[^\d+]/g, '');
+  if (n.startsWith('+')) n = n.slice(1); else if (n.startsWith('0')) n = '62' + n.slice(1);
+  return n.replace(/\D/g, '');
+}
+
+async function buildTodos() {
+  const T = baliToday(), T1 = isoPlus(T, 1), T2 = isoPlus(T, 2), T7 = isoPlus(T, 7), T14 = isoPlus(T, 14);
+  const isAdmin = currentUser?.email === MASTER_EMAIL;
+  const [resQ, passQ, confQ, miscQ, disQ, setQ, gStatus] = await Promise.all([
+    db.from('reservations').select('*').neq('status', 'Cancelled'),
+    db.from('reservation_files').select('reservation_id').eq('category', 'Passport'),
+    db.from('reservation_history').select('reservation_id').eq('action', 'Confirmation email sent'),
+    db.from('reservation_misc_payments').select('reservation_id, amount, notes').like('notes', 'Cancellation charge – No Show%'),
+    db.from('todo_dismissals').select('*').order('dismissed_at', { ascending: false }),
+    isAdmin ? db.from('app_settings').select('key, value').in('key', ['backup', 'bank']) : Promise.resolve({ data: [] }),
+    isAdmin ? googleFn('status').catch(() => null) : Promise.resolve(null),
+  ]);
+  const passports = new Set((passQ.data || []).map(x => x.reservation_id));
+  const confirmed = new Set((confQ.data || []).map(x => x.reservation_id));
+  const noShowMisc = {};
+  (miscQ.data || []).forEach(m => { noShowMisc[m.reservation_id] = (noShowMisc[m.reservation_id] || 0) + Number(m.amount || 0); });
+  const items = [];
+  const add = (o) => items.push(o);
+  const balance = r => Math.max(0, Number(r.room_revenue || 0) - Number(r.amount_paid || 0));
+  const payLine = r => payStatusOf(r) !== 'Paid' ? `Balance due <b>${idr(balance(r))}</b> of ${idr(r.room_revenue)}.` : '';
+  const open = r => ({ label: 'Open booking', icon: 'open_in_new', fn: `todoOpen('${r.id}')` });
+  const act = (r, to, label, icon) => ({ label, icon, primary: true, fn: `todoAct('${r.id}','${to}')` });
+
+  for (const r of resQ.data || []) {
+    const st = r.status || 'New Reservation';
+    // 1 · Arriving today
+    if (st === 'New Reservation' && r.arrival_date === T)
+      add({ key: `arrival:${r.id}:${r.arrival_date}`, group: 'today', icon: 'flight_land', title: 'Arriving today', r,
+            lines: [payLine(r)], actions: [act(r, 'Checked-in', 'Check in', 'login'), open(r)] });
+    // 2 · Arriving in the next 2 days
+    if (st === 'New Reservation' && (r.arrival_date === T1 || r.arrival_date === T2))
+      add({ key: `arrival:${r.id}:${r.arrival_date}`, group: 'upcoming', icon: 'event', r,
+            title: r.arrival_date === T1 ? 'Arriving tomorrow' : `Arriving ${fmtDateLong(r.arrival_date)}`,
+            lines: [payLine(r)], actions: [open(r)] });
+    // 3 · Check-out overdue
+    if (st === 'Checked-in' && r.departure_date < T)
+      add({ key: `overdue:${r.id}:${r.departure_date}`, group: 'urgent', icon: 'alarm', r,
+            title: `Check-out overdue — departure was ${fmtDateLong(r.departure_date)}`,
+            lines: [Number(r.security_deposit) > 0 ? `Refund the security deposit (${idr(r.security_deposit)}) and set it to 0 before checking out.` : '', payLine(r)],
+            actions: [act(r, 'Checked-out', 'Check out', 'logout'), open(r)] });
+    // 6 · Departing today
+    if (st === 'Checked-in' && r.departure_date === T)
+      add({ key: `departure:${r.id}:${r.departure_date}`, group: 'today', icon: 'flight_takeoff', title: 'Departing today', r,
+            lines: [Number(r.security_deposit) > 0 ? `Security deposit to refund: <b>${idr(r.security_deposit)}</b> (less any deductions), then set it to 0.` : '', payLine(r)],
+            actions: [act(r, 'Checked-out', 'Check out', 'logout'), open(r)] });
+    // 7 · Balance due — in-house guest
+    if (st === 'Checked-in' && payStatusOf(r) !== 'Paid' && r.departure_date > T)   // departing/overdue cards already show the balance
+      add({ key: `balance:${r.id}:${payStatusOf(r)}:${Number(r.amount_paid || 0)}`, group: 'today', icon: 'payments', r,
+            title: 'Balance due — in-house guest', lines: [payLine(r)], actions: [open(r)] });
+    // 4 · No Show — guest hasn't arrived yet
+    if (st === 'No-show' && r.departure_date >= T) {
+      const phone = waNumber(r.guest_phone);
+      const msg = encodeURIComponent(`Hello ${r.guest_name}, this is Evansen Co Living. We were expecting you on ${fmtDateLong(r.arrival_date)} (booking ${r.confirmation_number}). Could you let us know if you are still coming and your expected arrival time? Thank you.`);
+      add({ key: `noshow:${r.id}:${r.arrival_date}`, group: 'urgent', icon: 'person_off', r,
+            title: `No Show — expected ${fmtDateLong(r.arrival_date)}`,
+            lines: ['Contact the guest to reconfirm. If they are still coming, edit the arrival date to the day they arrive.', !phone ? 'No phone number on this booking.' : ''],
+            actions: [
+              ...(phone ? [{ label: 'WhatsApp', icon: 'chat', cls: 'wa', href: `https://wa.me/${phone}?text=${msg}` },
+                           { label: 'Call', icon: 'call', href: `tel:+${phone}` }] : []),
+              ...(r.guest_email ? [{ label: 'Email', icon: 'mail', href: `mailto:${encodeURIComponent(r.guest_email)}` }] : []),
+              open(r)] });
+    }
+    // 5 · No Show — booking period has passed
+    if (st === 'No-show' && r.departure_date < T) {
+      const posted = noShowMisc[r.id] || 0, pending = Number(r.amount_paid || 0);
+      add({ key: `noshowpast:${r.id}:${r.departure_date}`, group: 'info', icon: 'event_busy', r,
+            title: 'No Show — booking period has passed',
+            lines: [`The stay (${fmtDateLong(r.arrival_date)} – ${fmtDateLong(r.departure_date)}) has ended without the guest arriving.`,
+                    posted ? `Room payment <b>${idr(posted)}</b> was posted to Misc Payment as a cancellation charge.`
+                    : pending ? `Room payment <b>${idr(pending)}</b> will be posted to Misc Payment at the next nightly run.`
+                    : 'No room payment was received.'],
+            actions: [open(r)] });
+    }
+    // 8 · Long stay — monthly rent reminder (7 days before each monthly due date)
+    if ((st === 'New Reservation' || st === 'Checked-in') && Number(r.room_night) > 30) {
+      for (let k = 1; k < 60; k++) {
+        const due = addMonthsISO(r.arrival_date, k);
+        if (due >= r.departure_date) break;
+        if (T >= isoPlus(due, -7) && T <= due)
+          add({ key: `rent:${r.id}:${due}`, group: due === T ? 'today' : 'upcoming', icon: 'calendar_month', r,
+                title: due === T ? 'Monthly rent due today' : `Monthly rent due ${fmtDateLong(due)}`,
+                lines: [`Long stay (${r.room_night} nights). Month ${k + 1} starts ${fmtDateLong(due)} — collect the next payment.`, payLine(r)],
+                actions: [open(r)] });
+      }
+    }
+    // 9 · Missing guest details before arrival (next 7 days)
+    if (st === 'New Reservation' && r.arrival_date >= T && r.arrival_date <= T7) {
+      const miss = [];
+      if (!String(r.guest_phone || '').trim()) miss.push('phone number');
+      if (!String(r.guest_email || '').trim()) miss.push('email');
+      if (r.country && r.country !== 'Indonesia' && !passports.has(r.id)) miss.push('passport copy');
+      if (miss.length)
+        add({ key: `missing:${r.id}:${miss.join(',')}`, group: 'upcoming', icon: 'contact_page', r,
+              title: `Missing ${miss.join(', ')}`, lines: ['Complete the guest details before arrival.'], actions: [open(r)] });
+    }
+    // 10 · Confirmation email not sent (arrivals in the next 14 days)
+    if (st === 'New Reservation' && r.arrival_date >= T && r.arrival_date <= T14 && String(r.guest_email || '').trim() && !confirmed.has(r.id))
+      add({ key: `confirm:${r.id}`, group: 'upcoming', icon: 'mark_email_unread', r,
+            title: 'Confirmation email not sent', lines: [`Guest email: ${escHtml(r.guest_email)}`], actions: [open(r)] });
+  }
+
+  // 11 · Administrator reminders
+  if (isAdmin) {
+    const set = Object.fromEntries((setQ.data || []).map(x => [x.key, x.value || {}]));
+    const last = set.backup?.database?.at;
+    if (!last || (Date.now() - Date.parse(last)) > 30 * 86400000)
+      add({ key: `backup:${T.slice(0, 7)}`, group: 'info', icon: 'backup', title: 'Monthly database backup due',
+            lines: [last ? `Last database backup: ${fmtDateTime(last)}.` : 'No database backup yet.'],
+            actions: [{ label: 'Go to Backup', icon: 'settings', primary: true, fn: "todoSettings('backup-section')" }] });
+    if (gStatus && gStatus.configured && !gStatus.connected)
+      add({ key: 'google:disconnected', group: 'urgent', icon: 'link_off', title: 'Google account disconnected',
+            lines: ['Document uploads, invoices, guest emails and backups need the Google connection.'],
+            actions: [{ label: 'Reconnect', icon: 'settings', primary: true, fn: "todoSettings('google-section')" }] });
+    const bank = set.bank || {};
+    if (!String(bank.account_name || '').trim() || !String(bank.account_number || '').trim())
+      add({ key: 'bank:empty', group: 'info', icon: 'account_balance', title: 'Bank details are empty on invoices',
+            lines: ['Account name and/or account number are not filled in, so they print blank on invoices.'],
+            actions: [{ label: 'Add bank details', icon: 'settings', primary: true, fn: "todoSettings('bank-section')" }] });
+  }
+
+  const dismissed = disQ.data || [];
+  const disKeys = new Set(dismissed.map(d => d.key));
+  return { visible: items.filter(i => !disKeys.has(i.key)), hidden: items.filter(i => disKeys.has(i.key)), dismissed };
+}
+
+function setTodoBadge(n) {
+  const b = document.getElementById('todo-badge'); if (!b) return;
+  b.textContent = n > 99 ? '99+' : String(n);
+  b.hidden = !n;
+}
+let _todoBadgeBusy = false;
+async function refreshTodoBadge() {
+  if (_todoBadgeBusy || !currentUser) return;
+  _todoBadgeBusy = true;
+  try { const t = await buildTodos(); setTodoBadge(t.visible.length); } catch (_) {} finally { _todoBadgeBusy = false; }
+}
+
+async function loadTodo() {
+  document.getElementById('todo-list').innerHTML = '<div class="empty-state">Loading…</div>';
+  try {
+    const t = await buildTodos();
+    _todoItems = t.visible; _todoDismissed = t.hidden.map(i => ({ item: i, d: t.dismissed.find(x => x.key === i.key) }));
+    setTodoBadge(_todoItems.length);
+    renderTodo();
+  } catch (e) {
+    document.getElementById('todo-list').innerHTML = `<div class="empty-state">Could not load the To Do list: ${escHtml(e.message)}</div>`;
+  }
+}
+
+function todoCard(i, dismissed) {
+  const g = TODO_GROUPS.find(x => x.id === i.group);
+  const r = i.r;
+  const sub = r ? `<b>${escHtml(r.guest_name)}</b> · ${escHtml(r.room_name || '—')} · ${fmtDateLong(r.arrival_date)} – ${fmtDateLong(r.departure_date)} · ${escHtml(r.confirmation_number)}` : '';
+  const btns = (i.actions || []).map(a => a.href
+    ? `<a class="todo-btn ${a.cls || ''}" href="${a.href}" target="_blank" rel="noopener"><span class="mso">${a.icon}</span>${a.label}</a>`
+    : `<button class="todo-btn ${a.primary ? 'primary' : ''}" onclick="${a.fn}"><span class="mso">${a.icon}</span>${a.label}</button>`).join('');
+  return `
+    <div class="todo-item" style="--tc:${g.c};--tb:${g.b}">
+      <div class="todo-ico"><span class="mso">${i.icon}</span></div>
+      <div class="todo-body">
+        <div class="todo-title">${escHtml(i.title)}</div>
+        ${sub ? `<div class="todo-sub">${sub}</div>` : ''}
+        ${r ? `<div class="todo-chips">${statusChip(r.status)}${payDisplayChip(r)}</div>` : ''}
+        ${(i.lines || []).filter(Boolean).map(l => `<div class="todo-line">${l}</div>`).join('')}
+        ${btns ? `<div class="todo-actions">${btns}</div>` : ''}
+      </div>
+      ${dismissed ? '' : `<button class="todo-x" title="Dismiss (no action needed)" onclick="todoDismiss('${encodeURIComponent(i.key)}')"><span class="mso">close</span></button>`}
+    </div>`;
+}
+
+function renderTodo() {
+  const counts = Object.fromEntries(TODO_GROUPS.map(g => [g.id, _todoItems.filter(i => i.group === g.id).length]));
+  document.getElementById('todo-summary').innerHTML = _todoItems.length
+    ? TODO_GROUPS.filter(g => counts[g.id]).map(g => `<span class="todo-pill"><i style="background:${g.c}"></i>${counts[g.id]} ${g.label}</span>`).join('') : '';
+  document.getElementById('todo-list').innerHTML = _todoItems.length
+    ? TODO_GROUPS.filter(g => counts[g.id]).map(g => `
+        <div class="todo-group"><h3><i style="background:${g.c}"></i>${g.label}</h3>
+          ${_todoItems.filter(i => i.group === g.id).sort((a, b) => (a.r?.arrival_date || '').localeCompare(b.r?.arrival_date || '')).map(i => todoCard(i)).join('')}
+        </div>`).join('')
+    : `<div class="todo-empty"><span class="mso">task_alt</span><b>All clear</b><p>Nothing needs attention right now.</p></div>`;
+  const tgl = document.getElementById('todo-dis-toggle');
+  tgl.style.display = _todoDismissed.length ? '' : 'none';
+  tgl.textContent = `${_todoShowDismissed ? 'Hide' : 'Show'} dismissed (${_todoDismissed.length})`;
+  document.getElementById('todo-dis-list').innerHTML = _todoShowDismissed ? _todoDismissed.map(({ item, d }) => `
+    <div class="todo-dis-item"><span><b>${escHtml(item.title)}</b>${item.r ? ' · ' + escHtml(item.r.guest_name) : ''}<br>Dismissed by ${escHtml(d?.dismissed_by || '—')} · ${d ? fmtDateTime(d.dismissed_at) : ''}</span>
+      <button class="todo-btn" onclick="todoRestore('${encodeURIComponent(item.key)}')"><span class="mso">undo</span>Restore</button></div>`).join('') : '';
+}
+
+async function todoDismiss(k) {
+  const key = decodeURIComponent(k);
+  const i = _todoItems.find(x => x.key === key);
+  const { error } = await db.from('todo_dismissals').insert({ key, label: i ? `${i.title}${i.r ? ' · ' + i.r.guest_name : ''}` : null });
+  if (error && !/duplicate/i.test(error.message)) return showToast('Error: ' + error.message);
+  showToast('Dismissed — hidden for everyone');
+  loadTodo();
+}
+async function todoRestore(k) {
+  const { error } = await db.from('todo_dismissals').delete().eq('key', decodeURIComponent(k));
+  if (error) return showToast('Error: ' + error.message);
+  loadTodo();
+}
+function todoOpen(id) { openReservation(id, 'todo'); }
+async function todoAct(id, to) {
+  await openReservation(id, 'todo');   // opens the booking, then runs the normal rules and pop-ups
+  if (_rd && _rd.id === id) rdSetStatus(to);
+}
+function todoSettings(sectionId) {
+  showPage('settings', navBtn('settings'));
+  setTimeout(() => document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 300);
 }
 
 /* ══════════════════════════════════════════════════════════
