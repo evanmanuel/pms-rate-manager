@@ -1390,6 +1390,8 @@
       .page-header-text h2 { font-size:24px; }
       .page-header > div:not(.page-header-text) { flex-direction:row !important; align-items:stretch !important; width:100%; }
       .page-header > div:not(.page-header-text) > button, .page-header > button { flex:1; justify-content:center; }
+      .page-header > .res-actions { flex-direction:column-reverse !important; gap:8px !important; }
+      .page-header > .res-actions > button { width:100%; }
       .empty-state { padding:32px 16px; }
 
       /* Bigger touch targets; 16px inputs stop iPhone zooming in on focus */
@@ -1822,7 +1824,7 @@
         <div class="page-wrap">
           <div class="page-header">
             <div class="page-header-text"><h2>Reservations</h2><p>Latest bookings across all rooms</p></div>
-            <div style="display:flex;gap:10px;align-items:center">
+            <div class="res-actions" style="display:flex;gap:10px;align-items:center">
               <button class="btn-primary" style="background:var(--surface-container-high);color:var(--on-surface);box-shadow:none" onclick="showScreen('all-reservations')">
                 <span class="mso">table_rows</span>All Reservations
               </button>
