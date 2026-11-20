@@ -4396,7 +4396,7 @@ async function loadReport() {
   const lo = RP_MIN; let hi = rpAddMonths(cur, 12);
   _rp.res.forEach(r => { if (r.departure_date && r.departure_date.slice(0, 7) > hi) hi = r.departure_date.slice(0, 7); });
   _rp.months = []; for (let m = lo; m <= hi; m = rpAddMonths(m, 1)) _rp.months.push(m);
-  const opts = _rp.months.map(m => `<option value="${m}">${rpLabel(m)}${m === cur ? ' (current)' : ''}</option>`).join('');
+  const opts = _rp.months.map(m => `<option value="${m}">${rpLabel(m)}</option>`).join('');
   document.getElementById('rp-from').innerHTML = opts;
   document.getElementById('rp-to').innerHTML = opts;
   if (!_rp.from) rpPreset('ytd', true); else rpRender();
