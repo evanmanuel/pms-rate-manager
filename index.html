@@ -4354,6 +4354,7 @@ async function refreshTodoBadge() {
    entry date. Cancelled and No-show never count. Room filter applies
    to everything, occupancy uses the number of selected rooms. */
 const _rp = { res: [], misc: [], rooms: [], from: null, to: null, sel: null, focus: null, months: [] };
+const RP_MIN = '2026-09';   // earliest month offered in the period filter
 const RP_MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 function rpLabel(ym) { const [y, m] = ym.split('-').map(Number); return RP_MON[m - 1] + ' ' + y; }
 function rpAddMonths(ym, n) { let [y, m] = ym.split('-').map(Number); m += n - 1; y += Math.floor(m / 12); m = ((m % 12) + 12) % 12; return `${y}-${_pad2(m + 1)}`; }
@@ -4388,10 +4389,8 @@ async function loadReport() {
 
   // Month options: from the earliest data (or Jan last year) to the latest departure (at least 12 months ahead)
   const cur = baliToday().slice(0, 7);
-  let lo = (Number(cur.slice(0, 4)) - 1) + '-01', hi = rpAddMonths(cur, 12);
-  _rp.res.forEach(r => { if (r.arrival_date && r.arrival_date.slice(0, 7) < lo) lo = r.arrival_date.slice(0, 7);
-                         if (r.departure_date && r.departure_date.slice(0, 7) > hi) hi = r.departure_date.slice(0, 7); });
-  _rp.misc.forEach(m => { if (m.paid_on && m.paid_on.slice(0, 7) < lo) lo = m.paid_on.slice(0, 7); });
+  const lo = RP_MIN; let hi = rpAddMonths(cur, 12);
+  _rp.res.forEach(r => { if (r.departure_date && r.departure_date.slice(0, 7) > hi) hi = r.departure_date.slice(0, 7); });
   _rp.months = []; for (let m = lo; m <= hi; m = rpAddMonths(m, 1)) _rp.months.push(m);
   const opts = _rp.months.map(m => `<option value="${m}">${rpLabel(m)}${m === cur ? ' (current)' : ''}</option>`).join('');
   document.getElementById('rp-from').innerHTML = opts;
@@ -4403,6 +4402,7 @@ function rpPreset(kind, silent) {
   const cur = baliToday().slice(0, 7);
   _rp.to = cur;
   _rp.from = kind === '12m' ? rpAddMonths(cur, -11) : cur.slice(0, 4) + '-01';
+  if (_rp.from < RP_MIN) _rp.from = RP_MIN;
   _rp.preset = kind;
   _rp.focus = null;
   rpRender();
