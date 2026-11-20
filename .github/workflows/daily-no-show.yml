@@ -1,0 +1,29 @@
+# Marks guests who did not check in by the day after their arrival as "No Show".
+# Runs every day at 16:05 UTC = 00:05 Bali time (GitHub may start it a little late).
+# You can also run it by hand: GitHub repo > Actions > "Daily No Show check" > Run workflow.
+
+name: Daily No Show check
+
+on:
+  schedule:
+    - cron: "5 16 * * *"
+  workflow_dispatch:
+
+jobs:
+  no-show:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark No Shows
+        env:
+          SUPABASE_URL: https://qhyrdlaeeruyireocfbl.supabase.co
+          # Same public "anon" key already used in index.html
+          SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFoeXJkbGFlZXJ1eWlyZW9jZmJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ1MzExNjEsImV4cCI6MjA5MDEwNzE2MX0.QG_6ZV0p51pejAZMbX1gcKbov43jRxDthki2abMMpNs
+        run: |
+          out=$(curl -s -w "\n%{http_code}" -X POST \
+            "$SUPABASE_URL/rest/v1/rpc/mark_no_shows" \
+            -H "Content-Type: application/json" -d '{}' \
+            -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY")
+          code=$(echo "$out" | tail -n1)
+          echo "Bookings marked as No Show: $(echo "$out" | head -n1) (HTTP $code)"
+          if [ "$code" != "200" ]; then exit 1; fi

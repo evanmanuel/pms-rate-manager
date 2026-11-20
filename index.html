@@ -914,6 +914,7 @@
     .rd-status-btn .mso { font-size:22px; color:var(--primary); }
     .rd-status-btn.subtle { box-shadow:none; background:transparent; color:var(--secondary); }
     .rd-status-btn.subtle .mso { color:var(--secondary); }
+    .rd-status-btn:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
     .rd-muted { font-size:12px; color:var(--secondary); line-height:1.6; margin-top:12px; }
 
     /* stay card */
@@ -953,6 +954,19 @@
     .rd-sd-edit .rate-wrap input { width:100%; padding-left:42px; font-size:16px; }
     .rd-sd-edit .rate-prefix { left:10px; }
     @media (max-width:768px) { .rd-sd-edit .rate-wrap { flex-basis:100%; } .rd-sd-edit button { flex:1; justify-content:center; } }
+    .misc-list { margin-top:12px; display:flex; flex-direction:column; }
+    .misc-item { display:flex; gap:10px; align-items:flex-start; padding:10px 0; border-top:1px solid var(--surface-container-high); }
+    .misc-txt { flex:1; min-width:0; font-size:13px; }
+    .misc-txt span { color:var(--secondary); font-size:12px; }
+    .misc-txt small { display:block; font-size:12px; color:var(--on-surface-variant); margin-top:2px; overflow-wrap:anywhere; }
+    .misc-txt small.misc-by { color:var(--secondary); font-size:11px; }
+    .misc-form { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:14px; }
+    .misc-form .form-group { margin:0; min-width:0; }
+    .misc-form .misc-notes, .misc-form .misc-actions { grid-column:1 / -1; }
+    .misc-form input { width:100%; box-sizing:border-box; }
+    .misc-form .rate-wrap input { padding-left:42px; }
+    .misc-actions { display:flex; gap:10px; justify-content:flex-end; }
+    @media (max-width:768px) { .misc-form { grid-template-columns:1fr; } .misc-actions button { flex:1; justify-content:center; } .misc-form input { font-size:16px; } }
     .rd-sd-card.flash { animation: sdflash 1.6s ease; }
     @keyframes sdflash { 0%,100% { box-shadow:var(--shadow-sm); } 30% { box-shadow:0 0 0 3px #f59e0b; } }
     .rd-mini-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); border-radius:10px; padding:12px 16px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; color:var(--primary); margin-top:22px; width:100%; }
@@ -1661,8 +1675,8 @@
             <div class="form-section">
               <div class="form-section-header"><span class="mso">date_range</span><h3>Stay Details</h3></div>
               <div class="form-grid-4">
-                <div class="form-group"><label>Arrival</label><input type="date" id="arrival-date" onchange="checkAvailability(); updateRateSummary('new')" /></div>
-                <div class="form-group"><label>Departure</label><input type="date" id="departure-date" onchange="checkAvailability(); updateRateSummary('new')" /></div>
+                <div class="form-group"><label>Arrival</label><input type="date" id="arrival-date" onchange="syncDateMins('new'); checkAvailability(); updateRateSummary('new')" onfocus="syncDateMins('new')" /></div>
+                <div class="form-group"><label>Departure</label><input type="date" id="departure-date" onchange="checkAvailability(); updateRateSummary('new')" onfocus="syncDateMins('new')" /></div>
                 <div class="form-group rate-group">
                   <div class="rate-head"><label id="rate-label-new" for="rate">Rate / Night</label>
                     <div class="rate-mode" id="rate-mode-new">
@@ -1966,7 +1980,7 @@
     <h3 id="modal-title">Confirm Action</h3>
     <p id="modal-body">Are you sure?</p>
     <div class="modal-actions">
-      <button class="btn-ghost" onclick="closeModal()">Cancel</button>
+      <button class="btn-ghost" id="modal-cancel-btn" onclick="closeModal()">Cancel</button>
       <button class="btn-danger" id="modal-confirm-btn">Confirm</button>
     </div>
   </div>
@@ -2140,7 +2154,8 @@ function showToast(msg) {
    MODAL
 ══════════════════════════════════════════════════════════ */
 let _modalResolve = null;
-function showModal(title, body, okLabel, okClass) {
+function showModal(title, body, okLabel, okClass, cancelLabel) {
+  document.getElementById('modal-cancel-btn').textContent = cancelLabel || 'Cancel';
   document.getElementById('modal-title').textContent = title;
   document.getElementById('modal-body').textContent = body;
   const okBtn = document.getElementById('modal-confirm-btn');
@@ -2300,7 +2315,7 @@ async function loadDashboard() {
     const e = Math.min(dayNum(r.departure_date), pEnd);
     return Math.max(0, e - s);
   };
-  const counted   = all.filter(r => r.status !== 'Cancelled' && r.status !== 'No-show');
+  const counted   = all.filter(countsAsStay);
   const staying   = counted.map(r => ({ r, n: inPeriod(r) })).filter(x => x.n > 0);
   const nights    = staying.reduce((s, x) => s + x.n, 0);
   const revenue   = staying.reduce((s, x) => s + x.n * nightlyOf(x.r), 0);
@@ -2417,7 +2432,7 @@ async function loadResSummary() {
   }
 
   const [{ data: all }, { data: rooms }] = await Promise.all([
-    db.from('reservations').select('status, arrival_date, departure_date'),
+    db.from('reservations').select('status, arrival_date, departure_date, payment_status, amount_paid'),
     db.from('rooms').select('id'),
   ]);
   const total = all?.length || 0;
@@ -2429,7 +2444,7 @@ async function loadResSummary() {
   const [mFrom, mTo] = monthRange(now.getFullYear(), now.getMonth());
   const pFrom = dayNum(mFrom), pEnd = dayNum(mTo) + 1;
   const nightsSold = (all || [])
-    .filter(r => r.status !== 'Cancelled' && r.status !== 'No-show' && r.arrival_date && r.departure_date)
+    .filter(r => countsAsStay(r) && r.arrival_date && r.departure_date)
     .reduce((sum, r) => sum + Math.max(0, Math.min(dayNum(r.departure_date), pEnd) - Math.max(dayNum(r.arrival_date), pFrom)), 0);
   const capacity = (rooms?.length || 0) * (pEnd - pFrom);
   const occ = capacity ? Math.round((nightsSold / capacity) * 100) : 0;
@@ -2717,7 +2732,8 @@ async function saveReservation() {
   const secRaw        = unMoney(document.getElementById('security-deposit').value);
   const securityDeposit = (document.getElementById('payment-status').value !== 'Paid' || secRaw === '') ? null : Math.max(0, Math.round(parseFloat(secRaw) || 0));
   if (!guestName || !arrivalDate || !departureDate || !rate || !channel || !roomName) return showToast('Please fill in all required fields');
-  if (departureDate <= arrivalDate) return showToast('Departure must be after arrival');
+  if (arrivalDate < baliToday()) return showToast("Arrival can't be in the past — choose today or later");
+  if (departureDate <= arrivalDate) return showToast('Departure must be at least 1 day after arrival');
   const { data: conflicts } = await db.from('reservations').select('id').eq('room_name', roomName).neq('status','Cancelled').lt('arrival_date', departureDate).gt('departure_date', arrivalDate);
   if (conflicts && conflicts.length > 0) return showToast('Room not available for selected dates');
   const arrival     = new Date(arrivalDate);
@@ -3122,7 +3138,7 @@ function renderAvailability() {
   const days = avDays(), today = localISO(new Date());
   const pFrom = dayNum(_avFrom), pEnd = pFrom + days;
   const visibleRooms = _avRooms.filter(r => !_avHidden.has(r.name));
-  const counted = _avRes.filter(r => r.status !== 'No-show');
+  const counted = _avRes.filter(countsAsStay);
   const inPeriod = r => Math.max(0, Math.min(dayNum(r.departure_date), pEnd) - Math.max(dayNum(r.arrival_date), pFrom));
 
   // Legend (click to show/hide a room)
@@ -3217,10 +3233,10 @@ function avBarHTML(r, col, pFrom, pEnd, today) {
   const nights = d - a;
   const clipL = a < pFrom, clipR = d > pEnd;
   const status = r.status || 'New Reservation';
-  const locked = clipL || clipR || status === 'Checked-out' || status === 'No-show';
+  const locked = clipL || clipR || status === 'Checked-in' || status === 'Checked-out' || status === 'No-show';
   const badge = { 'New Reservation':'Arrival', 'Checked-in':'In-House', 'Checked-out':'Completed', 'No-show':'No-show' }[status] || status;
   const lockWhy = clipL || clipR ? 'This stay runs past the timeline — change it from the booking detail page'
-                : status === 'Checked-out' ? 'Checked-out — locked' : status === 'No-show' ? 'No-show — locked' : '';
+                : status === 'Checked-in' ? 'In-house — locked' : status === 'Checked-out' ? 'Checked-out — locked' : status === 'No-show' ? 'No-show — locked' : '';
   const cls = ['av-bar', locked ? 'locked' : '', clipL ? 'clip-l' : '', clipR ? 'clip-r' : '', status === 'No-show' ? 'noshow' : '',
                status === 'Checked-out' ? 'past' : '', n === 1 ? 'n1' : n === 2 ? 'n2' : n === 3 ? 'n3' : ''].join(' ');
   return `<div class="${cls}" data-id="${r.id}" data-s="${s}" data-n="${n}" style="--s:${s};--n:${n};--rc:${col.c}"
@@ -3309,6 +3325,7 @@ async function avDrop() {
   if (!t || !r) return;
   if (t.room === d.room0 && t.s === d.s0) return;          // dropped where it was
   if (t.clash) return showToast(`${t.room} is already booked (${t.clash.guest_name}) on those dates`);
+  if (t.arr < baliToday()) return showToast("A booking can't be moved into the past");
   const n = d.n;
   const ok = await showModal('Move Reservation',
     `Move ${r.guest_name} (${r.confirmation_number}) to ${t.room}, ${fmtDateLong(t.arr)} – ${fmtDateLong(t.dep)} (${n} night${n === 1 ? '' : 's'})? The rate and total stay the same.`);
@@ -3563,6 +3580,21 @@ function statusChip(status) {
   const s = status || 'New Reservation';
   return `<span class="st-chip ${RES_STATUSES[s] || 'st-new'}">${escHtml(s)}</span>`;
 }
+/* ── Dates in Bali time ── */
+const baliToday = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });   // YYYY-MM-DD
+const isoPlus = (iso, n) => { const d = new Date(iso + 'T00:00:00Z'); d.setUTCDate(d.getUTCDate() + n); return d.toISOString().slice(0, 10); };
+// Room nights / revenue count unless cancelled, or a No Show that was not fully paid (those count as 0)
+const countsAsStay = r => r.status !== 'Cancelled' && !(r.status === 'No-show' && payStatusOf(r) !== 'Paid');
+
+// Date pickers: arrival from today, departure at least 1 day after arrival
+function syncDateMins(which) {
+  const a = document.getElementById(which === 'new' ? 'arrival-date' : 'ed-arrival');
+  const d = document.getElementById(which === 'new' ? 'departure-date' : 'ed-departure');
+  if (!a || !d) return;
+  if (which === 'new') a.min = baliToday();
+  d.min = a.value ? isoPlus(a.value, 1) : (which === 'new' ? isoPlus(baliToday(), 1) : '');
+}
+
 /* ── Money inputs: show thousand separators while typing (1000000 → 1.000.000) ── */
 const unMoney = s => String(s ?? '').replace(/[^\d]/g, '');
 const moneyStr = n => (n === null || n === undefined || n === '' || isNaN(Number(n))) ? '' : Math.round(Number(n)).toLocaleString('id-ID');
@@ -3629,6 +3661,7 @@ function fmtDateTime(ts) {
 ══════════════════════════════════════════════════════════ */
 let _rd = null;          // current reservation record
 let _rdHistory = [];     // its history rows
+let _rdMisc = [];        // its misc payments
 let _rdBack = 'all-reservations';
 let _rdMode = 'view';    // 'view' | 'edit' | 'note'
 let _rdOptions = { rooms: [], channels: [] };
@@ -3644,11 +3677,12 @@ async function openReservation(id, backTo) {
 }
 
 async function loadReservationDetail(id) {
-  const [resQ, histQ, roomsQ, chQ] = await Promise.all([
+  const [resQ, histQ, roomsQ, chQ, miscQ] = await Promise.all([
     db.from('reservations').select('*').eq('id', id).single(),
     db.from('reservation_history').select('*').eq('reservation_id', id).order('changed_at', { ascending: false }),
     db.from('rooms').select('name').order('created_at'),
     db.from('channels').select('name').order('created_at'),
+    db.from('reservation_misc_payments').select('*').eq('reservation_id', id).order('paid_on').order('created_at'),
   ]);
   if (resQ.error || !resQ.data) {
     document.getElementById('rd-root').innerHTML = '<div class="empty-state">Could not load this reservation.</div>';
@@ -3656,6 +3690,7 @@ async function loadReservationDetail(id) {
   }
   _rd = resQ.data;
   _rdHistory = histQ.data || [];
+  _rdMisc = miscQ.data || [];
   _rdOptions = { rooms: (roomsQ.data || []).map(r => r.name), channels: (chQ.data || []).map(c => c.name) };
   renderReservationDetail();
 }
@@ -3720,14 +3755,27 @@ function renderReservationDetail() {
     </div>`;
 
   // ── Stay status actions
-  const btn = (to, icon, label, subtle) =>
-    `<button class="rd-status-btn ${subtle ? 'subtle' : ''}" onclick="rdSetStatus('${to}')"><span class="mso">${icon}</span>${label}</button>`;
-  let statusBtns = '';
+  const btn = (to, icon, label, subtle, disabled) =>
+    `<button class="rd-status-btn ${subtle ? 'subtle' : ''}" onclick="rdSetStatus('${to}')" ${disabled ? 'disabled' : ''}><span class="mso">${icon}</span>${label}</button>`;
+  const today = baliToday();
+  let statusBtns = '', statusHint = '';
   switch (r.status || 'New Reservation') {
-    case 'New Reservation': statusBtns = btn('Checked-in','login','Check in') + btn('No-show','person_off','No-show'); break;
-    case 'Checked-in':      statusBtns = btn('Checked-out','logout','Check out') + btn('New Reservation','undo','Undo check-in', true); break;
-    case 'Checked-out':     statusBtns = btn('Checked-in','undo','Undo check-out', true); break;
-    case 'No-show':         statusBtns = btn('New Reservation','undo','Undo no-show', true); break;
+    case 'New Reservation':
+    case 'No-show': {
+      const onDay = r.arrival_date === today;
+      statusBtns = btn('Checked-in', 'login', 'Check in', false, !onDay);
+      if (!onDay) statusHint = r.arrival_date > today
+        ? `Check-in opens on the arrival date (${fmtDateLong(r.arrival_date)}).`
+        : `Guest arriving late? Edit the arrival date to today first, and record any charge for missed nights under Misc Payment.`;
+      break;
+    }
+    case 'Checked-in':
+      statusBtns = btn('Checked-out', 'logout', 'Check out') + (r.arrival_date === today ? btn('New Reservation', 'undo', 'Undo check-in', true) : '');
+      break;
+    case 'Checked-out':
+      statusBtns = r.departure_date === today ? btn('Checked-in', 'undo', 'Undo check-out', true) : '';
+      if (!statusBtns) statusHint = 'Stay completed.';
+      break;
   }
   const statusCard = `
     <div class="rd-card tint">
@@ -3735,7 +3783,7 @@ function renderReservationDetail() {
       <div style="margin-top:12px">${statusChip(r.status)}</div>
       ${cancelled
         ? `<p class="rd-muted">This booking is cancelled and locked. To bring the guest back, create a new booking.</p>`
-        : `<div class="rd-status-btns">${statusBtns}</div>`}
+        : `${statusBtns ? `<div class="rd-status-btns">${statusBtns}</div>` : ''}${statusHint ? `<p class="rd-muted" style="margin-top:12px">${statusHint}</p>` : ''}`}
     </div>`;
 
   // ── Guest emails
@@ -3744,15 +3792,16 @@ function renderReservationDetail() {
     const h = _rdHistory.find(x => x.action === act);
     return h ? `Last sent ${fmtDateTime(h.changed_at)} by ${escHtml(h.changed_by || 'unknown')}` : '';
   };
-  const confNote = !hasEmail ? 'Add a guest email to send' : cancelled ? 'Booking is cancelled' : (lastSent('Confirmation email sent') || 'Not sent yet');
-  const cancNote = !hasEmail ? 'Add a guest email to send' : !cancelled ? 'Available after cancelling the booking' : (lastSent('Cancellation email sent') || 'Not sent yet');
+  const stayed = r.status === 'Checked-in' || r.status === 'Checked-out';
+  const confNote = stayed ? 'Not available after check-in' : !hasEmail ? 'Add a guest email to send' : cancelled ? 'Booking is cancelled' : (lastSent('Confirmation email sent') || 'Not sent yet');
+  const cancNote = stayed ? 'Not available after check-in' : !hasEmail ? 'Add a guest email to send' : !cancelled ? 'Available after cancelling the booking' : (lastSent('Cancellation email sent') || 'Not sent yet');
   const mailCard = `
     <div class="rd-card tint">
       <div class="rd-label">Guest Emails</div>
       <div class="rd-mail-btns">
-        <button class="rd-mail-btn" onclick="previewGuestEmail('confirmation')" ${hasEmail && !cancelled ? '' : 'disabled'}>
+        <button class="rd-mail-btn" onclick="previewGuestEmail('confirmation')" ${hasEmail && !cancelled && !stayed ? '' : 'disabled'}>
           <span class="mso">mark_email_read</span><span>Send Confirmation Email<small>${confNote}</small></span></button>
-        <button class="rd-mail-btn cancel" onclick="previewGuestEmail('cancellation')" ${hasEmail && cancelled ? '' : 'disabled'}>
+        <button class="rd-mail-btn cancel" onclick="previewGuestEmail('cancellation')" ${hasEmail && cancelled && !stayed ? '' : 'disabled'}>
           <span class="mso">cancel_schedule_send</span><span>Send Cancellation Email<small>${cancNote}</small></span></button>
       </div>
     </div>`;
@@ -3796,8 +3845,9 @@ function renderReservationDetail() {
       <div class="rd-fin-row"><span>Payment status</span>${payDisplayChip(r)}</div>
       <div class="rd-fin-row"><span>Paid by guest</span><b class="rd-paid">${idr(r.amount_paid)}</b></div>
       ${cancelled ? '' : `<div class="rd-fin-row"><span>Balance due</span><b class="${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? 'rd-due' : 'rd-paid'}">${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? idr(Number(r.room_revenue || 0) - Number(r.amount_paid || 0)) : 'Fully paid ✓'}</b></div>`}
-      <div class="rd-fin-total"><span>Total Revenue</span><b>${idr(cancelled ? 0 : r.room_revenue)}</b></div>
-      ${cancelled ? `<p class="rd-muted">Cancelled — not counted as revenue. Original value: ${idr(r.room_revenue)}.</p>` : ''}
+      <div class="rd-fin-total"><span>Total Revenue</span><b>${idr(countsAsStay(r) ? r.room_revenue : 0)}</b></div>
+      ${cancelled ? `<p class="rd-muted">Cancelled — not counted as revenue. Original value: ${idr(r.room_revenue)}.</p>`
+        : !countsAsStay(r) ? `<p class="rd-muted">No Show without full payment — counted as 0 room nights and 0 revenue. Record any money kept under Misc Payment. Original value: ${idr(r.room_revenue)}.</p>` : ''}
       <button class="rd-mini-btn" onclick="document.getElementById('rd-history').scrollIntoView({behavior:'smooth'})"><span class="mso">history</span>History</button>
     </div>`;
 
@@ -3818,6 +3868,28 @@ function renderReservationDetail() {
            <p class="rd-sd-note">Held separately and not part of the room payment.${sdHeld ? ' Set to 0 once refunded.' : ''}</p>
            ${sdHeld && r.status === 'Checked-in' ? `<div class="rd-sd-alert"><span class="mso">info</span><span>Refund this deposit (less any deductions for damage) and set it to 0 before checking the guest out.</span></div>` : ''}
            ${cancelled ? '' : payStatusOf(r) !== 'Paid' ? `<p class="rd-sd-note" style="margin-top:12px"><span class="mso" style="font-size:15px;vertical-align:-3px">lock</span> Available once Payment Status is Paid.</p>` : `<button class="rd-mini-btn" style="margin-top:16px" onclick="_rdMode='sd';renderReservationDetail();setTimeout(()=>{const i=document.getElementById('sd-input');i&&(i.focus(),i.select())},30)"><span class="mso">edit</span>${sd === null || sd === undefined ? 'Add amount' : 'Update amount'}</button>`}`}
+    </div>`;
+
+  // ── Misc Payments (money actually collected outside the room payment)
+  const miscTotal = _rdMisc.reduce((t, m) => t + Number(m.amount || 0), 0);
+  const miscCard = `
+    <div class="rd-card" id="rd-misc">
+      <div class="rd-sd-head"><div class="rd-label">Misc Payment${_rdMisc.length ? ` · ${_rdMisc.length}` : ''}</div><span class="mso" style="font-size:20px;color:var(--secondary)">add_card</span></div>
+      <div class="rd-sd-amount ${miscTotal ? '' : 'zero'}">${miscTotal ? idr(miscTotal) : 'None recorded'}</div>
+      <p class="rd-sd-note">Money collected outside the room payment, e.g. a cancellation or no-show charge.</p>
+      ${_rdMisc.length ? `<div class="misc-list">${_rdMisc.map(m => `
+        <div class="misc-item">
+          <div class="misc-txt"><b>${idr(m.amount)}</b> <span>· ${fmtDateLong(m.paid_on)}</span><small>${escHtml(m.notes)}</small><small class="misc-by">by ${escHtml(m.created_by || '—')}</small></div>
+          <button class="doc-del" onclick="rdDeleteMisc('${m.id}')" title="Remove"><span class="mso">delete</span></button>
+        </div>`).join('')}</div>` : ''}
+      ${_rdMode === 'misc'
+        ? `<div class="misc-form">
+             <div class="form-group"><label for="misc-date">Date</label><input id="misc-date" type="date" value="${baliToday()}" max="${baliToday()}"></div>
+             <div class="form-group"><label for="misc-amount">Amount</label><div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="misc-amount" type="text" inputmode="numeric" autocomplete="off" class="money" placeholder="0"></div></div>
+             <div class="form-group misc-notes"><label for="misc-notes">Notes</label><input id="misc-notes" type="text" maxlength="140" placeholder="e.g. No-show charge 12 Nov (1 night)"></div>
+             <div class="misc-actions"><button class="btn-ghost" onclick="_rdMode='view';renderReservationDetail()">Cancel</button><button class="btn-primary" id="misc-save" onclick="rdSaveMisc()">Save</button></div>
+           </div>`
+        : `<button class="rd-mini-btn" style="margin-top:16px" onclick="_rdMode='misc';renderReservationDetail();setTimeout(()=>document.getElementById('misc-amount')?.focus(),30)"><span class="mso">add</span>Add payment</button>`}
     </div>`;
 
   // ── Notes
@@ -3863,7 +3935,7 @@ function renderReservationDetail() {
       <div class="rd-col">
         ${stayCard}
         <div class="rd-two">${finCard}${notesCard}</div>
-        ${sdCard}
+        <div class="rd-two">${sdCard}${miscCard}</div>
         <div class="rd-card" id="rd-docs"><div class="rd-label">Documents</div><div class="rd-muted">Loading…</div></div>
         ${histCard}
         ${cancelBox}
@@ -4194,7 +4266,7 @@ const HIST_LABELS = {
   guest_name:'Guest name', country:'Country', guest_email:'Email', guest_phone:'Phone', guests:'Guests',
   arrival_date:'Arrival', departure_date:'Departure', room_name:'Room', rate:'Rate / night', channel:'Channel',
   status:'Status', payment_status:'Payment', amount_paid:'Amount paid', notes:'Notes', room_night:'Nights', room_revenue:'Revenue',
-  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone', rate_type:'Sold as', security_deposit:'Security deposit', file:'File', sent_to:'Sent to'
+  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone', rate_type:'Sold as', security_deposit:'Security deposit', misc_payment:'Misc payment', file:'File', sent_to:'Sent to'
 };
 const HIST_ORDER = Object.keys(HIST_LABELS);
 function histVal(field, v) {
@@ -4209,7 +4281,7 @@ function histVal(field, v) {
 }
 function renderHistory() {
   const items = _rdHistory.map(h => {
-    const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz' : h.action === 'Moved' ? 'open_with'
+    const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz' : h.action === 'Moved' ? 'open_with' : h.action === 'Misc payment added' ? 'add_card' : h.action === 'Misc payment removed' ? 'credit_card_off'
                : h.action === 'File uploaded' ? 'upload_file' : h.action === 'File deleted' ? 'delete' : h.action === 'Room renamed' ? 'bed' : h.action === 'Invoice generated' ? 'receipt_long'
                : h.action === 'Confirmation email sent' ? 'mark_email_read' : h.action === 'Cancellation email sent' ? 'cancel_schedule_send' : 'edit';
     const ch = h.changes || {};
@@ -4243,6 +4315,31 @@ async function rdUpdate(payload, okMsg) {
   return true;
 }
 
+async function rdSaveMisc() {
+  const date = document.getElementById('misc-date').value;
+  const amount = parseFloat(unMoney(document.getElementById('misc-amount').value)) || 0;
+  const notes = document.getElementById('misc-notes').value.trim();
+  if (!date) return showToast('Choose the payment date');
+  if (date > baliToday()) return showToast("The payment date can't be in the future");
+  if (!(amount > 0)) return showToast('Enter the amount collected');
+  if (!notes) return showToast('Add a note describing this payment');
+  const btn = document.getElementById('misc-save'); btn.disabled = true;
+  const { error } = await db.from('reservation_misc_payments').insert({ reservation_id: _rd.id, paid_on: date, amount: Math.round(amount), notes });
+  if (error) { btn.disabled = false; return showToast('Error: ' + error.message); }
+  showToast('Misc payment recorded ✓');
+  _rdMode = 'view';
+  await loadReservationDetail(_rd.id);
+}
+async function rdDeleteMisc(id) {
+  const m = _rdMisc.find(x => x.id === id); if (!m) return;
+  const ok = await showModal('Remove Misc Payment', `Remove ${idr(m.amount)} (${fmtDateLong(m.paid_on)} · ${m.notes})? The removal is recorded in the change history.`, 'Remove');
+  if (!ok) return;
+  const { error } = await db.from('reservation_misc_payments').delete().eq('id', id);
+  if (error) return showToast('Error: ' + error.message);
+  showToast('Misc payment removed');
+  await loadReservationDetail(_rd.id);
+}
+
 async function rdSaveSecurity() {
   if (payStatusOf(_rd) !== 'Paid') { showToast('Set Payment Status to Paid first'); return; }
   const x = unMoney(document.getElementById('sd-input').value);
@@ -4253,6 +4350,23 @@ async function rdSaveSecurity() {
 }
 
 async function rdSetStatus(to) {
+  const today = baliToday();
+  if (to === 'Checked-in' && ['New Reservation', 'No-show'].includes(_rd.status) && _rd.arrival_date !== today)
+    return showToast('Check-in is only possible on the arrival date');
+  if (to === 'New Reservation' && _rd.status === 'Checked-in' && _rd.arrival_date !== today)
+    return showToast('Undo check-in is only possible on the arrival date');
+  if (to === 'Checked-in' && _rd.status === 'Checked-out' && _rd.departure_date !== today)
+    return showToast('Undo check-out is only possible on the departure date');
+  if (to === 'Checked-out' && today < _rd.departure_date) {
+    const go = await showModal('Early Check-out',
+      `${_rd.guest_name}'s departure date is ${fmtDateLong(_rd.departure_date)}. To check out today, first change the departure date to today (${fmtDateLong(today)}) in the booking, so nights and revenue stay correct.`,
+      'Edit booking', 'btn-primary', 'Cancel check-out');
+    if (go) {
+      rdStartEdit();
+      setTimeout(() => { const i = document.getElementById('ed-departure'); if (i) { i.scrollIntoView({ behavior: 'smooth', block: 'center' }); i.focus({ preventScroll: true }); } }, 60);
+    }
+    return;
+  }
   if (to === 'Checked-out' && Number(_rd.security_deposit) > 0) {
     const go = await showModal('Check Refundable Security Deposit',
       `${idr(_rd.security_deposit)} security deposit is still recorded for ${_rd.guest_name}. Refund it to the guest (less any deductions for damage) and set the amount to 0 before checking out.`,
@@ -4266,7 +4380,7 @@ async function rdSetStatus(to) {
     }
     return;
   }
-  const labels = { 'Checked-in':'Check in', 'Checked-out':'Check out', 'No-show':'Mark as no-show', 'New Reservation':'Undo' };
+  const labels = { 'Checked-in': _rd.status === 'Checked-out' ? 'Undo check-out' : 'Check in', 'Checked-out':'Check out', 'New Reservation':'Undo check-in' };
   const ok = await showModal(labels[to] || 'Change status', `Change status of ${_rd.guest_name} from "${_rd.status || 'New Reservation'}" to "${to}"?`);
   if (!ok) return;
   await rdUpdate({ status: to }, `Status: ${to} ✓`);
@@ -4317,8 +4431,8 @@ function renderEditForm(r) {
     <div class="rd-edit-section">
       <h3><span class="mso">date_range</span>Stay</h3>
       <div class="form-grid-3">
-        ${f('ed-arrival','Arrival *',`<input id="ed-arrival" type="date" value="${r.arrival_date || ''}" onchange="rdRecalc()">`)}
-        ${f('ed-departure','Departure *',`<input id="ed-departure" type="date" value="${r.departure_date || ''}" onchange="rdRecalc()">`)}
+        ${f('ed-arrival','Arrival *',`<input id="ed-arrival" type="date" value="${r.arrival_date || ''}" ${r.arrival_date >= baliToday() ? `min="${baliToday()}"` : ''} onchange="syncDateMins('ed'); rdRecalc()">`)}
+        ${f('ed-departure','Departure *',`<input id="ed-departure" type="date" value="${r.departure_date || ''}" min="${r.arrival_date ? isoPlus(r.arrival_date, 1) : ''}" onchange="rdRecalc()">`)}
         ${f('ed-room','Room *',`<select id="ed-room" onchange="rdRecalc()">${opts(_rdOptions.rooms, r.room_name)}</select>`)}
         ${f('ed-channel','Channel *',`<select id="ed-channel">${opts(_rdOptions.channels, r.channel)}</select>`)}
         <div class="form-group rate-group">
@@ -4390,7 +4504,9 @@ async function rdSaveEdit() {
   const guest = v('ed-guest'), a = v('ed-arrival'), d = v('ed-departure'), room = v('ed-room'), channel = v('ed-channel');
   const rate = parseFloat(unMoney(v('ed-rate')));
   if (!guest || !a || !d || !room || !channel || !(rate >= 0) || v('ed-rate') === '') return showToast('Please fill in all required fields');
-  if (d <= a) return showToast('Departure must be after arrival');
+  if (d <= a) return showToast('Departure must be at least 1 day after arrival');
+  const today = baliToday();
+  if (a !== _rd.arrival_date && a < today) return showToast("Arrival can't be moved into the past — choose today or later");
 
   const btn = document.getElementById('ed-save'); btn.disabled = true;
   const free = await rdCheckAvail(a, d, room);
@@ -4427,6 +4543,8 @@ async function rdSaveEdit() {
     room_revenue: total,
     arrival_month: new Date(a + 'T00:00:00').toLocaleString('default', { month:'long', year:'numeric' }),
   };
+  // A No Show guest who is re-dated to today or later is expected again
+  if (_rd.status === 'No-show' && a >= today) payload.status = 'New Reservation';
   const nameChanged = payload.guest_name !== _rd.guest_name;
   const saved = await rdUpdate(payload, 'Changes saved ✓');
   if (saved && nameChanged) googleFn('rename-folder', { reservation_id: _rd.id }).catch(() => {});
