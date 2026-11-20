@@ -2099,7 +2099,7 @@
         </div>
         <div class="section">
           <div class="section-label">Room Names</div>
-          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Tap ✏️ to change a room's name or short description (max 30 characters, shown on the Availability page). Renaming a room also updates every reservation assigned to it.</p>
+          <p style="font-size:12px;color:var(--secondary);margin:-10px 0 14px">Tap ✏️ to change a room's name or short description (max 30 characters, shown on the Calendar page). Renaming a room also updates every reservation assigned to it.</p>
           <div id="room-list"></div>
           <div class="add-row">
             <input type="text" id="new-room" placeholder="Add new room…" onkeydown="if(event.key==='Enter') addRoom()" />
@@ -2281,7 +2281,7 @@ function enterApp() {
 /* ══════════════════════════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════════════════════════ */
-const PAGE_TITLES = { dashboard:'Dashboard', todo:'To Do', report:'Report', reservations:'Reservations', calendar:'Calendar', settings:'Settings', admin:'Administration' };
+const PAGE_TITLES = { dashboard:'Dashboard', todo:'To Do', report:'Report', reservations:'Reservations', calendar:'Calendar', settings:'Settings', admin:'Admin' };
 
 /* ── Where did the user come from? (Back buttons return there) ── */
 let _bookingOrigin = 'reservations';   // 'reservations' | 'availability'
