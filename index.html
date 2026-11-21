@@ -1882,8 +1882,8 @@
             <div class="form-section">
               <div class="form-section-header"><span class="mso">date_range</span><h3>Stay Details</h3></div>
               <div class="form-grid-4">
-                <div class="form-group"><label>Arrival</label><input type="date" id="arrival-date" onchange="syncDateMins('new'); checkAvailability(); updateRateSummary('new')" onfocus="syncDateMins('new')" /></div>
-                <div class="form-group"><label>Departure</label><input type="date" id="departure-date" onchange="checkAvailability(); updateRateSummary('new')" onfocus="syncDateMins('new')" /></div>
+                <div class="form-group"><label>Arrival</label><input type="date" id="arrival-date" onchange="guardDates('new','arrival'); checkAvailability(); updateRateSummary('new')" onfocus="syncDateMins('new')" /></div>
+                <div class="form-group"><label>Departure</label><input type="date" id="departure-date" onchange="guardDates('new','departure'); checkAvailability(); updateRateSummary('new')" onfocus="syncDateMins('new')" /></div>
                 <div class="form-group rate-group">
                   <div class="rate-head"><label id="rate-label-new" for="rate">Rate / Night</label>
                     <div class="rate-mode" id="rate-mode-new">
@@ -3030,6 +3030,7 @@ function clearForm() {
   document.getElementById('guest-count').value = '1';
   document.getElementById('payment-status').value = 'Unpaid';
   document.getElementById('channel-select').value = '';
+  syncDateMins('new');
   document.getElementById('room-select').value = '';
   document.getElementById('notes').value = '';
   const notice = document.getElementById('avail-notice');
@@ -3804,6 +3805,24 @@ function syncDateMins(which) {
   if (!a || !d) return;
   if (which === 'new') a.min = baliToday();
   d.min = a.value ? isoPlus(a.value, 1) : (which === 'new' ? isoPlus(baliToday(), 1) : '');
+}
+// Called when a date changes: some phones ignore the picker limits or allow typing,
+// so correct invalid dates right away instead of only on Save.
+function guardDates(which, changed) {
+  const a = document.getElementById(which === 'new' ? 'arrival-date' : 'ed-arrival');
+  const d = document.getElementById(which === 'new' ? 'departure-date' : 'ed-departure');
+  if (!a || !d) return;
+  if (which === 'new' && a.value && a.value < baliToday()) {
+    a.value = '';
+    showToast("Arrival can't be in the past — choose today or later");
+  }
+  if (a.value && d.value && d.value <= a.value) {
+    d.value = '';
+    showToast(changed === 'arrival'
+      ? 'Departure cleared — it must be after the new arrival date'
+      : 'Departure must be at least 1 day after arrival');
+  }
+  syncDateMins(which);
 }
 
 /* ── Money inputs: show thousand separators while typing (1000000 → 1.000.000) ── */
@@ -5172,8 +5191,8 @@ function renderEditForm(r) {
     <div class="rd-edit-section">
       <h3><span class="mso">date_range</span>Stay</h3>
       <div class="form-grid-3">
-        ${f('ed-arrival','Arrival *',`<input id="ed-arrival" type="date" value="${r.arrival_date || ''}" ${r.arrival_date >= baliToday() ? `min="${baliToday()}"` : ''} onchange="syncDateMins('ed'); rdRecalc()">`)}
-        ${f('ed-departure','Departure *',`<input id="ed-departure" type="date" value="${r.departure_date || ''}" min="${r.arrival_date ? isoPlus(r.arrival_date, 1) : ''}" onchange="rdRecalc()">`)}
+        ${f('ed-arrival','Arrival *',`<input id="ed-arrival" type="date" value="${r.arrival_date || ''}" ${r.arrival_date >= baliToday() ? `min="${baliToday()}"` : ''} onchange="guardDates('ed','arrival'); rdRecalc()">`)}
+        ${f('ed-departure','Departure *',`<input id="ed-departure" type="date" value="${r.departure_date || ''}" min="${r.arrival_date ? isoPlus(r.arrival_date, 1) : ''}" onfocus="syncDateMins('ed')" onchange="guardDates('ed','departure'); rdRecalc()">`)}
         ${f('ed-room','Room *',`<select id="ed-room" onchange="rdRecalc()">${opts(_rdOptions.rooms, r.room_name)}</select>`)}
         ${f('ed-channel','Channel *',`<select id="ed-channel">${opts(_rdOptions.channels, r.channel)}</select>`)}
         <div class="form-group rate-group">
