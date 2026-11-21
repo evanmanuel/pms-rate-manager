@@ -540,6 +540,23 @@
     .avail-notice.success { background:rgba(186,238,214,0.4); }
     .avail-notice.success .mso { color:var(--primary); }
     .avail-notice.success p { color:var(--primary); }
+    .ra-btn { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--primary); background:none; color:var(--primary); border-radius:8px; padding:9px 14px; font-family:'Manrope',sans-serif; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
+    .ra-btn .mso { font-size:17px; }
+    .ra-btn:hover { background:var(--primary-fixed); }
+    .ra-panel { display:flex; flex-direction:column; gap:8px; }
+    .ra-panel:empty { display:none; }
+    .ra-title { font-size:12px; color:var(--secondary); font-weight:600; }
+    .ra-list { display:grid; grid-template-columns:repeat(auto-fill, minmax(200px, 1fr)); gap:8px; }
+    .ra-room { display:flex; align-items:center; gap:10px; text-align:left; border-radius:10px; padding:10px 12px; border:1px solid var(--surface-container-high); background:var(--surface-container-lowest); font:inherit; color:var(--on-surface); min-width:0; }
+    .ra-room .mso { font-size:20px; flex-shrink:0; }
+    .ra-room b { display:block; font-size:13px; }
+    .ra-room small { display:block; font-size:11px; color:var(--secondary); overflow-wrap:anywhere; }
+    .ra-room.free { cursor:pointer; border-color:#9fd3b8; background:#EEF8F2; }
+    .ra-room.free .mso { color:#0F7A4A; }
+    .ra-room.free:hover { background:#E0F2E8; }
+    .ra-room.free.picked { box-shadow:inset 0 0 0 2px var(--primary); }
+    .ra-room.busy { opacity:.7; cursor:default; }
+    .ra-room.busy .mso { color:#b42318; }
     .form-actions { display:flex; align-items:center; justify-content:space-between; padding-top:28px; border-top:1px solid var(--surface-container-high); margin-top:12px; }
     .form-actions-right { display:flex; gap:10px; align-items:center; }
     .save-chip { display:none; align-items:center; gap:6px; padding:7px 14px; background:var(--primary-fixed); border-radius:20px; font-family:'Manrope',sans-serif; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.04em; color:var(--on-primary-fixed-var); }
@@ -1902,6 +1919,8 @@
                 <div class="form-group"><label>Room / Unit</label><select id="room-select" onchange="checkAvailability()"><option value="">Select room…</option></select></div>
                 <div class="avail-notice" id="avail-notice"><span class="mso">info</span><p>Select dates and a room to check availability.</p></div>
               </div>
+              <div style="margin-top:14px"><button type="button" class="ra-btn" onclick="showRoomAvail('new')"><span class="mso">event_available</span>Check available rooms</button></div>
+              <div class="ra-panel" id="ra-new" style="margin-top:12px"></div>
             </div>
             <div class="form-section">
               <div class="form-section-header"><span class="mso">payments</span><h3>Payment</h3></div>
@@ -2796,6 +2815,7 @@ async function loadDropdowns() {
    AVAILABILITY CHECK
 ══════════════════════════════════════════════════════════ */
 async function checkAvailability() {
+  refreshRoomAvail('new');
   const arrival   = document.getElementById('arrival-date').value;
   const departure = document.getElementById('departure-date').value;
   const room      = document.getElementById('room-select').value;
@@ -3031,6 +3051,7 @@ function clearForm() {
   document.getElementById('payment-status').value = 'Unpaid';
   document.getElementById('channel-select').value = '';
   syncDateMins('new');
+  const raNew = document.getElementById('ra-new'); if (raNew) { raNew.innerHTML = ''; raNew.dataset.open = ''; }
   document.getElementById('room-select').value = '';
   document.getElementById('notes').value = '';
   const notice = document.getElementById('avail-notice');
@@ -5208,6 +5229,8 @@ function renderEditForm(r) {
         <span class="st-chip st-out" id="ed-summary">—</span>
         <div class="avail-notice" id="ed-avail" style="flex:1;min-width:240px"><span class="mso">info</span><p>Availability will be checked when dates or room change.</p></div>
       </div>
+      <div style="margin-top:14px"><button type="button" class="ra-btn" onclick="showRoomAvail('ed')"><span class="mso">event_available</span>Check available rooms</button></div>
+      <div class="ra-panel" id="ra-ed" style="margin-top:12px"></div>
     </div>
     <div class="rd-edit-section">
       <h3><span class="mso">payments</span>Payment</h3>
@@ -5238,7 +5261,49 @@ function rdRecalc() {
   if (sum && rc) sum.textContent = rc.nights > 0 ? `${rc.nights} night${rc.nights === 1 ? '' : 's'} · ${idr(rc.total)}` : 'Check dates';
   updateRateSummary('ed');
   clearTimeout(_rdAvailTimer);
-  _rdAvailTimer = setTimeout(() => rdCheckAvail(a, d, room), 250);
+  _rdAvailTimer = setTimeout(() => { rdCheckAvail(a, d, room); refreshRoomAvail('ed'); }, 250);
+}
+
+/* ── "Check available rooms": every room for the chosen dates; tap a free one to pick it ── */
+function refreshRoomAvail(which) {
+  const panel = document.getElementById('ra-' + which);
+  if (panel && panel.dataset.open === '1') showRoomAvail(which, true);
+}
+async function showRoomAvail(which, quiet) {
+  const isNew = which === 'new';
+  const panel = document.getElementById('ra-' + which);
+  const a = document.getElementById(isNew ? 'arrival-date' : 'ed-arrival')?.value;
+  const d = document.getElementById(isNew ? 'departure-date' : 'ed-departure')?.value;
+  const sel = document.getElementById(isNew ? 'room-select' : 'ed-room');
+  if (!panel || !sel) return;
+  if (!a || !d || d <= a) {
+    if (quiet) { panel.innerHTML = '<div class="ra-title">Choose arrival and departure dates to see which rooms are free.</div>'; return; }
+    return showToast('Choose arrival and departure dates first');
+  }
+  panel.dataset.open = '1';
+  panel.innerHTML = '<div class="ra-title">Checking rooms…</div>';
+  const rooms = [...sel.options].map(o => o.value).filter(Boolean);
+  let q = db.from('reservations').select('id, guest_name, room_name, arrival_date, departure_date')
+    .neq('status', 'Cancelled').lt('arrival_date', d).gt('departure_date', a);
+  if (!isNew && _rd) q = q.neq('id', _rd.id);
+  const { data, error } = await q;
+  if (error) { panel.innerHTML = '<div class="ra-title">Could not check rooms. Try again.</div>'; return; }
+  const busy = {};
+  (data || []).forEach(r => (busy[r.room_name] = busy[r.room_name] || []).push(r));
+  const nights = nightsBetween(a, d);
+  const free = rooms.filter(n => !busy[n]).length;
+  panel.innerHTML = `<div class="ra-title">${fmtShort(a)} – ${fmtShort(d)} · ${nights} night${nights === 1 ? '' : 's'} · ${free} of ${rooms.length} rooms free${free ? ' — tap one to select it' : ''}</div>
+    <div class="ra-list">${rooms.map(n => {
+      const b = busy[n];
+      if (!b) return `<button type="button" class="ra-room free${sel.value === n ? ' picked' : ''}" onclick="pickRoomAvail('${which}', ${escHtml(JSON.stringify(n))})"><span class="mso">check_circle</span><span><b>${escHtml(n)}</b><small>Available</small></span></button>`;
+      return `<div class="ra-room busy"><span class="mso">block</span><span><b>${escHtml(n)}</b><small>Booked · ${b.map(r => `${escHtml(r.guest_name)} (${fmtShort(r.arrival_date)} – ${fmtShort(r.departure_date)})`).join(', ')}</small></span></div>`;
+    }).join('')}</div>`;
+}
+function pickRoomAvail(which, name) {
+  const sel = document.getElementById(which === 'new' ? 'room-select' : 'ed-room');
+  sel.value = name;
+  sel.dispatchEvent(new Event('change'));
+  document.querySelectorAll('#ra-' + which + ' .ra-room.free').forEach(el => el.classList.toggle('picked', el.querySelector('b')?.textContent === name));
 }
 
 async function rdCheckAvail(a, d, room) {
