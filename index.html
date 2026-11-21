@@ -2332,8 +2332,8 @@ function showPage(page, btn) {
 
   if (page === 'dashboard')    loadDashboard();
   if (page === 'todo')         loadTodo();
-  if (page === 'report')       loadReport();
   else refreshTodoBadge();
+  if (page === 'report')       loadReport();
   if (page === 'reservations') { showScreen('res-summary'); loadResSummary(); }
   if (page === 'settings')     { loadChannels(); loadRooms(); loadGoogleStatus(); loadBankSettings(); loadBackupInfo(); }
   if (page === 'admin')        loadUserList();
@@ -2981,6 +2981,7 @@ async function saveReservation() {
   if (error) return showToast('Error saving reservation: ' + error.message);
   clearForm();
   showBookingConfirmed(saved);
+  refreshTodoBadge();
 }
 
 function showBookingConfirmed(r) {
@@ -4347,6 +4348,16 @@ function setTodoBadge(n) {
   b.hidden = !n;
 }
 let _todoBadgeBusy = false;
+// Keep To Do fresh: when the app comes back to the screen, and every 5 minutes
+function refreshTodoNow() {
+  if (!currentUser || document.hidden) return;
+  if (document.getElementById('page-todo')?.classList.contains('active')) loadTodo();
+  else refreshTodoBadge();
+}
+document.addEventListener('visibilitychange', refreshTodoNow);
+window.addEventListener('focus', refreshTodoNow);
+setInterval(refreshTodoNow, 5 * 60 * 1000);
+
 async function refreshTodoBadge() {
   if (_todoBadgeBusy || !currentUser) return;
   _todoBadgeBusy = true;
