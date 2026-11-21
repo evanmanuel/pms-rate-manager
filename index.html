@@ -542,6 +542,8 @@
     .avail-notice.success p { color:var(--primary); }
     .ra-btn { display:inline-flex; align-items:center; gap:6px; border:1px solid var(--primary); background:none; color:var(--primary); border-radius:8px; padding:9px 14px; font-family:'Manrope',sans-serif; font-size:11px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; cursor:pointer; }
     .ra-btn .mso { font-size:17px; }
+    .ra-btn-cell { justify-content:flex-end; align-items:flex-start; }
+    .ra-btn-cell .ra-btn { min-height:46px; }
     .ra-btn:hover { background:var(--primary-fixed); }
     .ra-panel { display:flex; flex-direction:column; gap:8px; }
     .ra-panel:empty { display:none; }
@@ -1917,9 +1919,9 @@
               <div class="form-section-header"><span class="mso">bed</span><h3>Room Selection</h3></div>
               <div class="form-grid-2">
                 <div class="form-group"><label>Room / Unit</label><select id="room-select" onchange="checkAvailability()"><option value="">Select room…</option></select></div>
-                <div class="avail-notice" id="avail-notice"><span class="mso">info</span><p>Select dates and a room to check availability.</p></div>
+                <div class="form-group ra-btn-cell"><button type="button" class="ra-btn" onclick="showRoomAvail('new')"><span class="mso">event_available</span>Check available rooms</button></div>
+                <div class="avail-notice" id="avail-notice" style="display:none"><span class="mso">info</span><p></p></div>
               </div>
-              <div style="margin-top:14px"><button type="button" class="ra-btn" onclick="showRoomAvail('new')"><span class="mso">event_available</span>Check available rooms</button></div>
               <div class="ra-panel" id="ra-new" style="margin-top:12px"></div>
             </div>
             <div class="form-section">
@@ -5227,7 +5229,7 @@ function renderEditForm(r) {
       </div>
       <div class="rd-edit-summary">
         <span class="st-chip st-out" id="ed-summary">—</span>
-        <div class="avail-notice" id="ed-avail" style="flex:1;min-width:240px"><span class="mso">info</span><p>Availability will be checked when dates or room change.</p></div>
+        <div class="avail-notice" id="ed-avail" style="display:none"><span class="mso">info</span><p>Availability will be checked when dates or room change.</p></div>
       </div>
       <div style="margin-top:14px"><button type="button" class="ra-btn" onclick="showRoomAvail('ed')"><span class="mso">event_available</span>Check available rooms</button></div>
       <div class="ra-panel" id="ra-ed" style="margin-top:12px"></div>
