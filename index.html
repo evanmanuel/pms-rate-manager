@@ -353,6 +353,23 @@
     .res-card:hover { background:var(--surface-container-low); }
     /* Report */
     .rp-wrap { max-width:1200px; padding:40px 40px 60px; display:flex; flex-direction:column; gap:24px; }
+    .rp-perf, .rp-fin { display:flex; flex-direction:column; gap:24px; }
+    .rp-tabs { display:inline-flex; align-self:flex-start; background:var(--surface-container-lowest); border-radius:14px; padding:4px; gap:4px; box-shadow:var(--shadow-sm); }
+    .rp-tabs button { display:inline-flex; align-items:center; gap:6px; border:none; background:none; border-radius:10px; padding:9px 16px; font-family:'Manrope',sans-serif; font-size:12px; font-weight:800; letter-spacing:.04em; color:var(--secondary); cursor:pointer; }
+    .rp-tabs button .mso { font-size:18px; }
+    .rp-tabs button.on { background:var(--primary); color:#fff; }
+    .fn-day-head { display:flex; flex-wrap:wrap; gap:10px 16px; align-items:center; justify-content:space-between; }
+    .fn-day-head input[type=date] { border:1px solid var(--surface-container-high); background:var(--surface-container-low); border-radius:10px; padding:8px 10px; font:inherit; font-size:13px; font-weight:600; }
+    .fn-tiles { display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:10px; padding:16px 22px; }
+    .fn-tile { background:var(--surface-container-low); border-radius:12px; padding:10px 12px; }
+    .fn-tile small { display:block; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--secondary); }
+    .fn-tile b { display:block; font-size:16px; margin-top:4px; font-variant-numeric:tabular-nums; }
+    .fn-tile.total { background:var(--primary); color:#fff; } .fn-tile.total small { color:#D7E9DE; }
+    .fn-group { padding:10px 22px 4px; font-family:'Manrope',sans-serif; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--secondary); background:var(--surface-container-low); }
+    .rp-table td.l, .rp-table th.l { text-align:left; }
+    .rp-fin .rp-table th:first-child, .rp-fin .rp-table td:first-child { position:sticky; left:0; z-index:1; background:var(--surface-container-lowest); box-shadow:1px 0 0 var(--surface-container-high); }
+    .rp-fin .rp-table th:first-child, .rp-fin .rp-table tfoot td:first-child, .rp-fin .rp-table td.fn-group { background:var(--surface-container-low); }
+    .fn-muted { color:var(--secondary); font-size:11px; }
     .rp-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
     .rp-head h2 { font-family:'Manrope',sans-serif; font-size:28px; font-weight:800; color:var(--primary); letter-spacing:-.03em; line-height:1.1; }
     .rp-head p { font-size:13px; color:var(--secondary); margin-top:6px; line-height:1.6; }
@@ -1035,6 +1052,7 @@
     .fx-txt small { display:block; color:var(--on-surface); font-size:13px; overflow-wrap:anywhere; }
     .fx-amt { font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
     .fx-add { display:grid; grid-template-columns:175px 140px 200px 1fr auto; gap:10px; align-items:end; margin-top:12px; padding-top:12px; border-top:1px dashed var(--surface-container-high); }
+    .fx-add.pay { grid-template-columns:165px 150px 140px 190px 1fr auto; }
     .fx-add .form-group { gap:6px; min-width:0; }
     .fx-add label { font-size:10px; }
     .fx-amount { display:flex; gap:6px; align-items:stretch; }
@@ -1049,13 +1067,20 @@
     .fx-sum-total { grid-column:1 / -1; display:flex; justify-content:space-between; border-top:1px solid var(--surface-container-high); padding-top:10px; font-weight:700; font-size:14px; }
     .fx-alert { grid-column:1 / -1; display:flex; gap:8px; align-items:flex-start; background:#FDE8E8; color:#9b1c1c; border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.5; }
     .fx-alert .mso { font-size:18px; }
+    @container (max-width:1000px) {
+      .fx-add.pay { grid-template-columns:1fr 1fr 1fr; }
+      .fx-add.pay > .form-group:nth-child(4) { grid-column:1 / 2; }
+      .fx-add.pay .fx-notes { grid-column:2 / -1; }
+      .fx-add.pay .fx-add-btn { grid-column:1 / -1; }
+    }
     @container (max-width:860px) {
-      .fx-add { grid-template-columns:1fr 1fr 1.4fr; }
-      .fx-add .fx-notes { grid-column:1 / 3; }
+      .fx-add:not(.pay) { grid-template-columns:1fr 1fr 1.4fr; }
+      .fx-add:not(.pay) .fx-notes { grid-column:1 / 3; }
     }
     @container (max-width:520px) {
       .fx-add { grid-template-columns:1fr 1fr; }
-      .fx-add .fx-notes, .fx-add > .form-group:nth-child(3), .fx-add .fx-add-btn { grid-column:1 / -1; }
+      .fx-add { grid-template-columns:1fr 1fr !important; }
+      .fx-add .fx-notes, .fx-add:not(.pay) > .form-group:nth-child(3), .fx-add.pay > .form-group:nth-child(4), .fx-add .fx-add-btn { grid-column:1 / -1 !important; }
       .fx-row { grid-template-columns:1fr auto auto; gap:6px 10px; }
       .fx-row .fx-kind { grid-column:1 / -1; justify-self:start; }
       .fx-sum { grid-template-columns:1fr; }
@@ -1766,12 +1791,16 @@
 
     <div class="page" id="page-report">
       <div class="rp-wrap">
+        <div class="rp-tabs">
+          <button id="rp-tab-perf" class="on" onclick="rpTab('perf')"><span class="mso">bar_chart</span>Performance</button>
+          <button id="rp-tab-fin" onclick="rpTab('fin')"><span class="mso">account_balance</span>Finance</button>
+        </div>
         <div class="rp-head">
           <div>
-            <h2>Performance Report</h2>
-            <p>Room nights, room revenue and misc revenue by month. Click a number in the table to see who it comes from.</p>
+            <h2 id="rp-title">Performance Report</h2>
+            <p id="rp-intro">Room nights, room revenue and misc revenue by month. Click a number in the table to see who it comes from.</p>
           </div>
-          <button class="btn-primary" onclick="exportReport()"><span class="mso" style="font-size:18px">download</span>Export Excel</button>
+          <button class="btn-primary" onclick="_rp.tab === 'fin' ? exportFinance() : exportReport()"><span class="mso" style="font-size:18px">download</span>Export Excel</button>
         </div>
 
         <div class="rp-controls">
@@ -1781,6 +1810,7 @@
             <span class="rp-to">to</span>
             <select id="rp-to" onchange="rpSetRange(null, this.value)"></select>
             <div class="rp-seg">
+              <button id="rp-mtd" onclick="rpPreset('mtd')">This Month</button>
               <button id="rp-ytd" onclick="rpPreset('ytd')">Year to Date</button>
               <button id="rp-12m" onclick="rpPreset('12m')">Last 12 Months</button>
             </div>
@@ -1791,6 +1821,8 @@
           </div>
         </div>
 
+        <div id="rp-fin" class="rp-fin" style="display:none"></div>
+        <div id="rp-perf" class="rp-perf">
         <div id="rp-kpis" class="rp-kpis"></div>
 
         <section class="rp-card">
@@ -1802,6 +1834,7 @@
         </section>
 
         <section id="rp-detail" class="rp-detail"></section>
+        </div>
       </div>
     </div>
 
@@ -4309,6 +4342,10 @@ async function buildTodos() {
     if (st === 'Checked-in' && folioFor(r).balance > 0 && r.departure_date > T)   // departing/overdue cards already show the balance
       add({ key: `balance:${r.id}:${folioFor(r).balance}`, group: 'today', icon: 'payments', r,
             title: 'Balance due — in-house guest', lines: [payLine(r)], actions: [open(r)] });
+    // 7a · Upcoming guest (arriving in 3–7 days) not fully paid — arrivals in the next 2 days already show the balance
+    if (st === 'New Reservation' && r.arrival_date > isoPlus(T, 2) && r.arrival_date <= isoPlus(T, 7) && folioFor(r).balance > 0)
+      add({ key: `collect:${r.id}:${folioFor(r).balance}`, group: 'upcoming', icon: 'request_quote', r,
+            title: `Payment to collect before arrival (${fmtDateLong(r.arrival_date)})`, lines: [payLine(r)], actions: [open(r)] });
     // 7b · Checked out but payments not balanced — stays until balanced (can't be dismissed for good: the key changes with the amount)
     if (st === 'Checked-out' && folioFor(r).balance !== 0)
       add({ key: `outbalance:${r.id}:${folioFor(r).balance}`, group: 'urgent', icon: 'account_balance_wallet', r,
@@ -4437,9 +4474,9 @@ async function loadReport() {
   document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Loading…</div>';
   const [resQ, miscQ, roomQ, chgQ] = await Promise.all([
     db.from('reservations').select('id, confirmation_number, guest_name, room_name, status, arrival_date, departure_date, room_night, room_revenue, rate'),
-    db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes, kind').lt('amount', 0).neq('kind', 'Room').order('paid_on'),
+    db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes, kind, method, created_by, created_at').order('paid_on').order('created_at'),
     db.from('rooms').select('name').order('created_at'),
-    db.from('reservation_charges').select('id, reservation_id, charged_on, amount, notes, kind').order('charged_on'),
+    db.from('reservation_charges').select('id, reservation_id, charged_on, amount, notes, kind, created_by, created_at').order('charged_on'),
   ]);
   if (resQ.error || miscQ.error || roomQ.error || chgQ.error) {
     document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Could not load report data.</div>';
@@ -4447,7 +4484,9 @@ async function loadReport() {
   }
   _rp.res = resQ.data || [];
   // Misc revenue = Electricity + Misc charges (by charge date) less refunds / rebates (negative Electricity / Misc payments)
-  _rp.misc = [...(chgQ.data || []).map(c => ({ ...c, paid_on: c.charged_on })), ...(miscQ.data || [])]
+  _rp.pays = miscQ.data || [];
+  _rp.charges = chgQ.data || [];
+  _rp.misc = [...(chgQ.data || []).map(c => ({ ...c, paid_on: c.charged_on })), ...(_rp.pays.filter(p => Number(p.amount) < 0 && p.kind !== 'Room'))]
     .sort((a, b) => String(a.paid_on).localeCompare(String(b.paid_on)));
   _rp.rooms = (roomQ.data || []).map(r => r.name);
   if (!_rp.sel) _rp.sel = new Set(_rp.rooms);
@@ -4461,13 +4500,13 @@ async function loadReport() {
   const opts = _rp.months.map(m => `<option value="${m}">${rpLabel(m)}</option>`).join('');
   document.getElementById('rp-from').innerHTML = opts;
   document.getElementById('rp-to').innerHTML = opts;
-  if (!_rp.from) rpPreset('ytd', true); else rpRender();
+  if (!_rp.from) { if (_rp.tab === 'fin') rpPreset('mtd', true); else rpPreset('ytd', true); } else rpRender();
 }
 
 function rpPreset(kind, silent) {
   const cur = baliToday().slice(0, 7);
   _rp.to = cur;
-  _rp.from = kind === '12m' ? rpAddMonths(cur, -11) : cur.slice(0, 4) + '-01';
+  _rp.from = kind === '12m' ? rpAddMonths(cur, -11) : kind === 'mtd' ? cur : cur.slice(0, 4) + '-01';
   if (_rp.from < RP_MIN) _rp.from = RP_MIN;
   _rp.preset = kind;
   _rp.focus = null;
@@ -4525,11 +4564,13 @@ function rpRender() {
   document.getElementById('rp-to').value = _rp.to;
   document.getElementById('rp-ytd').classList.toggle('on', _rp.preset === 'ytd');
   document.getElementById('rp-12m').classList.toggle('on', _rp.preset === '12m');
+  document.getElementById('rp-mtd').classList.toggle('on', _rp.preset === 'mtd');
   document.getElementById('rp-rooms').innerHTML = _rp.rooms.map((n, i) =>
     `<button class="rp-chip${_rp.sel.has(n) ? '' : ' off'}" style="--rc:${ROOM_COLORS[i % ROOM_COLORS.length].c}" onclick="rpToggleRoom(${escHtml(JSON.stringify(n))})"><i></i>${escHtml(n)}</button>`).join('');
 
   const { rows, t } = rpCompute();
   _rp.data = { rows, t };
+  if (_rp.tab === 'fin') return fnRender();
   const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
   const kpi = (lbl, val, sub, icon, ib, ic, dark) => `<div class="rp-kpi${dark ? ' dark' : ''}"><div><div class="k-l">${lbl}</div><div class="k-v">${val}</div><div class="k-s">${sub}</div></div><span class="mso k-i" style="--ib:${ib};--ic:${ic}">${icon}</span></div>`;
   document.getElementById('rp-kpis').innerHTML =
@@ -4653,6 +4694,232 @@ function _doExportReport() {
   const name = `Performance Report ${rpLabel(_rp.from)}${_rp.from === _rp.to ? '' : ' - ' + rpLabel(_rp.to)}.xlsx`;
   XLSX.writeFile(wb, name);
   showToast('Report exported');
+}
+
+/* ═══════════════ FINANCE REPORT ══════════════════════════════════════════
+   Charges vs payments by month (room charges by night stayed, like Performance),
+   a daily reconciliation by payment method, and every booking whose billing is not balanced. */
+_rp.tab = 'perf';
+_rp.saved = {};
+let _fnDay = null;
+function rpTab(t) {
+  if (t === _rp.tab) return;
+  _rp.saved[_rp.tab] = { from: _rp.from, to: _rp.to, preset: _rp.preset };
+  _rp.tab = t;
+  const sv = _rp.saved[t];
+  document.getElementById('rp-tab-perf').classList.toggle('on', t === 'perf');
+  document.getElementById('rp-tab-fin').classList.toggle('on', t === 'fin');
+  document.getElementById('rp-perf').style.display = t === 'perf' ? '' : 'none';
+  document.getElementById('rp-fin').style.display = t === 'fin' ? '' : 'none';
+  document.getElementById('rp-title').textContent = t === 'fin' ? 'Finance Report' : 'Performance Report';
+  document.getElementById('rp-intro').textContent = t === 'fin'
+    ? 'Charges against payments by month, the daily payment check by method, and every guest whose billing is not balanced. Use it to reconcile every day.'
+    : 'Room nights, room revenue and misc revenue by month. Click a number in the table to see who it comes from.';
+  if (!_rp.from) return;   // still loading; loadReport picks the right default
+  if (sv) { _rp.from = sv.from; _rp.to = sv.to; _rp.preset = sv.preset; _rp.focus = null; rpRender(); }
+  else if (t === 'fin') rpPreset('mtd'); else rpPreset('ytd');
+}
+const fnIsReal = p => (p.method || 'Internal') !== 'Internal';   // money that actually moved
+function fnResById() { const m = {}; _rp.res.forEach(r => m[r.id] = r); return m; }
+function fnInRooms(resById, rid) { const r = resById[rid]; return r && _rp.sel.has(r.room_name); }
+
+function fnCompute() {
+  const resById = fnResById();
+  const { rows: perf } = rpCompute();
+  const sum = (list, f) => list.filter(f).reduce((t, x) => t + Number(x.amount || 0), 0);
+  const rows = perf.map(pr => {
+    const ym = pr.ym;
+    const ch = _rp.charges.filter(c => c.charged_on && c.charged_on.slice(0, 7) === ym && fnInRooms(resById, c.reservation_id));
+    const ps = _rp.pays.filter(p => p.paid_on && p.paid_on.slice(0, 7) === ym && fnInRooms(resById, p.reservation_id) && fnIsReal(p));
+    const rebate = sum(_rp.pays.filter(p => p.paid_on && p.paid_on.slice(0, 7) === ym && fnInRooms(resById, p.reservation_id)), p => p.kind !== 'Room' && Number(p.amount) < 0);
+    const o = {
+      ym, when: pr.when, guests: pr.guests, ch, ps,
+      room: pr.rev, elec: sum(ch, c => c.kind === 'Electricity'), misc: sum(ch, c => c.kind === 'Misc'), rebate,
+      pRoom: sum(ps, p => p.kind === 'Room' && Number(p.amount) > 0), pElec: sum(ps, p => p.kind === 'Electricity' && Number(p.amount) > 0),
+      pMisc: sum(ps, p => p.kind === 'Misc' && Number(p.amount) > 0), refunds: sum(ps, p => Number(p.amount) < 0),
+    };
+    o.charges = o.room + o.elec + o.misc + o.rebate;
+    o.paid = o.pRoom + o.pElec + o.pMisc + o.refunds;
+    o.diff = o.charges - o.paid;
+    return o;
+  });
+  const t = {};
+  ['room', 'elec', 'misc', 'rebate', 'charges', 'pRoom', 'pElec', 'pMisc', 'refunds', 'paid', 'diff'].forEach(k => t[k] = rows.reduce((s, r) => s + r[k], 0));
+  return { rows, t, resById };
+}
+
+// Every booking whose billing is not balanced (room filter applies, period does not)
+function fnOutstanding() {
+  const T = baliToday();
+  const byRes = {};
+  _rp.charges.forEach(c => (byRes[c.reservation_id] = byRes[c.reservation_id] || { charges: [], pays: [] }).charges.push(c));
+  _rp.pays.forEach(p => (byRes[p.reservation_id] = byRes[p.reservation_id] || { charges: [], pays: [] }).pays.push(p));
+  const out = [];
+  _rp.res.forEach(r => {
+    if (!_rp.sel.has(r.room_name)) return;
+    if (r.status === 'No-show' && r.departure_date >= T) return;   // room money moves to Misc after departure (nightly job)
+    const m = byRes[r.id] || { charges: [], pays: [] };
+    if (r.status === 'Cancelled' && !m.charges.length && !m.pays.length) return;
+    const f = folioOf(countsAsStay(r) ? Number(r.room_revenue || 0) : 0, m.charges, m.pays);
+    if (Math.round(f.balance) === 0) return;
+    const group = f.balance < 0 ? 'credit'
+      : r.status === 'Checked-in' ? 'inhouse'
+      : r.status === 'New Reservation' ? 'upcoming' : 'left';
+    out.push({ r, f, group });
+  });
+  out.sort((a, b) => String(a.r.arrival_date).localeCompare(String(b.r.arrival_date)));
+  return out;
+}
+
+function fnRender() {
+  const el = document.getElementById('rp-fin');
+  const { rows, t, resById } = fnCompute();
+  _rp.fin = { rows, t };
+  const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
+  const n = v => v ? rpNum(v) : '<span class="fn-muted">0</span>';
+  const sgn = v => v ? `<span class="${v < 0 ? 'rp-neg' : ''}">${rpSigned(v)}</span>` : '<span class="fn-muted">0</span>';
+  const diffCell = v => Math.round(v) === 0 ? '<b class="rp-pos">Balanced</b>' : `<b class="${v > 0 ? 'rp-neg' : ''}">${rpSigned(v)}</b>`;
+  const tag = w => w === 'cur' ? '<span class="rp-tag cur">Current</span>' : w === 'fut' ? '<span class="rp-tag fut">On the books</span>' : '';
+  const f = _rp.focus && _rp.focus.kind === 'fin' ? _rp.focus.month : null;
+  const sorted = rows.slice().reverse();
+
+  // KPIs
+  const out = fnOutstanding();
+  const owe = out.filter(x => x.f.balance > 0).reduce((s, x) => s + x.f.balance, 0);
+  const credit = -out.filter(x => x.f.balance < 0).reduce((s, x) => s + x.f.balance, 0);
+  const kpi = (lbl, val, sub, icon, ib, ic, dark) => `<div class="rp-kpi${dark ? ' dark' : ''}"><div><div class="k-l">${lbl}</div><div class="k-v">${val}</div><div class="k-s">${sub}</div></div><span class="mso k-i" style="--ib:${ib};--ic:${ic}">${icon}</span></div>`;
+
+  if (!_fnDay) _fnDay = baliToday();
+  el.innerHTML = `
+    <div class="rp-kpis">
+      ${kpi('Total Charges', rpShort(t.charges), 'Room ' + rpShort(t.room) + ' · extras ' + rpShort(t.elec + t.misc + t.rebate), 'receipt_long', '#FBEFD9', '#8A5A12')}
+      ${kpi('Payments Received', rpShort(t.paid), 'Refunds & rebates ' + rpShort(t.refunds), 'payments', '#E3EFE9', '#0B3D2E')}
+      ${kpi('Guests Owe', rpShort(owe), out.filter(x => x.f.balance > 0).length + ' booking(s) · all dates', 'pending_actions', '#FBE3E1', '#b42318')}
+      ${kpi('Credit to Refund', rpShort(credit), out.filter(x => x.f.balance < 0).length + ' booking(s)', 'undo', '', '', true)}
+    </div>
+
+    <section class="rp-card">
+      <div class="rp-card-head"><h3>Charges vs Payments</h3><span class="rp-sub">${period} · ${_rp.sel.size} of ${_rp.rooms.length} rooms · IDR · click a month for its transactions</span></div>
+      <div class="rp-table-wrap"><table class="rp-table">
+        <thead><tr><th>Month</th><th>Room</th><th>Electricity</th><th>Misc</th><th>Discount / Rebate</th><th>Total Charges</th>
+          <th>Room Paid</th><th>Electricity Paid</th><th>Misc Paid</th><th>Refunds &amp; Rebates</th><th>Total Payments</th><th>Difference</th></tr></thead>
+        <tbody>${sorted.map(r => `<tr class="${f === r.ym ? 'sel-row' : ''}" style="cursor:pointer" onclick="fnFocus('${r.ym}')">
+          <td><b>${rpLabel(r.ym)}</b>${tag(r.when)}</td><td>${n(r.room)}</td><td>${n(r.elec)}</td><td>${n(r.misc)}</td><td>${sgn(r.rebate)}</td><td><b>${rpNum(r.charges)}</b></td>
+          <td>${n(r.pRoom)}</td><td>${n(r.pElec)}</td><td>${n(r.pMisc)}</td><td>${sgn(r.refunds)}</td><td><b>${rpNum(r.paid)}</b></td><td>${diffCell(r.diff)}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td>Total</td><td>${rpNum(t.room)}</td><td>${rpNum(t.elec)}</td><td>${rpNum(t.misc)}</td><td>${rpSigned(t.rebate)}</td><td>${rpNum(t.charges)}</td>
+          <td>${rpNum(t.pRoom)}</td><td>${rpNum(t.pElec)}</td><td>${rpNum(t.pMisc)}</td><td>${rpSigned(t.refunds)}</td><td>${rpNum(t.paid)}</td><td>${Math.round(t.diff) === 0 ? 'Balanced' : rpSigned(t.diff)}</td></tr></tfoot>
+      </table></div>
+      <div class="rp-empty" style="border-top:1px solid var(--surface-container-high)">Difference = charges − payments in the month. <b>Positive</b>: guests still owe for that month. <b>Negative</b>: money received ahead (e.g. deposits for a later stay). Room charges follow the nights stayed; payments follow the payment date. Internal moves (No Show / cancellation) are not counted as money received.</div>
+    </section>
+
+    ${f ? fnMonthHTML(rows.find(r => r.ym === f), resById) : ''}
+
+    <section class="rp-card" id="fn-day">${fnDayHTML(resById)}</section>
+
+    <section class="rp-card">
+      <div class="rp-card-head"><h3>Outstanding Balances</h3><span class="rp-sub">All dates · ${_rp.sel.size} of ${_rp.rooms.length} rooms · click a guest to open the booking</span></div>
+      ${fnOutstandingHTML(out)}
+    </section>`;
+}
+function fnFocus(ym) {
+  _rp.focus = _rp.focus && _rp.focus.kind === 'fin' && _rp.focus.month === ym ? null : { kind: 'fin', month: ym };
+  fnRender();
+  if (_rp.focus) document.getElementById('fn-month')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+function fnTxRows(resById, list) {
+  const openG = r => r ? `<span class="rp-guest" onclick="openReservation('${r.id}','report')">${escHtml(r.guest_name)}</span>` : '—';
+  return list.map(x => `<tr>
+      <td class="l">${fmtShort(x.date)}</td><td class="l">${openG(resById[x.rid])}<div class="fn-muted">${escHtml(resById[x.rid]?.room_name || '')}</div></td>
+      <td class="l">${escHtml(x.type)}</td><td class="l">${escHtml(x.method || '')}</td>
+      <td class="l" style="white-space:normal;min-width:180px">${escHtml(x.notes || '')}</td>
+      <td>${x.charge !== null ? `<span class="${x.charge < 0 ? 'rp-neg' : ''}">${rpSigned(x.charge)}</span>` : ''}</td>
+      <td>${x.paid !== null ? `<span class="${x.paid < 0 ? 'rp-neg' : ''}">${rpSigned(x.paid)}</span>` : ''}</td></tr>`).join('');
+}
+function fnMonthTx(row) {
+  const list = [];
+  row.guests.forEach(g => list.push({ date: g.from, rid: g.r.id, type: 'Room charge', method: '', notes: `${g.nights} night${g.nights === 1 ? '' : 's'} × ${rpNum(g.adr)} (${fmtShort(g.from)} – ${fmtShort(g.to)})`, charge: g.rev, paid: null }));
+  row.ch.forEach(c => list.push({ date: c.charged_on, rid: c.reservation_id, type: c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null }));
+  _rp.pays.filter(p => p.paid_on && p.paid_on.slice(0, 7) === row.ym && _rp.sel.has(fnResById()[p.reservation_id]?.room_name)).forEach(p => {
+    const real = fnIsReal(p), reb = p.kind !== 'Room' && Number(p.amount) < 0;
+    list.push({ date: p.paid_on, rid: p.reservation_id, type: reb ? `${p.kind} rebate` : `${p.kind} payment`, method: p.method || 'Internal',
+                notes: p.notes + (real ? '' : ' (internal move — not money received)'), charge: reb ? Number(p.amount) : null, paid: real ? Number(p.amount) : null });
+  });
+  return list.sort((a, b) => String(a.date).localeCompare(String(b.date)));
+}
+function fnMonthHTML(row, resById) {
+  if (!row) return '';
+  const list = fnMonthTx(row);
+  return `<section class="rp-card" id="fn-month">
+    <div class="rp-card-head"><h3>Transactions · ${rpLabel(row.ym)}</h3><button class="rp-link" onclick="fnFocus('${row.ym}')">Close</button></div>
+    <div class="rp-table-wrap"><table class="rp-table">
+      <thead><tr><th class="l">Date</th><th class="l">Guest</th><th class="l">Type</th><th class="l">Method</th><th class="l">Notes</th><th>Charge</th><th>Payment</th></tr></thead>
+      <tbody>${list.length ? fnTxRows(resById, list) : '<tr><td colspan="7" style="text-align:center;color:var(--secondary)">No transactions this month</td></tr>'}</tbody>
+      <tfoot><tr><td class="l" colspan="5">Total</td><td>${rpNum(row.charges)}</td><td>${rpNum(row.paid)}</td></tr></tfoot>
+    </table></div></section>`;
+}
+function fnDayHTML(resById) {
+  const d = _fnDay;
+  const inRooms = rid => fnInRooms(resById, rid);
+  const pays = _rp.pays.filter(p => p.paid_on === d && inRooms(p.reservation_id));
+  const chs = _rp.charges.filter(c => c.charged_on === d && inRooms(c.reservation_id));
+  const real = pays.filter(fnIsReal);
+  const by = m => real.filter(p => p.method === m).reduce((s, p) => s + Number(p.amount), 0);
+  const total = real.reduce((s, p) => s + Number(p.amount), 0);
+  const tile = (l, v, cls = '') => `<div class="fn-tile ${cls}"><small>${l}</small><b>${rpSigned(v).replace(/^\+/, '')}</b></div>`;
+  const list = [
+    ...chs.map(c => ({ date: c.charged_on, rid: c.reservation_id, type: c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null })),
+    ...pays.map(p => ({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Internal', notes: p.notes + (fnIsReal(p) ? '' : ' (internal move)'), charge: null, paid: fnIsReal(p) ? Number(p.amount) : null })),
+  ];
+  return `<div class="rp-card-head fn-day-head"><div><h3>Daily Reconciliation</h3><span class="rp-sub">Money received on the day, by method — check it against the cash box and bank statement</span></div>
+      <input type="date" value="${d}" max="${baliToday()}" onchange="_fnDay=this.value||baliToday();document.getElementById('fn-day').innerHTML=fnDayHTML(fnResById())"></div>
+    <div class="fn-tiles">${FX_METHODS.map(m => tile(m, by(m))).join('')}${tile('Total received', total, 'total')}</div>
+    <div class="rp-table-wrap"><table class="rp-table">
+      <thead><tr><th class="l">Date</th><th class="l">Guest</th><th class="l">Type</th><th class="l">Method</th><th class="l">Notes</th><th>Charge</th><th>Payment</th></tr></thead>
+      <tbody>${list.length ? fnTxRows(resById, list) : `<tr><td colspan="7" style="text-align:center;color:var(--secondary)">Nothing posted on ${fmtDateLong(d)}</td></tr>`}</tbody>
+    </table></div>`;
+}
+function fnOutstandingHTML(out) {
+  if (!out.length) return '<div class="rp-empty">✓ Every booking is balanced.</div>';
+  const groups = [['inhouse', 'Guest owes — in-house'], ['left', 'Guest owes — checked out / no show / cancelled'], ['upcoming', 'To collect before arrival'], ['credit', 'Credit to refund to the guest']];
+  return `<div class="rp-table-wrap"><table class="rp-table">
+    <thead><tr><th class="l">Guest</th><th class="l">Room</th><th class="l">Stay</th><th class="l">Status</th><th>Room</th><th>Electricity &amp; Misc</th><th>Balance</th></tr></thead>
+    <tbody>${groups.map(([g, label]) => {
+      const rows = out.filter(x => x.group === g);
+      if (!rows.length) return '';
+      return `<tr><td colspan="7" class="fn-group">${label} · ${rows.length}</td></tr>` + rows.map(({ r, f }) => `<tr>
+        <td class="l"><span class="rp-guest" onclick="openReservation('${r.id}','report')">${escHtml(r.guest_name)}</span><div class="fn-muted">${escHtml(r.confirmation_number || '')}</div></td>
+        <td class="l">${escHtml(r.room_name)}</td><td class="l">${fmtShort(r.arrival_date)} – ${fmtShort(r.departure_date)}</td><td class="l">${statusChip(r.status)}</td>
+        <td>${f.roomDue ? `<span class="${f.roomDue > 0 ? 'rp-neg' : ''}">${rpSigned(f.roomDue)}</span>` : '<span class="fn-muted">0</span>'}</td>
+        <td>${Math.round(f.extrasDue) ? rpSigned(f.extrasDue) : '<span class="fn-muted">0</span>'}</td>
+        <td><b class="${f.balance > 0 ? 'rp-neg' : ''}">${f.balance > 0 ? rpNum(f.balance) : 'Credit ' + rpNum(-f.balance)}</b></td></tr>`).join('');
+    }).join('')}</tbody></table></div>`;
+}
+function exportFinance() {
+  if (typeof XLSX === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = _doExportFinance; s.onerror = () => showToast('Could not load the Excel library');
+    document.head.appendChild(s); showToast('Preparing export…');
+  } else _doExportFinance();
+}
+function _doExportFinance() {
+  const { rows, t, resById } = fnCompute();
+  const R = Math.round;
+  const mrow = (label, r) => ({ 'Month': label, 'Room Charges': R(r.room), 'Electricity Charges': R(r.elec), 'Misc Charges': R(r.misc), 'Discount / Rebate': R(r.rebate), 'Total Charges': R(r.charges),
+    'Room Paid': R(r.pRoom), 'Electricity Paid': R(r.pElec), 'Misc Paid': R(r.pMisc), 'Refunds & Rebates': R(r.refunds), 'Total Payments': R(r.paid), 'Difference': R(r.diff) });
+  const monthly = rows.slice().reverse().map(r => mrow(rpLabel(r.ym), r)); monthly.push(mrow('Total', t));
+  const tx = rows.flatMap(r => fnMonthTx(r).map(x => ({ 'Month': rpLabel(r.ym), 'Date': x.date, 'Confirmation No.': resById[x.rid]?.confirmation_number || '', 'Guest': resById[x.rid]?.guest_name || '',
+    'Room': resById[x.rid]?.room_name || '', 'Type': x.type, 'Method': x.method, 'Notes': x.notes, 'Charge': x.charge === null ? '' : R(x.charge), 'Payment': x.paid === null ? '' : R(x.paid) })));
+  const gl = { inhouse: 'Guest owes — in-house', left: 'Guest owes — checked out / no show / cancelled', upcoming: 'To collect before arrival', credit: 'Credit to refund' };
+  const outs = fnOutstanding().map(({ r, f, group }) => ({ 'Group': gl[group], 'Confirmation No.': r.confirmation_number || '', 'Guest': r.guest_name, 'Room': r.room_name, 'Arrival': r.arrival_date, 'Departure': r.departure_date,
+    'Status': r.status, 'Room Balance': R(f.roomDue), 'Electricity & Misc Balance': R(f.extrasDue), 'Total Balance': R(f.balance) }));
+  const wb = XLSX.utils.book_new();
+  const add = (data, name, widths) => { const ws = XLSX.utils.json_to_sheet(data.length ? data : [{ 'Note': 'No data' }]); ws['!cols'] = widths.map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, name); };
+  add(monthly, 'Charges vs Payments', [12, 14, 16, 14, 16, 14, 14, 16, 12, 16, 14, 13]);
+  add(tx, 'Transactions', [12, 12, 16, 22, 10, 18, 14, 44, 13, 13]);
+  add(outs, 'Outstanding', [40, 16, 22, 10, 12, 12, 16, 14, 22, 14]);
+  XLSX.writeFile(wb, `Finance Report ${rpLabel(_rp.from)}${_rp.from === _rp.to ? '' : ' - ' + rpLabel(_rp.to)}.xlsx`);
+  showToast('Finance report exported');
 }
 
 async function loadTodo() {
@@ -5100,6 +5367,7 @@ async function rdUpdate(payload, okMsg) {
 let _rdCharges = [];
 const FX_PAY = ['Room', 'Electricity', 'Misc'];
 const FX_CHG = ['Electricity', 'Misc'];
+const FX_METHODS = ['Cash', 'Bank Transfer', 'QRIS', 'OTA Collect'];
 const _fx = { new: null, ed: null };
 let _fxSeq = 0;
 function signedIdr(n) { n = Number(n) || 0; return (n < 0 ? '−' : '') + idr(Math.abs(n)); }
@@ -5161,7 +5429,7 @@ function fxRowHTML(which, x, type) {
   const del = which === 'rd' ? `fxDelete('rd','${type}','${x.id}')` : `fxDelete('${which}','${type}','${x.id}')`;
   return `<div class="fx-row${x._new ? ' fresh' : ''}">
       <span class="fx-kind k-${x.kind.toLowerCase()}">${kind}</span>
-      <span class="fx-txt"><span>${fmtShort(date)}${x.created_by && which === 'rd' ? ` · ${escHtml(String(x.created_by).split('@')[0])}` : ''}</span><small>${escHtml(x.notes || '')}${neg && type === 'p' ? ` <em class="misc-tag">${x.kind === 'Room' ? 'Refund' : 'Rebate'}</em>` : ''}</small></span>
+      <span class="fx-txt"><span>${fmtShort(date)}${type === 'p' && x.method ? ` · ${escHtml(x.method)}` : ''}${x.created_by && which === 'rd' ? ` · ${escHtml(String(x.created_by).split('@')[0])}` : ''}</span><small>${escHtml(x.notes || '')}${neg && type === 'p' ? ` <em class="misc-tag">${x.kind === 'Room' ? 'Refund' : 'Rebate'}</em>` : ''}</small></span>
       <b class="fx-amt ${neg ? 'misc-neg' : ''}">${signedIdr(x.amount)}</b>
       <button type="button" class="doc-del" onclick="${del}" title="Remove"><span class="mso">delete</span></button>
     </div>`;
@@ -5169,8 +5437,9 @@ function fxRowHTML(which, x, type) {
 function fxAddHTML(which, type) {
   const id = s => `fx-${which}-${type}-${s}`;
   const kinds = type === 'p' ? FX_PAY : FX_CHG;
-  return `<div class="fx-add" data-sign="+" id="${id('box')}">
+  return `<div class="fx-add${type === 'p' ? ' pay' : ''}" data-sign="+" id="${id('box')}">
       <div class="form-group"><label for="${id('kind')}">Type</label><select id="${id('kind')}">${kinds.map(k => `<option value="${k}">${type === 'p' ? k + ' Payment' : k}</option>`).join('')}</select></div>
+      ${type === 'p' ? `<div class="form-group"><label for="${id('method')}">Method</label><select id="${id('method')}"><option value="">Select…</option>${FX_METHODS.map(m => `<option>${m}</option>`).join('')}</select></div>` : ''}
       <div class="form-group"><label for="${id('date')}">Date</label><input id="${id('date')}" type="date" value="${baliToday()}" ${type === 'p' ? `max="${baliToday()}"` : ''}></div>
       <div class="form-group"><label for="${id('amount')}">Amount</label>
         <div class="fx-amount">${type === 'p' ? `<button type="button" class="fx-sign" id="${id('sign')}" onclick="fxToggleSign('${which}','${type}')" title="Switch between payment (+) and refund / rebate (−)">+</button>` : ''}
@@ -5233,8 +5502,10 @@ function updatePayHint(which) { fxSummary(which); }
 async function fxAdd(which, type) {
   const id = s => document.getElementById(`fx-${which}-${type}-${s}`);
   const kind = id('kind').value, date = id('date').value, notes = id('notes').value.trim();
+  const method = type === 'p' ? id('method').value : null;
   const neg = type === 'p' && id('box').dataset.sign === '−';
   const raw = parseFloat(unMoney(id('amount').value)) || 0;
+  if (type === 'p' && !method) return showToast(neg ? 'Choose how the money was returned (method)' : 'Choose the payment method');
   if (!date) return showToast('Choose the date');
   if (type === 'p' && date > baliToday()) return showToast("A payment date can't be in the future");
   if (!(raw > 0)) return showToast('Enter the amount');
@@ -5246,7 +5517,7 @@ async function fxAdd(which, type) {
     if (received <= 0) return showToast('A refund / rebate is only possible after money has been received');
     if (returned - amount > received) return showToast(`Refunds can't be more than the money received (${idr(received)}). Already returned: ${idr(returned)}`);
   }
-  const row = type === 'p' ? { kind, paid_on: date, amount, notes } : { kind, charged_on: date, amount, notes };
+  const row = type === 'p' ? { kind, method, paid_on: date, amount, notes } : { kind, charged_on: date, amount, notes };
   if (which === 'rd') {
     const btn = id('box').querySelector('.fx-add-btn'); btn.disabled = true;
     const table = type === 'p' ? 'reservation_misc_payments' : 'reservation_charges';
