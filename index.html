@@ -1031,7 +1031,7 @@
     .fx-kind.k-room { background:#E1EEF8; color:#1E4B72; }
     .fx-kind.k-electricity { background:#FEF3C7; color:#92400E; }
     .fx-kind.k-misc { background:#F4ECF8; color:#502568; }
-    .fx-txt { min-width:0; font-size:12px; color:var(--secondary); }
+    .fx-txt { min-width:0; font-size:12px; color:var(--secondary); overflow-wrap:anywhere; }
     .fx-txt small { display:block; color:var(--on-surface); font-size:13px; overflow-wrap:anywhere; }
     .fx-amt { font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
     .fx-add { display:grid; grid-template-columns:175px 140px 200px 1fr auto; gap:10px; align-items:end; margin-top:12px; padding-top:12px; border-top:1px dashed var(--surface-container-high); }
@@ -4118,7 +4118,7 @@ function renderReservationDetail() {
            <div class="rd-fin-row"><span>≈ Per night</span><b>${idr(nightlyOf(r))}</b></div>`
         : `<div class="rd-fin-row"><span>Room rate (${idr(r.rate)} × ${nights})</span><b>${idr(r.room_revenue)}</b></div>`}
       <div class="rd-fin-row"><span>Sold as</span><b>${r.rate_type === 'total' ? 'Total stay' : 'Per night'}</b></div>
-      <div class="rd-fin-row"><span>Room payment status</span>${payDisplayChip(r)}</div>
+      <div class="rd-fin-row"><span>Room payment status</span>${paymentChip(payStatusOf(r))}</div>
       <div class="rd-fin-row"><span>Room payments</span><b class="rd-paid">${signedIdr(fo.roomPaid)}</b></div>
       ${fo.hasCharges || fo.extraPaidIn || fo.rebate ? `<div class="rd-fin-row"><span>Electricity & misc charges</span><b>${idr(fo.extraCharges)}</b></div>
       <div class="rd-fin-row"><span>Electricity & misc payments</span><b class="rd-paid">${idr(fo.extraPaidIn)}</b></div>` : ''}
@@ -4793,7 +4793,8 @@ function invoiceHTML(r, room, roomIdx, bank) {
   const st = { 'Paid':           { t: 'Paid',           bg: '#DCFCE7', fg: '#166534', bd: '#86EFAC', dot: '#16A34A' },
                'Deposit':        { t: 'Deposit',        bg: '#E0E7FF', fg: '#3730A3', bd: '#A5B4FC', dot: '#4F46E5' },
                'Partially Paid': { t: 'Partially Paid', bg: '#FEF3C7', fg: '#92400E', bd: '#FCD34D', dot: '#D97706' },
-               'Unpaid':         { t: 'Unpaid',         bg: '#FEE2E2', fg: '#991B1B', bd: '#FCA5A5', dot: '#DC2626' } }[payDisplay(r)];
+               'Unpaid':         { t: 'Unpaid',         bg: '#FEE2E2', fg: '#991B1B', bd: '#FCA5A5', dot: '#DC2626' } }[
+                 fo.balance <= 0 ? 'Paid' : (fo.roomPaid + fo.extraPaidIn) > 0 ? 'Partially Paid' : 'Unpaid'];   // whole bill, not only the room
   const issue = new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Makassar' });
   const perNight = r.rate_type !== 'total';
   const desc = room?.description || '';
@@ -5160,7 +5161,7 @@ function fxRowHTML(which, x, type) {
   const del = which === 'rd' ? `fxDelete('rd','${type}','${x.id}')` : `fxDelete('${which}','${type}','${x.id}')`;
   return `<div class="fx-row${x._new ? ' fresh' : ''}">
       <span class="fx-kind k-${x.kind.toLowerCase()}">${kind}</span>
-      <span class="fx-txt"><span>${fmtShort(date)}${x.created_by && which === 'rd' ? ` · ${escHtml(x.created_by)}` : ''}</span><small>${escHtml(x.notes || '')}${neg && type === 'p' ? ` <em class="misc-tag">${x.kind === 'Room' ? 'Refund' : 'Rebate'}</em>` : ''}</small></span>
+      <span class="fx-txt"><span>${fmtShort(date)}${x.created_by && which === 'rd' ? ` · ${escHtml(String(x.created_by).split('@')[0])}` : ''}</span><small>${escHtml(x.notes || '')}${neg && type === 'p' ? ` <em class="misc-tag">${x.kind === 'Room' ? 'Refund' : 'Rebate'}</em>` : ''}</small></span>
       <b class="fx-amt ${neg ? 'misc-neg' : ''}">${signedIdr(x.amount)}</b>
       <button type="button" class="doc-del" onclick="${del}" title="Remove"><span class="mso">delete</span></button>
     </div>`;
