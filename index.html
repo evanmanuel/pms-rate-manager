@@ -4719,7 +4719,7 @@ function rpTab(t) {
   if (sv) { _rp.from = sv.from; _rp.to = sv.to; _rp.preset = sv.preset; _rp.focus = null; rpRender(); }
   else if (t === 'fin') rpPreset('mtd'); else rpPreset('ytd');
 }
-const fnIsReal = p => (p.method || 'Internal') !== 'Internal';   // money that actually moved
+const fnIsReal = p => p.method !== 'Internal';   // money that actually moved (method not set = entered before methods existed)
 function fnResById() { const m = {}; _rp.res.forEach(r => m[r.id] = r); return m; }
 function fnInRooms(resById, rid) { const r = resById[rid]; return r && _rp.sel.has(r.room_name); }
 
@@ -4841,7 +4841,7 @@ function fnMonthTx(row) {
   row.ch.forEach(c => list.push({ date: c.charged_on, rid: c.reservation_id, type: c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null }));
   _rp.pays.filter(p => p.paid_on && p.paid_on.slice(0, 7) === row.ym && _rp.sel.has(fnResById()[p.reservation_id]?.room_name)).forEach(p => {
     const real = fnIsReal(p), reb = p.kind !== 'Room' && Number(p.amount) < 0;
-    list.push({ date: p.paid_on, rid: p.reservation_id, type: reb ? `${p.kind} rebate` : `${p.kind} payment`, method: p.method || 'Internal',
+    list.push({ date: p.paid_on, rid: p.reservation_id, type: reb ? `${p.kind} rebate` : `${p.kind} payment`, method: p.method || 'Not set',
                 notes: p.notes + (real ? '' : ' (internal move — not money received)'), charge: reb ? Number(p.amount) : null, paid: real ? Number(p.amount) : null });
   });
   return list.sort((a, b) => String(a.date).localeCompare(String(b.date)));
@@ -4868,11 +4868,11 @@ function fnDayHTML(resById) {
   const tile = (l, v, cls = '') => `<div class="fn-tile ${cls}"><small>${l}</small><b>${rpSigned(v).replace(/^\+/, '')}</b></div>`;
   const list = [
     ...chs.map(c => ({ date: c.charged_on, rid: c.reservation_id, type: c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null })),
-    ...pays.map(p => ({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Internal', notes: p.notes + (fnIsReal(p) ? '' : ' (internal move)'), charge: null, paid: fnIsReal(p) ? Number(p.amount) : null })),
+    ...pays.map(p => ({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Not set', notes: p.notes + (fnIsReal(p) ? '' : ' (internal move)'), charge: null, paid: fnIsReal(p) ? Number(p.amount) : null })),
   ];
   return `<div class="rp-card-head fn-day-head"><div><h3>Daily Reconciliation</h3><span class="rp-sub">Money received on the day, by method — check it against the cash box and bank statement</span></div>
       <input type="date" value="${d}" max="${baliToday()}" onchange="_fnDay=this.value||baliToday();document.getElementById('fn-day').innerHTML=fnDayHTML(fnResById())"></div>
-    <div class="fn-tiles">${FX_METHODS.map(m => tile(m, by(m))).join('')}${tile('Total received', total, 'total')}</div>
+    <div class="fn-tiles">${FX_METHODS.map(m => tile(m, by(m))).join('')}${real.some(p => !p.method) ? tile('Method not set', real.filter(p => !p.method).reduce((s, p) => s + Number(p.amount), 0)) : ''}${tile('Total received', total, 'total')}</div>
     <div class="rp-table-wrap"><table class="rp-table">
       <thead><tr><th class="l">Date</th><th class="l">Guest</th><th class="l">Type</th><th class="l">Method</th><th class="l">Notes</th><th>Charge</th><th>Payment</th></tr></thead>
       <tbody>${list.length ? fnTxRows(resById, list) : `<tr><td colspan="7" style="text-align:center;color:var(--secondary)">Nothing posted on ${fmtDateLong(d)}</td></tr>`}</tbody>
