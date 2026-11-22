@@ -1014,6 +1014,53 @@
     .pay-unpaid { background:#fff1f0; color:#a8382c; }
     .pay-deposit{ background:#fef3c7; color:#92400e; }
     .pay-paid   { background:#d1fae5; color:#065f46; }
+    .pay-extras { background:#fde7d4; color:#9a3412; }
+    /* Guest Payments & Additional Charges editor */
+    .fx-wrap { display:flex; flex-direction:column; gap:18px; container-type:inline-size; }
+    .fx-block { border:1px solid var(--surface-container-high); border-radius:14px; padding:16px; background:var(--surface-container-lowest); }
+    .fx-head { display:flex; gap:10px; align-items:flex-start; margin-bottom:10px; }
+    .fx-head > .mso { font-size:20px; color:var(--primary); margin-top:1px; }
+    .fx-head b { display:block; font-size:14px; }
+    .fx-head small { display:block; font-size:12px; color:var(--secondary); line-height:1.5; margin-top:2px; }
+    .fx-list { display:flex; flex-direction:column; }
+    .fx-empty { font-size:12px; color:var(--secondary); padding:8px 0; }
+    .fx-row { display:grid; grid-template-columns:auto 1fr auto auto; gap:12px; align-items:center; padding:10px 0; border-top:1px solid var(--surface-container-high); }
+    .fx-row:first-child { border-top:none; }
+    .fx-row.fresh { background:linear-gradient(90deg, #EEF8F2, transparent); }
+    .fx-kind { font-size:10px; font-weight:800; letter-spacing:.06em; text-transform:uppercase; padding:4px 8px; border-radius:999px; white-space:nowrap; background:var(--surface-container-high); color:var(--on-surface); }
+    .fx-kind.k-room { background:#E1EEF8; color:#1E4B72; }
+    .fx-kind.k-electricity { background:#FEF3C7; color:#92400E; }
+    .fx-kind.k-misc { background:#F4ECF8; color:#502568; }
+    .fx-txt { min-width:0; font-size:12px; color:var(--secondary); }
+    .fx-txt small { display:block; color:var(--on-surface); font-size:13px; overflow-wrap:anywhere; }
+    .fx-amt { font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
+    .fx-add { display:grid; grid-template-columns:175px 140px 200px 1fr auto; gap:10px; align-items:end; margin-top:12px; padding-top:12px; border-top:1px dashed var(--surface-container-high); }
+    .fx-add .form-group { gap:6px; min-width:0; }
+    .fx-add label { font-size:10px; }
+    .fx-amount { display:flex; gap:6px; align-items:stretch; }
+    .fx-amount .rate-wrap { flex:1; min-width:0; }
+    .fx-sign { width:40px; flex-shrink:0; border:1px solid var(--surface-container-high); border-radius:8px; background:#EEF8F2; color:#0F7A4A; font-size:18px; font-weight:800; cursor:pointer; }
+    .fx-sign.neg { background:#FBE3E1; color:#b42318; }
+    .fx-add-btn { min-height:44px; justify-content:center; }
+    .fx-sum { display:grid; grid-template-columns:1fr 1fr; gap:10px 24px; background:var(--surface-container-low); border-radius:14px; padding:14px 16px; }
+    .fx-sum-title { display:flex; align-items:center; gap:8px; font-family:'Manrope',sans-serif; font-size:11px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--secondary); margin-bottom:4px; }
+    .fx-sum-row { display:flex; justify-content:space-between; gap:10px; font-size:13px; padding:3px 0; }
+    .fx-sum-row span { color:var(--secondary); }
+    .fx-sum-total { grid-column:1 / -1; display:flex; justify-content:space-between; border-top:1px solid var(--surface-container-high); padding-top:10px; font-weight:700; font-size:14px; }
+    .fx-alert { grid-column:1 / -1; display:flex; gap:8px; align-items:flex-start; background:#FDE8E8; color:#9b1c1c; border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.5; }
+    .fx-alert .mso { font-size:18px; }
+    @container (max-width:860px) {
+      .fx-add { grid-template-columns:1fr 1fr 1.4fr; }
+      .fx-add .fx-notes { grid-column:1 / 3; }
+    }
+    @container (max-width:520px) {
+      .fx-add { grid-template-columns:1fr 1fr; }
+      .fx-add .fx-notes, .fx-add > .form-group:nth-child(3), .fx-add .fx-add-btn { grid-column:1 / -1; }
+      .fx-row { grid-template-columns:1fr auto auto; gap:6px 10px; }
+      .fx-row .fx-kind { grid-column:1 / -1; justify-self:start; }
+      .fx-sum { grid-template-columns:1fr; }
+      .fx-block { padding:14px 12px; }
+    }
     .pay-secdep { background:#e0e7ff; color:#3730a3; }
     .sec-field.off input { opacity:.45; cursor:not-allowed; }
     .sec-field.off label { opacity:.6; }
@@ -1925,15 +1972,12 @@
               <div class="ra-panel" id="ra-new" style="margin-top:12px"></div>
             </div>
             <div class="form-section">
-              <div class="form-section-header"><span class="mso">payments</span><h3>Payment</h3></div>
-              <div class="form-grid-2">
-                <div class="form-group"><label>Payment Status</label><select id="payment-status" onchange="onPayStatusChange('new')"><option value="Unpaid">Unpaid</option><option value="Deposit">Partially Paid</option><option value="Paid">Paid</option></select>
-                  <small class="pay-hint" id="pay-hint-new"></small></div>
-                <div class="form-group" id="deposit-group-new" style="display:none"><label>Room Payment (IDR)</label>
-                  <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="text" inputmode="numeric" autocomplete="off" class="money" id="deposit-amount" placeholder="0" oninput="updatePayHint('new')" /></div></div>
+              <div class="form-section-header"><span class="mso">payments</span><h3>Guest Payment &amp; Additional Charges</h3></div>
+              <div class="fx-wrap" id="fx-new"></div>
+              <div class="form-grid-2" style="margin-top:24px">
                 <div class="form-group sec-field off" id="sec-group-new"><label>Refundable Security Deposit (Optional)</label>
                   <div class="rate-wrap"><span class="rate-prefix">IDR</span><input type="text" inputmode="numeric" autocomplete="off" class="money" id="security-deposit" placeholder="0" disabled /></div>
-                  <small class="pay-hint" id="sec-hint-new">Available when Payment Status is Paid</small></div>
+                  <small class="pay-hint" id="sec-hint-new">Available once the room is fully paid</small></div>
               </div>
               <div class="form-group" style="margin-top:28px"><label>Notes (Optional)</label><textarea id="notes" placeholder="Special requests, early check-in, etc."></textarea></div>
             </div>
@@ -2633,7 +2677,9 @@ function fmtDateLong(d) {
    RESERVATION SUMMARY
 ══════════════════════════════════════════════════════════ */
 async function loadResSummary() {
-  const { data } = await db.from('reservations').select('*').order('created_date', { ascending: false }).limit(4);
+  const [{ data }, fm] = await Promise.all([
+    db.from('reservations').select('*').order('created_date', { ascending: false }).limit(4), loadFolioMap()]);
+  _folioMap = fm;
   const list = document.getElementById('res-card-list');
   if (!data || data.length === 0) {
     list.innerHTML = '<div class="empty-state">No reservations yet. Create your first booking!</div>';
@@ -2652,7 +2698,7 @@ async function loadResSummary() {
           </div>
           <div style="display:flex;justify-content:center"><span class="res-room">${r.room_name || '—'}</span></div>
           <div class="chip-stack">
-            ${statusChip(r.status)}${payDisplayChip(r)}
+            ${statusChip(r.status)}${payDisplayChip(r)}${extrasChip(r)}
           </div>
           <div style="display:flex;justify-content:flex-end">
             <button class="icon-btn" title="View details"><span class="mso">chevron_right</span></button>
@@ -2899,19 +2945,6 @@ function updateRateSummary(which) {
   updatePayHint(which);
 }
 
-/* ── Payment status: deposit amount field + live hint ──────── */
-function payCtx(which) {
-  if (which === 'new') {
-    const rc = rateCalc('new');
-    return { status: document.getElementById('payment-status').value, total: rc.nights > 0 ? rc.total : 0, dep: document.getElementById('deposit-amount'),
-             group: document.getElementById('deposit-group-new'), hint: document.getElementById('pay-hint-new') };
-  }
-  const g = id => document.getElementById(id);
-  if (!g('ed-payment')) return null;
-  const rc = rateCalc('ed');
-  return { status: g('ed-payment').value, total: rc && rc.nights > 0 ? rc.total : 0, dep: g('ed-deposit'),
-           group: g('deposit-group-ed'), hint: g('pay-hint-ed') };
-}
 // Refundable Security Deposit can only be recorded once the room is fully paid
 function syncSecurityField(which, status) {
   const grp = document.getElementById(which === 'new' ? 'sec-group-new' : 'sec-group-ed');
@@ -2922,28 +2955,8 @@ function syncSecurityField(which, status) {
   grp.classList.toggle('off', !on);
   inp.disabled = !on;
   if (!on) inp.value = '';
-  hint.textContent = on ? 'Held separately, not part of the room payment' : 'Available when Payment Status is Paid';
+  hint.textContent = on ? 'Held separately, not part of the room payment' : 'Available once the room is fully paid';
 }
-function onPayStatusChange(which) {
-  const c = payCtx(which); if (!c) return;
-  syncSecurityField(which, c.status);
-  c.group.style.display = c.status === 'Deposit' ? '' : 'none';
-  if (c.status === 'Deposit') setTimeout(() => c.dep.focus(), 30);
-  updatePayHint(which);
-}
-function updatePayHint(which) {
-  const c = payCtx(which); if (!c) return;
-  const total = c.total;
-  c.hint.classList.remove('warn');
-  if (c.status === 'Paid') c.hint.textContent = total ? `Recorded as fully paid: ${idr(total)}` : 'Recorded as fully paid';
-  else if (c.status === 'Deposit') {
-    const dep = parseFloat(unMoney(c.dep.value)) || 0;
-    if (!total) c.hint.textContent = 'Enter dates and rate to see the balance';
-    else if (dep >= total) { c.hint.textContent = 'Amount paid covers the full total — choose "Paid" instead'; c.hint.classList.add('warn'); }
-    else c.hint.textContent = `Total ${idr(total)} · Balance due ${idr(total - dep)}`;
-  } else c.hint.textContent = total ? `Balance due ${idr(total)}` : '';
-}
-
 async function saveReservation() {
   const guestName     = document.getElementById('guest-name').value.trim();
   const arrivalDate   = document.getElementById('arrival-date').value;
@@ -2955,13 +2968,10 @@ async function saveReservation() {
   const guestEmail    = document.getElementById('guest-email').value.trim();
   const guestPhone    = document.getElementById('guest-phone').value.trim();
   const guestCount    = parseInt(document.getElementById('guest-count').value, 10) || 1;
-  const paymentStatus = document.getElementById('payment-status').value || 'Unpaid';
   const notes         = document.getElementById('notes').value.trim();
   const emergencyName = document.getElementById('emergency-name').value.trim();
   const emergencyPhone= document.getElementById('emergency-phone').value.trim();
-  const depositAmount = parseFloat(unMoney(document.getElementById('deposit-amount').value)) || 0;
   const secRaw        = unMoney(document.getElementById('security-deposit').value);
-  const securityDeposit = (document.getElementById('payment-status').value !== 'Paid' || secRaw === '') ? null : Math.max(0, Math.round(parseFloat(secRaw) || 0));
   if (!guestName || !arrivalDate || !departureDate || !rate || !channel || !roomName) return showToast('Please fill in all required fields');
   if (arrivalDate < baliToday()) return showToast("Arrival can't be in the past — choose today or later");
   if (departureDate <= arrivalDate) return showToast('Departure must be at least 1 day after arrival');
@@ -2974,11 +2984,13 @@ async function saveReservation() {
   const rateType = rc.mode;
   const roomRevenue = rateType === 'total' ? rate : roomNight * rate;
   const nightlyRate = rateType === 'total' ? Math.round((rate / roomNight) * 100) / 100 : rate;
-  if (paymentStatus === 'Deposit') {
-    if (!(depositAmount > 0)) return showToast('Enter the amount paid');
-    if (depositAmount >= roomRevenue) return showToast('Amount paid covers the full total — choose "Paid" instead');
+  const fx = fxState('new');
+  const roomPaid = fxSum(fx.pays, x => x.kind === 'Room');
+  if (roomPaid > roomRevenue) {
+    document.getElementById('fx-new-sum')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return showToast(`Room payment overcharged by ${idr(roomPaid - roomRevenue)} — adjust room nights or post the excess on Misc Payment`);
   }
-  const amountPaid = paymentStatus === 'Paid' ? roomRevenue : paymentStatus === 'Deposit' ? depositAmount : 0;
+  const securityDeposit = (roomPaid < roomRevenue || secRaw === '') ? null : Math.max(0, Math.round(parseFloat(secRaw) || 0));
   const arrivalMonth = arrival.toLocaleString('default', { month:'long', year:'numeric' });
   let confNumber, exists = true;
   while (exists) {
@@ -2995,14 +3007,18 @@ async function saveReservation() {
     arrival_month: arrivalMonth, room_night: roomNight, room_revenue: roomRevenue,
     status: 'New Reservation',
     guest_email: guestEmail || null, guest_phone: guestPhone || null, guests: guestCount,
-    payment_status: paymentStatus, notes: notes || null, amount_paid: amountPaid,
+    notes: notes || null,
     emergency_contact_name: emergencyName || null, emergency_contact_phone: emergencyPhone || null,
-    security_deposit: securityDeposit
   }).select().single();
+  if (error) { saveBtn.disabled = false; return showToast('Error saving reservation: ' + error.message); }
+  // Payments and charges, then the security deposit (only possible once the room is paid)
+  const fxErr = await fxCommit('new', saved.id);
+  if (!fxErr && securityDeposit !== null) await db.from('reservations').update({ security_deposit: securityDeposit }).eq('id', saved.id);
+  const { data: fresh } = await db.from('reservations').select('*').eq('id', saved.id).single();
   saveBtn.disabled = false;
-  if (error) return showToast('Error saving reservation: ' + error.message);
+  if (fxErr) showToast('Booking saved, but a payment/charge could not be saved: ' + fxErr.message + ' — add it on the booking page');
   clearForm();
-  showBookingConfirmed(saved);
+  showBookingConfirmed(fresh || saved);
   refreshTodoBadge();
 }
 
@@ -3044,13 +3060,11 @@ function showBookingConfirmed(r) {
 }
 
 function clearForm() {
-  ['guest-name','arrival-date','departure-date','rate','country','guest-email','guest-phone','emergency-name','emergency-phone','deposit-amount','security-deposit'].forEach(id => document.getElementById(id).value = '');
-  document.getElementById('deposit-group-new').style.display = 'none';
+  ['guest-name','arrival-date','departure-date','rate','country','guest-email','guest-phone','emergency-name','emergency-phone','security-deposit'].forEach(id => document.getElementById(id).value = '');
   syncSecurityField('new', 'Unpaid');
+  fxReset('new'); fxRender('new');
   _rateMode.new = 'per_night'; paintRateMode('new'); document.getElementById('rate-summary-new').textContent = '';
-  document.getElementById('pay-hint-new').textContent = '';
   document.getElementById('guest-count').value = '1';
-  document.getElementById('payment-status').value = 'Unpaid';
   document.getElementById('channel-select').value = '';
   syncDateMins('new');
   const raNew = document.getElementById('ra-new'); if (raNew) { raNew.innerHTML = ''; raNew.dataset.open = ''; }
@@ -3073,7 +3087,8 @@ let _sortDir = 'desc';
 
 async function initAllRes() {
   document.getElementById('allres-tbody').innerHTML = '<tr><td colspan="10" class="empty-state">Loading…</td></tr>';
-  const { data } = await db.from('reservations').select('*').order('arrival_date', { ascending: false });
+  const [{ data }, fm] = await Promise.all([db.from('reservations').select('*').order('arrival_date', { ascending: false }), loadFolioMap()]);
+  _folioMap = fm;
   _allResData = data || [];
   filterAllRes();
 }
@@ -3147,7 +3162,7 @@ function renderAllRes() {
         <td class="c-arr" data-label="Arrival">${fmtDateLong(r.arrival_date)}</td>
         <td class="c-dep" data-label="Departure">${fmtDateLong(r.departure_date)}</td>
         <td class="c-room" data-label="Room">${escHtml(r.room_name || '—')}</td>
-        <td class="c-status"><div class="chip-stack">${statusChip(r.status)}${payDisplayChip(r)}</div></td>
+        <td class="c-status"><div class="chip-stack">${statusChip(r.status)}${payDisplayChip(r)}${extrasChip(r)}</div></td>
         <td class="allres-money c-adr" data-label="ADR">${idr(nightlyOf(r))}</td>
         <td class="allres-nights c-nights" data-label="Nights">${r.room_night || 0}</td>
         <td class="allres-money c-rev" data-label="Revenue">IDR ${Number(r.room_revenue || 0).toLocaleString('id-ID')}</td>
@@ -3869,15 +3884,15 @@ document.addEventListener('input', e => { if (e.target.classList && e.target.cla
 const PAY_LABEL = { Unpaid: 'Unpaid', Deposit: 'Partially Paid', Paid: 'Paid' };
 const payLabel = v => PAY_LABEL[v] || v || 'Unpaid';
 // Payment display status for the guest summary page and the invoice:
-// Unpaid · Partially Paid · Fully Paid (paid, no security deposit held) · Deposit (paid + security deposit held)
+// Unpaid · Partially Paid · Paid (paid, no security deposit held) · Deposit (paid + security deposit held)
 function payDisplay(r) {
   const st = payStatusOf(r);
-  if (st === 'Paid') return Number(r.security_deposit) > 0 ? 'Deposit' : 'Fully Paid';
+  if (st === 'Paid') return Number(r.security_deposit) > 0 ? 'Deposit' : 'Paid';
   return st === 'Deposit' ? 'Partially Paid' : 'Unpaid';
 }
 function payDisplayChip(r) {
   const t = payDisplay(r);
-  const cls = { 'Unpaid': 'pay-unpaid', 'Partially Paid': 'pay-deposit', 'Fully Paid': 'pay-paid', 'Deposit': 'pay-secdep' }[t];
+  const cls = { 'Unpaid': 'pay-unpaid', 'Partially Paid': 'pay-deposit', 'Paid': 'pay-paid', 'Deposit': 'pay-secdep' }[t];
   return `<span class="st-chip ${cls}">${t}</span>`;
 }
 // "Partially Paid" only counts when something was actually paid; otherwise it is Unpaid
@@ -3932,12 +3947,13 @@ async function openReservation(id, backTo) {
 }
 
 async function loadReservationDetail(id) {
-  const [resQ, histQ, roomsQ, chQ, miscQ] = await Promise.all([
+  const [resQ, histQ, roomsQ, chQ, miscQ, chgQ] = await Promise.all([
     db.from('reservations').select('*').eq('id', id).single(),
     db.from('reservation_history').select('*').eq('reservation_id', id).order('changed_at', { ascending: false }),
     db.from('rooms').select('name').order('created_at'),
     db.from('channels').select('name').order('created_at'),
     db.from('reservation_misc_payments').select('*').eq('reservation_id', id).order('paid_on').order('created_at'),
+    db.from('reservation_charges').select('*').eq('reservation_id', id).order('charged_on').order('created_at'),
   ]);
   if (resQ.error || !resQ.data) {
     document.getElementById('rd-root').innerHTML = '<div class="empty-state">Could not load this reservation.</div>';
@@ -3946,6 +3962,7 @@ async function loadReservationDetail(id) {
   _rd = resQ.data;
   _rdHistory = histQ.data || [];
   _rdMisc = miscQ.data || [];
+  _rdCharges = chgQ.data || [];
   _rdOptions = { rooms: (roomsQ.data || []).map(r => r.name), channels: (chQ.data || []).map(c => c.name) };
   renderReservationDetail();
 }
@@ -3971,7 +3988,7 @@ function renderReservationDetail() {
       <div>
         <div class="rd-title">${escHtml(r.guest_name || 'Guest')}</div>
         <div class="rd-sub">
-          ${statusChip(r.status)} ${payDisplayChip(r)}
+          ${statusChip(r.status)} ${payDisplayChip(r)} ${(() => { const f = folioOf(countsAsStay(r) ? Number(r.room_revenue || 0) : 0, _rdCharges, _rdMisc); return f.hasCharges && f.extrasDue > 0 ? '<span class="st-chip pay-extras">Extras due</span>' : ''; })()}
           <span><span class="mso">bed</span> ${escHtml(r.room_name || '—')}</span>
           <span><span class="mso">hub</span> ${escHtml(r.channel || '—')}</span>
         </div>
@@ -3984,6 +4001,7 @@ function renderReservationDetail() {
 
   if (_rdMode === 'edit') {
     root.innerHTML = header + renderEditForm(r);
+    fxRender('ed');
     rdRecalc();
     return;
   }
@@ -4091,6 +4109,7 @@ function renderReservationDetail() {
     </div>`;
 
   // ── Finance
+  const fo = folioOf(countsAsStay(r) ? Number(r.room_revenue || 0) : 0, _rdCharges, _rdMisc);
   const finCard = `
     <div class="rd-card tint">
       <div class="rd-label" style="display:flex;justify-content:space-between">Financial Overview <span class="mso" style="font-size:20px">payments</span></div>
@@ -4099,12 +4118,14 @@ function renderReservationDetail() {
            <div class="rd-fin-row"><span>≈ Per night</span><b>${idr(nightlyOf(r))}</b></div>`
         : `<div class="rd-fin-row"><span>Room rate (${idr(r.rate)} × ${nights})</span><b>${idr(r.room_revenue)}</b></div>`}
       <div class="rd-fin-row"><span>Sold as</span><b>${r.rate_type === 'total' ? 'Total stay' : 'Per night'}</b></div>
-      <div class="rd-fin-row"><span>Payment status</span>${payDisplayChip(r)}</div>
-      <div class="rd-fin-row"><span>Paid by guest</span><b class="rd-paid">${idr(r.amount_paid)}</b></div>
-      ${cancelled ? '' : `<div class="rd-fin-row"><span>Balance due</span><b class="${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? 'rd-due' : 'rd-paid'}">${Number(r.room_revenue || 0) - Number(r.amount_paid || 0) > 0 ? idr(Number(r.room_revenue || 0) - Number(r.amount_paid || 0)) : 'Fully paid ✓'}</b></div>`}
-      <div class="rd-fin-total"><span>Total Revenue</span><b>${idr(countsAsStay(r) ? r.room_revenue : 0)}</b></div>
+      <div class="rd-fin-row"><span>Room payment status</span>${payDisplayChip(r)}</div>
+      <div class="rd-fin-row"><span>Room payments</span><b class="rd-paid">${signedIdr(fo.roomPaid)}</b></div>
+      ${fo.hasCharges || fo.extraPaidIn || fo.rebate ? `<div class="rd-fin-row"><span>Electricity & misc charges</span><b>${idr(fo.extraCharges)}</b></div>
+      <div class="rd-fin-row"><span>Electricity & misc payments</span><b class="rd-paid">${idr(fo.extraPaidIn)}</b></div>` : ''}
+      <div class="rd-fin-row"><span>Balance due</span><b class="${fo.balance > 0 ? 'rd-due' : fo.balance < 0 ? 'misc-neg' : 'rd-paid'}">${fo.balance > 0 ? idr(fo.balance) : fo.balance < 0 ? 'Credit ' + idr(-fo.balance) : 'Balanced ✓'}</b></div>
+      <div class="rd-fin-total"><span>Total Revenue</span><b>${idr((countsAsStay(r) ? Number(r.room_revenue || 0) : 0) + fo.extraCharges + fo.rebate)}</b></div>
       ${cancelled ? `<p class="rd-muted">Cancelled — not counted as revenue. Original value: ${idr(r.room_revenue)}.</p>`
-        : !countsAsStay(r) ? `<p class="rd-muted">No Show — counted as 0 room nights and 0 revenue. Once the departure date has passed, any room payment is moved to Misc Payment automatically as a cancellation charge. Original value: ${idr(r.room_revenue)}.</p>` : ''}
+        : !countsAsStay(r) ? `<p class="rd-muted">No Show — counted as 0 room nights and 0 revenue. Once the departure date has passed, any room payment is moved to Misc automatically as a cancellation charge. Original value: ${idr(r.room_revenue)}.</p>` : ''}
       <button class="rd-mini-btn" onclick="document.getElementById('rd-history').scrollIntoView({behavior:'smooth'})"><span class="mso">history</span>History</button>
     </div>`;
 
@@ -4124,38 +4145,11 @@ function renderReservationDetail() {
         : `<div class="rd-sd-amount ${sdHeld ? '' : 'zero'}">${sd === null || sd === undefined ? 'Not added' : sdHeld ? idr(sd) : 'IDR 0 · nothing held'}</div>
            <p class="rd-sd-note">Held separately and not part of the room payment.${sdHeld ? ' Set to 0 once refunded.' : ''}</p>
            ${sdHeld && r.status === 'Checked-in' ? `<div class="rd-sd-alert"><span class="mso">info</span><span>Refund this deposit (less any deductions for damage) and set it to 0 before checking the guest out.</span></div>` : ''}
-           ${cancelled ? '' : payStatusOf(r) !== 'Paid' ? `<p class="rd-sd-note" style="margin-top:12px"><span class="mso" style="font-size:15px;vertical-align:-3px">lock</span> Available once Payment Status is Paid.</p>` : `<button class="rd-mini-btn" style="margin-top:16px" onclick="_rdMode='sd';renderReservationDetail();setTimeout(()=>{const i=document.getElementById('sd-input');i&&(i.focus(),i.select())},30)"><span class="mso">edit</span>${sd === null || sd === undefined ? 'Add amount' : 'Update amount'}</button>`}`}
+           ${cancelled ? '' : payStatusOf(r) !== 'Paid' ? `<p class="rd-sd-note" style="margin-top:12px"><span class="mso" style="font-size:15px;vertical-align:-3px">lock</span> Available once the room is fully paid.</p>` : `<button class="rd-mini-btn" style="margin-top:16px" onclick="_rdMode='sd';renderReservationDetail();setTimeout(()=>{const i=document.getElementById('sd-input');i&&(i.focus(),i.select())},30)"><span class="mso">edit</span>${sd === null || sd === undefined ? 'Add amount' : 'Update amount'}</button>`}`}
     </div>`;
 
-  // ── Misc Payments (money actually collected outside the room payment)
-  const miscTotal = _rdMisc.reduce((t, m) => t + Number(m.amount || 0), 0);
-  const miscIn  = _rdMisc.filter(m => Number(m.amount) > 0).reduce((t, m) => t + Number(m.amount), 0);
-  const miscOut = _rdMisc.filter(m => Number(m.amount) < 0).reduce((t, m) => t - Number(m.amount), 0);
-  const signedIdr = n => (Number(n) < 0 ? '−' : '') + idr(Math.abs(Number(n)));
-  const miscCard = `
-    <div class="rd-card" id="rd-misc">
-      <div class="rd-sd-head"><div class="rd-label">Misc Payment${_rdMisc.length ? ` · ${_rdMisc.length}` : ''}</div><span class="mso" style="font-size:20px;color:var(--secondary)">add_card</span></div>
-      <div class="rd-sd-amount ${_rdMisc.length ? '' : 'zero'} ${miscTotal < 0 ? 'neg' : ''}">${_rdMisc.length ? signedIdr(miscTotal) : 'None recorded'}</div>
-      ${miscOut ? `<p class="rd-sd-note">Charges ${idr(miscIn)} · Refunds <span class="misc-neg">−${idr(miscOut)}</span></p>` : ''}
-      <p class="rd-sd-note">Money in or out outside the room payment: charges (e.g. cancellation, no-show, damage) and refunds / rebates.</p>
-      ${_rdMisc.length ? `<div class="misc-list">${_rdMisc.map(m => `
-        <div class="misc-item">
-          <div class="misc-txt"><b class="${Number(m.amount) < 0 ? 'misc-neg' : ''}">${signedIdr(m.amount)}</b>${Number(m.amount) < 0 ? ' <em class="misc-tag">Refund</em>' : ''} <span>· ${fmtDateLong(m.paid_on)}</span><small>${escHtml(m.notes)}</small><small class="misc-by">by ${escHtml(m.created_by || '—')}</small></div>
-          <button class="doc-del" onclick="rdDeleteMisc('${m.id}')" title="Remove"><span class="mso">delete</span></button>
-        </div>`).join('')}</div>` : ''}
-      ${_rdMode === 'misc'
-        ? `<div class="misc-form">
-             <div class="misc-type" role="group" aria-label="Type">
-               <button type="button" class="${_miscType === 'charge' ? 'on' : ''}" onclick="setMiscType('charge')"><span class="mso">add</span>Charge</button>
-               <button type="button" class="${_miscType === 'refund' ? 'on refund' : ''}" onclick="setMiscType('refund')"><span class="mso">remove</span>Refund / Rebate</button>
-             </div>
-             <div class="form-group"><label for="misc-date">Date</label><input id="misc-date" type="date" value="${baliToday()}" max="${baliToday()}"></div>
-             <div class="form-group"><label for="misc-amount">Amount</label><div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="misc-amount" type="text" inputmode="numeric" autocomplete="off" class="money" placeholder="0"></div></div>
-             <div class="form-group misc-notes"><label for="misc-notes">Notes</label><input id="misc-notes" type="text" maxlength="140" placeholder="${_miscType === 'refund' ? 'e.g. Rebate for AC complaint / refund early departure' : 'e.g. No-show charge 12 Nov (1 night)'}"></div>
-             <div class="misc-actions"><button class="btn-ghost" onclick="_rdMode='view';renderReservationDetail()">Cancel</button><button class="btn-primary" id="misc-save" onclick="rdSaveMisc()">Save</button></div>
-           </div>`
-        : `<button class="rd-mini-btn" style="margin-top:16px" onclick="_miscType='charge';_rdMode='misc';renderReservationDetail();setTimeout(()=>document.getElementById('misc-amount')?.focus(),30)"><span class="mso">add</span>Add entry</button>`}
-    </div>`;
+  // ── Guest Payments + Additional Charges
+  const folioCard = `<div class="rd-card" id="rd-misc"><div class="rd-sd-head"><div class="rd-label">Guest Payments &amp; Additional Charges</div><span class="mso" style="font-size:20px;color:var(--secondary)">account_balance_wallet</span></div><div class="fx-wrap" id="fx-rd"></div></div>`;
 
   // ── Notes
   const notesCard = _rdMode === 'note'
@@ -4199,13 +4193,15 @@ function renderReservationDetail() {
       <div class="rd-col">${guestCard}${statusCard}${mailCard}</div>
       <div class="rd-col">
         ${stayCard}
-        <div class="rd-two">${finCard}${notesCard}</div>
-        <div class="rd-two">${sdCard}${miscCard}</div>
+        <div class="rd-two">${finCard}${sdCard}</div>
+        ${folioCard}
+        ${notesCard}
         <div class="rd-card" id="rd-docs"><div class="rd-label">Documents</div><div class="rd-muted">Loading…</div></div>
         ${histCard}
         ${cancelBox}
       </div>
     </div>`;
+  fxRender('rd');
 }
 
 /* ══════════════════════════════════════════════════════════
@@ -4271,14 +4267,19 @@ async function buildTodos() {
     isAdmin ? db.from('app_settings').select('key, value').in('key', ['backup', 'bank']) : Promise.resolve({ data: [] }),
     isAdmin ? googleFn('status').catch(() => null) : Promise.resolve(null),
   ]);
+  _folioMap = await loadFolioMap();
   const passports = new Set((passQ.data || []).map(x => x.reservation_id));
   const confirmed = new Set((confQ.data || []).map(x => x.reservation_id));
   const noShowMisc = {};
   (miscQ.data || []).forEach(m => { noShowMisc[m.reservation_id] = (noShowMisc[m.reservation_id] || 0) + Number(m.amount || 0); });
   const items = [];
   const add = (o) => items.push(o);
-  const balance = r => Math.max(0, Number(r.room_revenue || 0) - Number(r.amount_paid || 0));
-  const payLine = r => payStatusOf(r) !== 'Paid' ? `Balance due <b>${idr(balance(r))}</b> of ${idr(r.room_revenue)}.` : '';
+  const payLine = r => {
+    const f = folioFor(r);
+    if (f.balance > 0) return `Balance due <b>${idr(f.balance)}</b>` + (f.roomDue > 0 && f.extrasDue > 0 ? ` (room ${idr(f.roomDue)} · electricity & misc ${idr(f.extrasDue)}).` : f.extrasDue > 0 ? ' (electricity & misc).' : ` of ${idr(r.room_revenue)} room revenue.`);
+    if (f.balance < 0) return `Credit <b>${idr(-f.balance)}</b> — refund the guest or post it on Misc Payment.`;
+    return '';
+  };
   const open = r => ({ label: 'Open booking', icon: 'open_in_new', fn: `todoOpen('${r.id}')` });
   const act = (r, to, label, icon) => ({ label, icon, primary: true, fn: `todoAct('${r.id}','${to}')` });
 
@@ -4305,9 +4306,14 @@ async function buildTodos() {
             lines: [Number(r.security_deposit) > 0 ? `Security deposit to refund: <b>${idr(r.security_deposit)}</b> (less any deductions), then set it to 0.` : '', payLine(r)],
             actions: [act(r, 'Checked-out', 'Check out', 'logout'), open(r)] });
     // 7 · Balance due — in-house guest
-    if (st === 'Checked-in' && payStatusOf(r) !== 'Paid' && r.departure_date > T)   // departing/overdue cards already show the balance
-      add({ key: `balance:${r.id}:${payStatusOf(r)}:${Number(r.amount_paid || 0)}`, group: 'today', icon: 'payments', r,
+    if (st === 'Checked-in' && folioFor(r).balance > 0 && r.departure_date > T)   // departing/overdue cards already show the balance
+      add({ key: `balance:${r.id}:${folioFor(r).balance}`, group: 'today', icon: 'payments', r,
             title: 'Balance due — in-house guest', lines: [payLine(r)], actions: [open(r)] });
+    // 7b · Checked out but payments not balanced — stays until balanced (can't be dismissed for good: the key changes with the amount)
+    if (st === 'Checked-out' && folioFor(r).balance !== 0)
+      add({ key: `outbalance:${r.id}:${folioFor(r).balance}`, group: 'urgent', icon: 'account_balance_wallet', r,
+            title: folioFor(r).balance > 0 ? 'Balance due — guest has checked out' : 'Credit to refund — guest has checked out',
+            lines: [payLine(r), 'Post the payment (or refund) on the booking so the billing balances.'], actions: [open(r)] });
     // 4 · No Show — guest hasn't arrived yet
     if (st === 'No-show' && r.departure_date >= T) {
       const phone = waNumber(r.guest_phone);
@@ -4327,8 +4333,8 @@ async function buildTodos() {
       add({ key: `noshowpast:${r.id}:${r.departure_date}`, group: 'info', icon: 'event_busy', r,
             title: 'No Show — booking period has passed',
             lines: [`The stay (${fmtDateLong(r.arrival_date)} – ${fmtDateLong(r.departure_date)}) has ended without the guest arriving.`,
-                    posted ? `Room payment <b>${idr(posted)}</b> was posted to Misc Payment as a cancellation charge.`
-                    : pending ? `Room payment <b>${idr(pending)}</b> will be posted to Misc Payment at the next nightly run.`
+                    posted ? `Room payment <b>${idr(posted)}</b> was moved to Misc as a cancellation charge.`
+                    : pending ? `Room payment <b>${idr(pending)}</b> will be moved to Misc as a cancellation charge at the next nightly run.`
                     : 'No room payment was received.'],
             actions: [open(r)] });
     }
@@ -4429,17 +4435,20 @@ function rpPct(x) { return (x * 100).toFixed(1).replace(/\.0$/, '') + '%'; }
 
 async function loadReport() {
   document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Loading…</div>';
-  const [resQ, miscQ, roomQ] = await Promise.all([
+  const [resQ, miscQ, roomQ, chgQ] = await Promise.all([
     db.from('reservations').select('id, confirmation_number, guest_name, room_name, status, arrival_date, departure_date, room_night, room_revenue, rate'),
-    db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes').order('paid_on'),
+    db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes, kind').lt('amount', 0).neq('kind', 'Room').order('paid_on'),
     db.from('rooms').select('name').order('created_at'),
+    db.from('reservation_charges').select('id, reservation_id, charged_on, amount, notes, kind').order('charged_on'),
   ]);
-  if (resQ.error || miscQ.error || roomQ.error) {
+  if (resQ.error || miscQ.error || roomQ.error || chgQ.error) {
     document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Could not load report data.</div>';
     return;
   }
   _rp.res = resQ.data || [];
-  _rp.misc = miscQ.data || [];
+  // Misc revenue = Electricity + Misc charges (by charge date) less refunds / rebates (negative Electricity / Misc payments)
+  _rp.misc = [...(chgQ.data || []).map(c => ({ ...c, paid_on: c.charged_on })), ...(miscQ.data || [])]
+    .sort((a, b) => String(a.paid_on).localeCompare(String(b.paid_on)));
   _rp.rooms = (roomQ.data || []).map(r => r.name);
   if (!_rp.sel) _rp.sel = new Set(_rp.rooms);
   else _rp.sel = new Set([..._rp.sel].filter(n => _rp.rooms.includes(n)));
@@ -4593,7 +4602,7 @@ function rpRenderDetail() {
   const tAdd = add.reduce((s, x) => s + Number(x.p.amount), 0), tReb = reb.reduce((s, x) => s + Number(x.p.amount), 0);
   const net = tAdd + tReb;
   const line = x => `<div class="rp-mline"><div style="min-width:0"><span class="who" ${openG(x.r)}>${escHtml(x.r.guest_name)}</span> <span style="font-size:11px;color:var(--secondary)">· ${escHtml(x.r.room_name)}</span>
-      <small>${escHtml(x.p.notes || '—')} · ${fmtShort(x.p.paid_on)}</small></div>
+      <small>${escHtml(x.p.kind || 'Misc')} · ${escHtml(x.p.notes || '—')} · ${fmtShort(x.p.paid_on)}</small></div>
       <span class="amt ${Number(x.p.amount) < 0 ? 'rp-neg' : 'rp-pos'}">${rpSigned(x.p.amount)}</span></div>`;
   const card = (title, sub, icon, ib, ic, list, total, cls) => `<div class="rp-mcard">
       <div class="rp-mcard-head"><span class="mso" style="background:${ib};color:${ic}">${icon}</span><div><b>${title}</b><small>${sub}</small></div></div>
@@ -4604,8 +4613,8 @@ function rpRenderDetail() {
       <p>Counted by entry date. Click a guest to open the booking.</p></div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">${back}<span class="rp-netpill">Net <b class="${net < 0 ? 'rp-neg' : 'rp-pos'}">${rpSigned(net)}</b></span></div></div>
     <div class="rp-misc-grid">
-      ${card('Additional Revenue', 'Charges · positive entries', 'add_circle', '#DDF2E6', '#0F7A4A', add, tAdd, 'rp-pos')}
-      ${card('Rebate Revenue', 'Refunds · negative entries', 'remove_circle', '#FBE3E1', '#b42318', reb, tReb, 'rp-neg')}
+      ${card('Additional Revenue', 'Electricity & misc charges', 'add_circle', '#DDF2E6', '#0F7A4A', add, tAdd, 'rp-pos')}
+      ${card('Rebate Revenue', 'Refunds · discounts · rebates', 'remove_circle', '#FBE3E1', '#b42318', reb, tReb, 'rp-neg')}
     </div>`;
 }
 
@@ -4630,7 +4639,7 @@ function _doExportReport() {
     'Total Room Revenue': R(t.rev), 'Additional Revenue': R(t.add), 'Rebate Revenue': R(t.reb), 'Misc Revenue (Net)': R(t.net), 'Total Revenue': R(t.rev + t.net) });
   const rooms = rows.flatMap(r => r.guests.map(g => ({ 'Month': rpLabel(r.ym), 'Confirmation No.': g.r.confirmation_number || '', 'Guest': g.r.guest_name,
     'Room': g.r.room_name, 'Status': g.r.status, 'Nights From': g.from, 'Nights To': g.to, 'RNs': g.nights, 'ADR': R(g.adr), 'Room Revenue': R(g.rev) })));
-  const misc = rows.flatMap(r => r.misc.map(x => ({ 'Month': rpLabel(r.ym), 'Date': x.p.paid_on, 'Type': Number(x.p.amount) < 0 ? 'Rebate' : 'Additional',
+  const misc = rows.flatMap(r => r.misc.map(x => ({ 'Month': rpLabel(r.ym), 'Date': x.p.paid_on, 'Type': Number(x.p.amount) < 0 ? 'Rebate' : 'Additional', 'Category': x.p.kind || 'Misc',
     'Confirmation No.': x.r.confirmation_number || '', 'Guest': x.r.guest_name, 'Room': x.r.room_name, 'Notes': x.p.notes || '', 'Amount': R(Number(x.p.amount)) })));
   const wb = XLSX.utils.book_new();
   const add = (data, name, widths) => {
@@ -4640,7 +4649,7 @@ function _doExportReport() {
   };
   add(monthly, 'Monthly', [12, 13, 10, 13, 12, 12, 18, 18, 16, 18, 16]);
   add(rooms, 'Room breakdown', [12, 16, 24, 10, 16, 12, 12, 6, 12, 14]);
-  add(misc, 'Misc breakdown', [12, 12, 11, 16, 24, 10, 44, 14]);
+  add(misc, 'Misc breakdown', [12, 12, 11, 12, 16, 24, 10, 44, 14]);
   const name = `Performance Report ${rpLabel(_rp.from)}${_rp.from === _rp.to ? '' : ' - ' + rpLabel(_rp.to)}.xlsx`;
   XLSX.writeFile(wb, name);
   showToast('Report exported');
@@ -4673,7 +4682,7 @@ function todoCard(i, dismissed) {
       <div class="todo-body">
         <div class="todo-title">${escHtml(i.title)}</div>
         ${sub ? `<div class="todo-sub">${sub}</div>` : ''}
-        ${r ? `<div class="todo-chips">${statusChip(r.status)}${payDisplayChip(r)}</div>` : ''}
+        ${r ? `<div class="todo-chips">${statusChip(r.status)}${payDisplayChip(r)}${extrasChip(r)}</div>` : ''}
         ${(i.lines || []).filter(Boolean).map(l => `<div class="todo-line">${l}</div>`).join('')}
         ${btns ? `<div class="todo-actions">${btns}</div>` : ''}
       </div>
@@ -4777,9 +4786,11 @@ function invoiceHTML(r, room, roomIdx, bank) {
   const nights = Number(r.room_night) || nightsBetween(r.arrival_date, r.departure_date);
   const guests = Number(r.guests) || 1;
   const total = Number(r.room_revenue || 0);
-  const paid = Math.min(total, Number(r.amount_paid || 0));
-  const due = Math.max(0, total - paid);
-  const st = { 'Fully Paid':     { t: 'Fully Paid',     bg: '#DCFCE7', fg: '#166534', bd: '#86EFAC', dot: '#16A34A' },
+  const fo = folioOf(total, _rdCharges, _rdMisc);
+  const paid = fo.roomPaid;
+  const due = Math.max(0, fo.balance);
+  const extraPays = _rdMisc.filter(p => p.kind !== 'Room');
+  const st = { 'Paid':           { t: 'Paid',           bg: '#DCFCE7', fg: '#166534', bd: '#86EFAC', dot: '#16A34A' },
                'Deposit':        { t: 'Deposit',        bg: '#E0E7FF', fg: '#3730A3', bd: '#A5B4FC', dot: '#4F46E5' },
                'Partially Paid': { t: 'Partially Paid', bg: '#FEF3C7', fg: '#92400E', bd: '#FCD34D', dot: '#D97706' },
                'Unpaid':         { t: 'Unpaid',         bg: '#FEE2E2', fg: '#991B1B', bd: '#FCA5A5', dot: '#DC2626' } }[payDisplay(r)];
@@ -4854,7 +4865,13 @@ function invoiceHTML(r, room, roomIdx, bank) {
         <td style="${TD}text-align:center;font-weight:500">${nights}</td>
         <td style="${TD}text-align:right;font-weight:500">${perNight ? invNum(r.rate) : 'Total stay'}</td>
         <td style="${TD}text-align:right;font-weight:700">${invNum(total)}</td>
-      </tr></tbody>
+      </tr>${_rdCharges.map(c => `<tr>
+        <td style="${TD}padding-right:16px"><div style="font-weight:600">${c.kind === 'Electricity' ? 'Electricity' : 'Misc Charge'}</div>
+          <div style="font-size:11px;color:#4B5563;margin-top:3px">${invDate(c.charged_on)}${c.notes ? ' · ' + e(c.notes) : ''}</div></td>
+        <td style="${TD}text-align:center;font-weight:500">1</td>
+        <td style="${TD}text-align:right;font-weight:500">${Number(c.amount) < 0 ? '-' : ''}${invNum(Math.abs(c.amount))}</td>
+        <td style="${TD}text-align:right;font-weight:700">${Number(c.amount) < 0 ? '-' : ''}${invNum(Math.abs(c.amount))}</td>
+      </tr>`).join('')}</tbody>
     </table>
 
     <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:24px;margin-top:24px;padding-top:16px;border-top:1px solid #E5E7EB;">
@@ -4867,7 +4884,12 @@ function invoiceHTML(r, room, roomIdx, bank) {
       </div>
       <div style="width:300px;font-size:13px;color:#4B5563">
         <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Room Charges (${nights} night${nights === 1 ? '' : 's'}):</span><b style="color:#111827">IDR ${invNum(total)}</b></div>
-        <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Room Payment:</span><b style="color:#0F382A">${paid ? '-' : ''}IDR ${invNum(paid)}</b></div>
+        ${fo.hasCharges ? `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Additional Charges:</span><b style="color:#111827">IDR ${invNum(fo.extraCharges)}</b></div>` : ''}
+        ${fo.rebate ? `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Less discount / rebate:</span><b style="color:#111827">-IDR ${invNum(-fo.rebate)}</b></div>` : ''}
+        ${fo.hasCharges || fo.rebate ? `<div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #E5E7EB;margin-top:4px"><span>Subtotal:</span><b style="color:#111827">IDR ${invNum(total + fo.extraCharges + fo.rebate)}</b></div>` : ''}
+        <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Room Payment:</span><b style="color:#0F382A">${paid > 0 ? '-' : ''}IDR ${invNum(Math.abs(paid))}</b></div>
+        ${extraPays.map(p => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>${Number(p.amount) < 0 ? 'Rebate refunded' : p.kind + ' Payment'} (${invDate(p.paid_on)}):</span><b style="color:#0F382A;white-space:nowrap">${Number(p.amount) > 0 ? '-' : '+'}IDR ${invNum(Math.abs(p.amount))}</b></div>`).join('')}
+
         <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid #0F382A;margin-top:8px;padding-top:10px">
           <span style="font-size:15px;font-weight:700;color:#0F382A">Total Amount Due:</span><span style="font-size:19px;font-weight:700;color:#0F382A">IDR ${invNum(due)}</span></div>
         <div style="display:flex;justify-content:space-between;font-size:12px;padding-top:6px"><span>Payment Status:</span><b style="color:${st.fg}">${st.t}</b></div>
@@ -5019,7 +5041,7 @@ const HIST_LABELS = {
   guest_name:'Guest name', country:'Country', guest_email:'Email', guest_phone:'Phone', guests:'Guests',
   arrival_date:'Arrival', departure_date:'Departure', room_name:'Room', rate:'Rate / night', channel:'Channel',
   status:'Status', payment_status:'Payment', amount_paid:'Amount paid', notes:'Notes', room_night:'Nights', room_revenue:'Revenue',
-  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone', rate_type:'Sold as', security_deposit:'Security deposit', misc_payment:'Misc payment', file:'File', sent_to:'Sent to'
+  emergency_contact_name:'Emergency contact', emergency_contact_phone:'Emergency phone', rate_type:'Sold as', security_deposit:'Security deposit', misc_payment:'Misc payment', payment:'Payment', charge:'Charge', file:'File', sent_to:'Sent to'
 };
 const HIST_ORDER = Object.keys(HIST_LABELS);
 function histVal(field, v) {
@@ -5034,7 +5056,7 @@ function histVal(field, v) {
 }
 function renderHistory() {
   const items = _rdHistory.map(h => {
-    const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz' : h.action === 'Moved' ? 'open_with' : h.action === 'Misc payment added' ? 'add_card' : h.action === 'Misc payment removed' ? 'credit_card_off'
+    const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz' : h.action === 'Moved' ? 'open_with' : (h.action === 'Misc payment added' || h.action === 'Payment added') ? 'add_card' : (h.action === 'Misc payment removed' || h.action === 'Payment removed') ? 'credit_card_off' : h.action === 'Charge added' ? 'receipt_long' : h.action === 'Charge removed' ? 'remove_circle_outline'
                : h.action === 'File uploaded' ? 'upload_file' : h.action === 'File deleted' ? 'delete' : h.action === 'Room renamed' ? 'bed' : h.action === 'Invoice generated' ? 'receipt_long'
                : h.action === 'Confirmation email sent' ? 'mark_email_read' : h.action === 'Cancellation email sent' ? 'cancel_schedule_send' : 'edit';
     const ch = h.changes || {};
@@ -5068,47 +5090,221 @@ async function rdUpdate(payload, okMsg) {
   return true;
 }
 
-let _miscType = 'charge';   // 'charge' (+) or 'refund' (−)
-function setMiscType(t) {
-  // keep what was typed while switching
-  const keep = ['misc-date', 'misc-amount', 'misc-notes'].map(id => document.getElementById(id)?.value);
-  _miscType = t; renderReservationDetail();
-  ['misc-date', 'misc-amount', 'misc-notes'].forEach((id, i) => { const el = document.getElementById(id); if (el && keep[i] !== undefined) el.value = keep[i]; });
+/* ═══════════════ GUEST FOLIO: Guest Payments + Additional Charges ═════════════
+   Payments (table reservation_misc_payments, column kind): Room / Electricity / Misc, + or −.
+     · negative Room Payment   = refund of room money (e.g. shortened stay)
+     · negative Electricity/Misc Payment = refund / discount / rebate (lowers misc revenue)
+   Charges (table reservation_charges): Electricity / Misc, what the guest owes on top of the room.
+   Room status comes from Room Payments vs room revenue (worked out by the database too). */
+let _rdCharges = [];
+const FX_PAY = ['Room', 'Electricity', 'Misc'];
+const FX_CHG = ['Electricity', 'Misc'];
+const _fx = { new: null, ed: null };
+let _fxSeq = 0;
+function signedIdr(n) { n = Number(n) || 0; return (n < 0 ? '−' : '') + idr(Math.abs(n)); }
+const fxSum = (list, f) => list.filter(f).reduce((t, x) => t + (Number(x.amount) || 0), 0);
+function roomStatusFor(total, paid) { return paid <= 0 ? 'Unpaid' : paid < total ? 'Deposit' : 'Paid'; }
+
+// Money picture of one booking. roomRev = room revenue that counts (0 for Cancelled / No Show)
+function folioOf(roomRev, charges, pays) {
+  const roomPaid = fxSum(pays, p => p.kind === 'Room');
+  const extraCharges = fxSum(charges, () => true);
+  const extraPaidIn = fxSum(pays, p => p.kind !== 'Room' && Number(p.amount) > 0);
+  const rebate = fxSum(pays, p => p.kind !== 'Room' && Number(p.amount) < 0);      // ≤ 0
+  const roomDue = roomRev - roomPaid;
+  const extrasDue = extraCharges - extraPaidIn;   // a rebate is money back AND less owed, so it nets out
+  return { roomRev, roomPaid, extraCharges, extraPaidIn, rebate, roomDue, extrasDue,
+           balance: roomDue + extrasDue, hasCharges: charges.length > 0, overRoom: roomPaid > roomRev ? roomPaid - roomRev : 0 };
 }
-async function rdSaveMisc() {
-  const date = document.getElementById('misc-date').value;
-  const amount = parseFloat(unMoney(document.getElementById('misc-amount').value)) || 0;
-  const notes = document.getElementById('misc-notes').value.trim();
-  const refund = _miscType === 'refund';
+// Per-booking totals for lists (chips, To Do): { [reservation_id]: { charges:[], pays:[] } }
+async function loadFolioMap() {
+  const [c, p] = await Promise.all([
+    db.from('reservation_charges').select('reservation_id, kind, amount'),
+    db.from('reservation_misc_payments').select('reservation_id, kind, amount'),
+  ]);
+  const map = {};
+  const get = id => (map[id] = map[id] || { charges: [], pays: [] });
+  (c.data || []).forEach(x => get(x.reservation_id).charges.push(x));
+  (p.data || []).forEach(x => get(x.reservation_id).pays.push(x));
+  return map;
+}
+let _folioMap = {};
+function folioFor(r) {
+  const m = _folioMap[r.id] || { charges: [], pays: [] };
+  return folioOf(countsAsStay(r) ? Number(r.room_revenue || 0) : 0, m.charges, m.pays);
+}
+// "Extras due" chip — only on bookings that have electricity / misc charges still unpaid
+function extrasChip(r) {
+  const f = folioFor(r);
+  return f.hasCharges && f.extrasDue > 0 ? `<span class="st-chip pay-extras" title="Electricity / misc due ${idr(f.extrasDue)}">Extras due</span>` : '';
+}
+
+/* ── The editor (New booking = 'new', Edit booking = 'ed': staged until Save; booking page = 'rd': saved straight away) ── */
+function fxReset(which, pays = [], charges = []) {
+  _fx[which] = { pays: pays.map(x => ({ ...x })), charges: charges.map(x => ({ ...x })), delPays: [], delCharges: [] };
+}
+function fxState(which) {
+  if (which === 'rd') return { pays: _rdMisc, charges: _rdCharges };
+  if (!_fx[which]) fxReset(which);
+  return _fx[which];
+}
+function fxRoomTotal(which) {
+  if (which === 'rd') return countsAsStay(_rd) ? Number(_rd.room_revenue || 0) : 0;
+  const rc = rateCalc(which);
+  return rc && rc.nights > 0 && rc.entered !== null ? rc.total : 0;
+}
+function fxRowHTML(which, x, type) {
+  const neg = Number(x.amount) < 0;
+  const kind = type === 'p' ? `${x.kind} Payment` : x.kind;
+  const date = type === 'p' ? x.paid_on : x.charged_on;
+  const del = which === 'rd' ? `fxDelete('rd','${type}','${x.id}')` : `fxDelete('${which}','${type}','${x.id}')`;
+  return `<div class="fx-row${x._new ? ' fresh' : ''}">
+      <span class="fx-kind k-${x.kind.toLowerCase()}">${kind}</span>
+      <span class="fx-txt"><span>${fmtShort(date)}${x.created_by && which === 'rd' ? ` · ${escHtml(x.created_by)}` : ''}</span><small>${escHtml(x.notes || '')}${neg && type === 'p' ? ` <em class="misc-tag">${x.kind === 'Room' ? 'Refund' : 'Rebate'}</em>` : ''}</small></span>
+      <b class="fx-amt ${neg ? 'misc-neg' : ''}">${signedIdr(x.amount)}</b>
+      <button type="button" class="doc-del" onclick="${del}" title="Remove"><span class="mso">delete</span></button>
+    </div>`;
+}
+function fxAddHTML(which, type) {
+  const id = s => `fx-${which}-${type}-${s}`;
+  const kinds = type === 'p' ? FX_PAY : FX_CHG;
+  return `<div class="fx-add" data-sign="+" id="${id('box')}">
+      <div class="form-group"><label for="${id('kind')}">Type</label><select id="${id('kind')}">${kinds.map(k => `<option value="${k}">${type === 'p' ? k + ' Payment' : k}</option>`).join('')}</select></div>
+      <div class="form-group"><label for="${id('date')}">Date</label><input id="${id('date')}" type="date" value="${baliToday()}" ${type === 'p' ? `max="${baliToday()}"` : ''}></div>
+      <div class="form-group"><label for="${id('amount')}">Amount</label>
+        <div class="fx-amount">${type === 'p' ? `<button type="button" class="fx-sign" id="${id('sign')}" onclick="fxToggleSign('${which}','${type}')" title="Switch between payment (+) and refund / rebate (−)">+</button>` : ''}
+        <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="${id('amount')}" type="text" inputmode="numeric" autocomplete="off" class="money" placeholder="0"></div></div></div>
+      <div class="form-group fx-notes"><label for="${id('notes')}">Notes</label><input id="${id('notes')}" type="text" maxlength="140" placeholder="${type === 'p' ? 'e.g. Transfer BCA · or reason for a refund / rebate' : 'e.g. Electricity Nov: 1.240 → 1.395 kWh'}"></div>
+      <button type="button" class="btn-primary fx-add-btn" onclick="fxAdd('${which}','${type}')"><span class="mso">add</span>Add</button>
+    </div>`;
+}
+function fxToggleSign(which, type) {
+  const box = document.getElementById(`fx-${which}-${type}-box`), b = document.getElementById(`fx-${which}-${type}-sign`);
+  const s = box.dataset.sign === '+' ? '−' : '+';
+  box.dataset.sign = s; b.textContent = s; b.classList.toggle('neg', s === '−');
+}
+function fxRender(which) {
+  const el = document.getElementById('fx-' + which); if (!el) return;
+  const st = fxState(which);
+  const live = which === 'rd';
+  const locked = live && _rd.status === 'Cancelled';
+  el.innerHTML = `
+    <div class="fx-block">
+      <div class="fx-head"><span class="mso">account_balance_wallet</span><div><b>Guest Payments</b><small>Money received: room, electricity or misc. Use − for a refund, discount or rebate (note the reason).</small></div></div>
+      <div class="fx-list">${st.pays.length ? st.pays.map(x => fxRowHTML(which, x, 'p')).join('') : '<div class="fx-empty">No payments yet</div>'}</div>
+      ${locked ? '' : fxAddHTML(which, 'p')}
+    </div>
+    <div class="fx-block">
+      <div class="fx-head"><span class="mso">receipt_long</span><div><b>Additional Charges</b><small>What the guest owes on top of the room: electricity (kWh in the notes) or misc.</small></div></div>
+      <div class="fx-list">${st.charges.length ? st.charges.map(x => fxRowHTML(which, x, 'c')).join('') : '<div class="fx-empty">No additional charges</div>'}</div>
+      ${locked ? '' : fxAddHTML(which, 'c')}
+    </div>
+    <div class="fx-sum" id="fx-${which}-sum"></div>`;
+  fxSummary(which);
+}
+function fxSummary(which) {
+  const el = document.getElementById(`fx-${which}-sum`); if (!el) return;
+  const st = fxState(which);
+  const total = fxRoomTotal(which);
+  const f = folioOf(total, st.charges, st.pays);
+  const status = roomStatusFor(total, f.roomPaid);
+  const line = (l, v, cls = '') => `<div class="fx-sum-row"><span>${l}</span><b class="${cls}">${v}</b></div>`;
+  el.innerHTML =
+    `<div class="fx-sum-col">
+       <div class="fx-sum-title">Room ${total || f.roomPaid ? paymentChip(status) : ''}</div>
+       ${line('Room revenue', total ? idr(total) : (which === 'new' ? 'Enter dates and rate' : idr(0)))}
+       ${line('Room payments', signedIdr(f.roomPaid))}
+       ${line(f.roomDue >= 0 ? 'Room balance' : 'Overpaid', idr(Math.abs(f.roomDue)), f.roomDue > 0 ? 'rd-due' : f.roomDue < 0 ? 'misc-neg' : 'rd-paid')}
+     </div>
+     <div class="fx-sum-col">
+       <div class="fx-sum-title">Electricity & Misc</div>
+       ${line('Charges', idr(f.extraCharges))}
+       ${line('Payments', idr(f.extraPaidIn))}
+       ${f.rebate ? line('Refund / rebate', signedIdr(f.rebate), 'misc-neg') : ''}
+       ${line('Balance', idr(Math.max(0, f.extrasDue)), f.extrasDue > 0 ? 'rd-due' : 'rd-paid')}
+     </div>
+     <div class="fx-sum-total"><span>Total balance due</span><b class="${f.balance > 0 ? 'rd-due' : f.balance < 0 ? 'misc-neg' : 'rd-paid'}">${f.balance < 0 ? 'Credit ' + idr(-f.balance) : f.balance > 0 ? idr(f.balance) : 'Balanced ✓'}</b></div>
+     ${f.overRoom && total ? `<div class="fx-alert"><span class="mso">error</span><span><b>Room payment overcharged by ${idr(f.overRoom)}.</b> Adjust the room nights, or post the excess as a refund (− Room Payment).</span></div>` : ''}`;
+  if (which !== 'rd') syncSecurityField(which, total > 0 ? status : 'Unpaid');
+}
+function updatePayHint(which) { fxSummary(which); }
+
+async function fxAdd(which, type) {
+  const id = s => document.getElementById(`fx-${which}-${type}-${s}`);
+  const kind = id('kind').value, date = id('date').value, notes = id('notes').value.trim();
+  const neg = type === 'p' && id('box').dataset.sign === '−';
+  const raw = parseFloat(unMoney(id('amount').value)) || 0;
   if (!date) return showToast('Choose the date');
-  if (date > baliToday()) return showToast("The date can't be in the future");
-  if (!(amount > 0)) return showToast(refund ? 'Enter the amount refunded' : 'Enter the amount collected');
-  if (!notes) return showToast(refund ? 'Add the reason for this refund / rebate' : 'Add a note describing this payment');
-  if (refund) {
-    const received = Number(_rd.amount_paid || 0) + _rdMisc.filter(m => Number(m.amount) > 0).reduce((t, m) => t + Number(m.amount), 0);
-    const refunded = _rdMisc.filter(m => Number(m.amount) < 0).reduce((t, m) => t - Number(m.amount), 0);
-    if (received <= 0) return showToast('A refund is only possible after money has been received on this booking');
-    if (refunded + amount > received) return showToast(`Refunds can't be more than the money received (${idr(received)}). Already refunded: ${idr(refunded)}`);
+  if (type === 'p' && date > baliToday()) return showToast("A payment date can't be in the future");
+  if (!(raw > 0)) return showToast('Enter the amount');
+  if (!notes) return showToast(neg ? 'Add the reason for this refund / rebate' : 'Add a note');
+  const amount = Math.round(raw) * (neg ? -1 : 1);
+  const st = fxState(which);
+  if (neg) {
+    const received = fxSum(st.pays, p => Number(p.amount) > 0), returned = -fxSum(st.pays, p => Number(p.amount) < 0);
+    if (received <= 0) return showToast('A refund / rebate is only possible after money has been received');
+    if (returned - amount > received) return showToast(`Refunds can't be more than the money received (${idr(received)}). Already returned: ${idr(returned)}`);
   }
-  const btn = document.getElementById('misc-save'); btn.disabled = true;
-  const { error } = await db.from('reservation_misc_payments').insert({ reservation_id: _rd.id, paid_on: date, amount: Math.round(amount) * (refund ? -1 : 1), notes });
-  if (error) { btn.disabled = false; return showToast('Error: ' + error.message); }
-  showToast(refund ? 'Refund recorded ✓' : 'Misc payment recorded ✓');
-  _rdMode = 'view';
-  await loadReservationDetail(_rd.id);
+  const row = type === 'p' ? { kind, paid_on: date, amount, notes } : { kind, charged_on: date, amount, notes };
+  if (which === 'rd') {
+    const btn = id('box').querySelector('.fx-add-btn'); btn.disabled = true;
+    const table = type === 'p' ? 'reservation_misc_payments' : 'reservation_charges';
+    const { error } = await db.from(table).insert({ reservation_id: _rd.id, ...row });
+    if (error) { btn.disabled = false; return showToast('Error: ' + error.message); }
+    showToast(type === 'p' ? (neg ? 'Refund / rebate recorded ✓' : 'Payment recorded ✓') : 'Charge added ✓');
+    return loadReservationDetail(_rd.id);
+  }
+  (type === 'p' ? st.pays : st.charges).push({ ...row, id: 'n' + (++_fxSeq), _new: true });
+  const keepKind = kind;
+  fxRender(which);
+  const k = document.getElementById(`fx-${which}-${type}-kind`); if (k) k.value = keepKind;
 }
-async function rdDeleteMisc(id) {
-  const m = _rdMisc.find(x => x.id === id); if (!m) return;
-  const ok = await showModal('Remove Misc Payment', `Remove ${Number(m.amount) < 0 ? '−' : ''}${idr(Math.abs(m.amount))} (${fmtDateLong(m.paid_on)} · ${m.notes})? The removal is recorded in the change history.`, 'Remove');
-  if (!ok) return;
-  const { error } = await db.from('reservation_misc_payments').delete().eq('id', id);
-  if (error) return showToast('Error: ' + error.message);
-  showToast('Misc payment removed');
-  await loadReservationDetail(_rd.id);
+async function fxDelete(which, type, rowId) {
+  const st = fxState(which);
+  const list = type === 'p' ? st.pays : st.charges;
+  const x = list.find(r => String(r.id) === String(rowId)); if (!x) return;
+  const what = `${type === 'p' ? x.kind + ' Payment' : x.kind + ' charge'} ${signedIdr(x.amount)} (${fmtDateLong(type === 'p' ? x.paid_on : x.charged_on)} · ${x.notes})`;
+  if (which === 'rd') {
+    const ok = await showModal('Remove entry', `Remove ${what}? The removal is recorded in the change history.`, 'Remove');
+    if (!ok) return;
+    const { error } = await db.from(type === 'p' ? 'reservation_misc_payments' : 'reservation_charges').delete().eq('id', rowId);
+    if (error) return showToast('Error: ' + error.message);
+    showToast('Entry removed');
+    return loadReservationDetail(_rd.id);
+  }
+  if (!x._new) (type === 'p' ? st.delPays : st.delCharges).push(x.id);
+  list.splice(list.indexOf(x), 1);
+  fxRender(which);
+}
+// Save staged entries for a booking: removals, charges, payments (+ before −, so refunds have money to come from)
+async function fxCommit(which, reservationId) {
+  const st = fxState(which);
+  if (st.delPays.length) { const { error } = await db.from('reservation_misc_payments').delete().in('id', st.delPays); if (error) return error; }
+  if (st.delCharges.length) { const { error } = await db.from('reservation_charges').delete().in('id', st.delCharges); if (error) return error; }
+  const clean = ({ id, _new, created_at, created_by, reservation_id, ...rest }) => ({ ...rest, reservation_id: reservationId });
+  const newC = st.charges.filter(x => x._new).map(clean);
+  if (newC.length) { const { error } = await db.from('reservation_charges').insert(newC); if (error) return error; }
+  const newP = st.pays.filter(x => x._new).map(clean);
+  for (const grp of [newP.filter(x => x.amount > 0), newP.filter(x => x.amount < 0)]) {
+    if (grp.length) { const { error } = await db.from('reservation_misc_payments').insert(grp); if (error) return error; }
+  }
+  return null;
+}
+// Shortened stay / wrong entry: room payments above room revenue — offer to post the excess as a refund
+async function fxCheckOverpaid(which, total, label) {
+  const st = fxState(which);
+  const over = fxSum(st.pays, p => p.kind === 'Room') - total;
+  if (over <= 0) return true;
+  const go = await showModal('Room payment overcharged',
+    `Room payments are ${idr(over)} more than the room revenue (${idr(total)}). This can happen after shortening the stay, or when a payment was entered by mistake.\n\nPost ${idr(over)} as a refund (− Room Payment) so the billing balances? Or go back and adjust the room nights / payments.`,
+    'Post refund & save', 'btn-primary', 'Go back');
+  if (!go) return false;
+  st.pays.push({ kind: 'Room', paid_on: baliToday(), amount: -Math.round(over), notes: `Refund – ${label}`, id: 'n' + (++_fxSeq), _new: true });
+  return true;
 }
 
 async function rdSaveSecurity() {
-  if (payStatusOf(_rd) !== 'Paid') { showToast('Set Payment Status to Paid first'); return; }
+  if (payStatusOf(_rd) !== 'Paid') { showToast('The room must be fully paid first'); return; }
   const x = unMoney(document.getElementById('sd-input').value);
   const val = x === '' ? null : Math.max(0, Math.round(parseFloat(x) || 0));
   const cur = _rd.security_deposit == null ? null : Number(_rd.security_deposit);
@@ -5148,6 +5344,18 @@ async function rdSetStatus(to) {
     }
     return;
   }
+  if (to === 'Checked-out') {
+    const f = folioOf(countsAsStay(_rd) ? Number(_rd.room_revenue || 0) : 0, _rdCharges, _rdMisc);
+    if (f.balance !== 0) {
+      const parts = [f.roomDue ? `• Room: ${f.roomDue > 0 ? 'due ' + idr(f.roomDue) : 'overpaid ' + idr(-f.roomDue)}` : '',
+                     f.extrasDue > 0 ? `• Electricity & misc: due ${idr(f.extrasDue)}` : ''].filter(Boolean).join('\n');
+      const go = await showModal('Payments not balanced',
+        `${_rd.guest_name}'s billing is not balanced — ${f.balance > 0 ? 'balance due ' + idr(f.balance) : 'credit ' + idr(-f.balance) + ' to refund'}:\n\n${parts}\n\nYou can still check out. A "Balance due" item will stay on the To Do list until the payments are balanced.`,
+        'Check out anyway', 'btn-primary', 'Cancel');
+      if (!go) return;
+      return rdUpdate({ status: to }, 'Status: Checked-out ✓');
+    }
+  }
   const labels = { 'Checked-in': _rd.status === 'Checked-out' ? 'Undo check-out' : 'Check in', 'Checked-out':'Check out', 'New Reservation':'Undo check-in' };
   const ok = await showModal(labels[to] || 'Change status', `Change status of ${_rd.guest_name} from "${_rd.status || 'New Reservation'}" to "${to}"?`);
   if (!ok) return;
@@ -5158,15 +5366,15 @@ async function rdCancel() {
   const paid = Number(_rd.amount_paid) || 0, sec = Number(_rd.security_deposit) || 0;
   if (paid > 0 || sec > 0) {
     // Money already received: it must be moved to Misc Payment before the booking can be cancelled
-    const lines = [paid > 0 ? `• Room payment ${idr(paid)} → Misc Payment "Cancellation room charge"` : '',
-                   sec > 0 ? `• Security deposit ${idr(sec)} → Misc Payment "Cancellation security deposit charge"` : ''].filter(Boolean).join('\n');
-    const move = await showModal('Move payments to Misc Payment?',
-      `${_rd.guest_name}'s booking (${_rd.confirmation_number}) already has money received:\n\n${lines}\n\nTo cancel, these amounts must be moved to Misc Payment. Move them and cancel the booking? This cannot be undone.`,
+    const lines = [paid > 0 ? `• Room payment ${idr(paid)} → Misc charge & payment "Cancellation room charge"` : '',
+                   sec > 0 ? `• Security deposit ${idr(sec)} → Misc charge & payment "Cancellation security deposit charge"` : ''].filter(Boolean).join('\n');
+    const move = await showModal('Move payments to Misc?',
+      `${_rd.guest_name}'s booking (${_rd.confirmation_number}) already has money received:\n\n${lines}\n\nTo cancel, these amounts become a cancellation charge under Misc. Move them and cancel the booking? This cannot be undone.`,
       'Yes, move & cancel', 'btn-danger', 'No');
-    if (!move) return showToast('Booking not cancelled — payments must be moved to Misc Payment first');
+    if (!move) return showToast('Booking not cancelled — payments must be moved to Misc first');
     const { error } = await db.rpc('cancel_with_misc', { p_id: _rd.id });
     if (error) return showToast('Error: ' + error.message);
-    showToast('Reservation cancelled · payments moved to Misc Payment');
+    showToast('Reservation cancelled · payments moved to Misc');
     _rdMode = 'view';
     return loadReservationDetail(_rd.id);
   }
@@ -5186,6 +5394,7 @@ async function rdSaveNote() {
 function rdStartEdit() {
   if (_rd.status === 'Cancelled') return;
   _rateMode.ed = _rd.rate_type === 'total' ? 'total' : 'per_night';
+  fxReset('ed', _rdMisc, _rdCharges);
   _rdMode = 'edit';
   renderReservationDetail();
 }
@@ -5235,14 +5444,12 @@ function renderEditForm(r) {
       <div class="ra-panel" id="ra-ed" style="margin-top:12px"></div>
     </div>
     <div class="rd-edit-section">
-      <h3><span class="mso">payments</span>Payment</h3>
-      <div class="form-grid-3">
-        ${f('ed-payment','Payment Status',`<select id="ed-payment" onchange="onPayStatusChange('ed')">${['Unpaid','Deposit','Paid'].map(v => `<option value="${v}" ${v === payStatusOf(r) ? 'selected' : ''}>${payLabel(v)}</option>`).join('')}</select><small class="pay-hint" id="pay-hint-ed"></small>`)}
-        <div class="form-group" id="deposit-group-ed" style="${payStatusOf(r) === 'Deposit' ? '' : 'display:none'}"><label for="ed-deposit">Room Payment (IDR)</label>
-          <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-deposit" type="text" inputmode="numeric" autocomplete="off" class="money" value="${payStatusOf(r) === 'Deposit' ? moneyStr(r.amount_paid) : ''}" placeholder="0" oninput="updatePayHint('ed')"></div></div>
+      <h3><span class="mso">payments</span>Guest Payment &amp; Additional Charges</h3>
+      <div class="fx-wrap" id="fx-ed"></div>
+      <div class="form-grid-3" style="margin-top:20px">
         <div class="form-group sec-field ${payStatusOf(r) === 'Paid' ? '' : 'off'}" id="sec-group-ed"><label for="ed-security">Refundable Security Deposit</label>
           <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="ed-security" type="text" inputmode="numeric" autocomplete="off" class="money" value="${payStatusOf(r) === 'Paid' ? moneyStr(r.security_deposit) : ''}" placeholder="0" ${payStatusOf(r) === 'Paid' ? '' : 'disabled'}></div>
-          <small class="pay-hint" id="sec-hint-ed">${payStatusOf(r) === 'Paid' ? 'Held separately, not part of the room payment' : 'Available when Payment Status is Paid'}</small></div>
+          <small class="pay-hint" id="sec-hint-ed">${payStatusOf(r) === 'Paid' ? 'Held separately, not part of the room payment' : 'Available once the room is fully paid'}</small></div>
       </div>
     </div>
     <div class="rd-edit-actions">
@@ -5343,12 +5550,13 @@ async function rdSaveEdit() {
   const rc = rateCalc('ed');
   const total = rc.mode === 'total' ? rate : nights * rate;
   const nightlyRate = rc.mode === 'total' ? Math.round((rate / nights) * 100) / 100 : rate;
-  const payStatus = v('ed-payment') || 'Unpaid';
-  const deposit = parseFloat(unMoney(v('ed-deposit'))) || 0;
-  if (payStatus === 'Deposit') {
-    if (!(deposit > 0)) { btn.disabled = false; return showToast('Enter the amount paid'); }
-    if (deposit >= total) { btn.disabled = false; return showToast('Amount paid covers the full total — choose "Paid" instead'); }
-  }
+  // Room payments above the (new) room revenue: offer to post the excess as a refund
+  const oldNights = Number(_rd.room_night) || nightsBetween(_rd.arrival_date, _rd.departure_date);
+  const okPaid = await fxCheckOverpaid('ed', total, nights < oldNights ? `shortened stay, ${oldNights} → ${nights} night${nights === 1 ? '' : 's'}` : 'room payment above room revenue');
+  if (!okPaid) { btn.disabled = false; fxRender('ed'); return; }
+  fxRender('ed');
+  const roomPaidNew = fxSum(fxState('ed').pays, x => x.kind === 'Room');
+  const payStatus = roomStatusFor(total, roomPaidNew);
   const payload = {
     guest_name: guest,
     country: v('ed-country') || null,
@@ -5361,8 +5569,6 @@ async function rdSaveEdit() {
     channel,
     rate: nightlyRate,
     rate_type: rc.mode,
-    payment_status: payStatus,
-    amount_paid: payStatus === 'Paid' ? total : payStatus === 'Deposit' ? deposit : 0,
     security_deposit: (() => { const x = unMoney(v('ed-security')); return (payStatus !== 'Paid' || x === '') ? null : Math.max(0, Math.round(parseFloat(x) || 0)); })(),
     emergency_contact_name: v('ed-em-name') || null,
     emergency_contact_phone: v('ed-em-phone') || null,
@@ -5373,6 +5579,9 @@ async function rdSaveEdit() {
   // A No Show guest who is re-dated to today or later is expected again
   if (_rd.status === 'No-show' && a >= today) payload.status = 'New Reservation';
   const nameChanged = payload.guest_name !== _rd.guest_name;
+  // Payments / charges first, so the room payment status is worked out with them
+  const fxErr = await fxCommit('ed', _rd.id);
+  if (fxErr) { btn.disabled = false; showToast('Error saving payments: ' + fxErr.message); return loadReservationDetail(_rd.id); }
   const saved = await rdUpdate(payload, 'Changes saved ✓');
   if (saved && nameChanged) googleFn('rename-folder', { reservation_id: _rd.id }).catch(() => {});
   if (!saved) btn.disabled = false;
