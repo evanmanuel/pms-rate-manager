@@ -370,6 +370,20 @@
     .rp-fin .rp-table th:first-child, .rp-fin .rp-table td:first-child { position:sticky; left:0; z-index:1; background:var(--surface-container-lowest); box-shadow:1px 0 0 var(--surface-container-high); }
     .rp-fin .rp-table th:first-child, .rp-fin .rp-table tfoot td:first-child, .rp-fin .rp-table td.fn-group { background:var(--surface-container-low); }
     .fn-muted { color:var(--secondary); font-size:11px; }
+    /* Charges (amber) vs Payments (green) in the Finance table */
+    .rp-fin .rp-table .ch { background:#FFF8EC; }
+    .rp-fin .rp-table .ch.tot { background:#FDEBCB; color:#7A4A06; }
+    .rp-fin .rp-table .py { background:#EEF8F2; }
+    .rp-fin .rp-table .py.tot { background:#D3EEDF; color:#0B5B37; }
+    .rp-fin .rp-table th.ch { background:#FBEBD0; color:#8A5A12; }
+    .rp-fin .rp-table th.py { background:#D9F0E3; color:#0F6B40; }
+    .rp-fin .rp-table th.tot { border-bottom:2px solid currentColor; }
+    .rp-fin .rp-table tr.fn-grp th { text-align:center; font-size:11px; letter-spacing:.14em; padding:8px; }
+    .rp-fin .rp-table tr.fn-grp th.ch { background:#F6D9A6; color:#6B4106; border-left:3px solid #fff; }
+    .rp-fin .rp-table tr.fn-grp th.py { background:#B8E2CB; color:#0B5B37; border-left:3px solid #fff; }
+    .rp-fin .rp-table td.ch:nth-child(2), .rp-fin .rp-table th.ch:nth-child(2), .rp-fin .rp-table td.py:nth-child(7), .rp-fin .rp-table th.py:nth-child(7) { border-left:3px solid #fff; }
+    .rp-fin .rp-table tfoot td.ch, .rp-fin .rp-table tfoot td.py { font-weight:800; }
+    .rp-fin .rp-table tbody tr:hover td.ch, .rp-fin .rp-table tbody tr:hover td.py { filter:brightness(.97); }
     .rp-head { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
     .rp-head h2 { font-family:'Manrope',sans-serif; font-size:28px; font-weight:800; color:var(--primary); letter-spacing:-.03em; line-height:1.1; }
     .rp-head p { font-size:13px; color:var(--secondary); margin-top:6px; line-height:1.6; }
@@ -4801,13 +4815,14 @@ function fnRender() {
     <section class="rp-card">
       <div class="rp-card-head"><h3>Charges vs Payments</h3><span class="rp-sub">${period} · ${_rp.sel.size} of ${_rp.rooms.length} rooms · IDR · click a month for its transactions</span></div>
       <div class="rp-table-wrap"><table class="rp-table">
-        <thead><tr><th>Month</th><th>Room</th><th>Electricity</th><th>Misc</th><th>Discount / Rebate</th><th>Total Charges</th>
-          <th>Room Paid</th><th>Electricity Paid</th><th>Misc Paid</th><th>Refunds &amp; Rebates</th><th>Total Payments</th><th>Difference</th></tr></thead>
+        <thead><tr class="fn-grp"><th></th><th colspan="5" class="ch">Charges</th><th colspan="5" class="py">Payments</th><th class="df"></th></tr>
+          <tr><th>Month</th><th class="ch">Room</th><th class="ch">Electricity</th><th class="ch">Misc</th><th class="ch">Discount / Rebate</th><th class="ch tot">Total Charges</th>
+          <th class="py">Room Paid</th><th class="py">Electricity Paid</th><th class="py">Misc Paid</th><th class="py">Refunds &amp; Rebates</th><th class="py tot">Total Payments</th><th class="df">Difference</th></tr></thead>
         <tbody>${sorted.map(r => `<tr class="${f === r.ym ? 'sel-row' : ''}" style="cursor:pointer" onclick="fnFocus('${r.ym}')">
-          <td><b>${rpLabel(r.ym)}</b>${tag(r.when)}</td><td>${n(r.room)}</td><td>${n(r.elec)}</td><td>${n(r.misc)}</td><td>${sgn(r.rebate)}</td><td><b>${rpNum(r.charges)}</b></td>
-          <td>${n(r.pRoom)}</td><td>${n(r.pElec)}</td><td>${n(r.pMisc)}</td><td>${sgn(r.refunds)}</td><td><b>${rpNum(r.paid)}</b></td><td>${diffCell(r.diff)}</td></tr>`).join('')}</tbody>
-        <tfoot><tr><td>Total</td><td>${rpNum(t.room)}</td><td>${rpNum(t.elec)}</td><td>${rpNum(t.misc)}</td><td>${rpSigned(t.rebate)}</td><td>${rpNum(t.charges)}</td>
-          <td>${rpNum(t.pRoom)}</td><td>${rpNum(t.pElec)}</td><td>${rpNum(t.pMisc)}</td><td>${rpSigned(t.refunds)}</td><td>${rpNum(t.paid)}</td><td>${Math.round(t.diff) === 0 ? 'Balanced' : rpSigned(t.diff)}</td></tr></tfoot>
+          <td><b>${rpLabel(r.ym)}</b>${tag(r.when)}</td><td class="ch">${n(r.room)}</td><td class="ch">${n(r.elec)}</td><td class="ch">${n(r.misc)}</td><td class="ch">${sgn(r.rebate)}</td><td class="ch tot"><b>${rpNum(r.charges)}</b></td>
+          <td class="py">${n(r.pRoom)}</td><td class="py">${n(r.pElec)}</td><td class="py">${n(r.pMisc)}</td><td class="py">${sgn(r.refunds)}</td><td class="py tot"><b>${rpNum(r.paid)}</b></td><td class="df">${diffCell(r.diff)}</td></tr>`).join('')}</tbody>
+        <tfoot><tr><td>Total</td><td class="ch">${rpNum(t.room)}</td><td class="ch">${rpNum(t.elec)}</td><td class="ch">${rpNum(t.misc)}</td><td class="ch">${rpSigned(t.rebate)}</td><td class="ch tot">${rpNum(t.charges)}</td>
+          <td class="py">${rpNum(t.pRoom)}</td><td class="py">${rpNum(t.pElec)}</td><td class="py">${rpNum(t.pMisc)}</td><td class="py">${rpSigned(t.refunds)}</td><td class="py tot">${rpNum(t.paid)}</td><td class="df">${Math.round(t.diff) === 0 ? 'Balanced' : rpSigned(t.diff)}</td></tr></tfoot>
       </table></div>
       <div class="rp-empty" style="border-top:1px solid var(--surface-container-high)">Difference = charges − payments in the month. <b>Positive</b>: guests still owe for that month. <b>Negative</b>: money received ahead (e.g. deposits for a later stay). Room charges follow the nights stayed; payments follow the payment date. Internal moves (No Show / cancellation) are not counted as money received.</div>
     </section>
