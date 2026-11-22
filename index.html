@@ -3033,9 +3033,10 @@ async function saveReservation() {
   const nightlyRate = rateType === 'total' ? Math.round((rate / roomNight) * 100) / 100 : rate;
   const fx = fxState('new');
   const roomPaid = fxSum(fx.pays, x => x.kind === 'Room');
-  if (roomPaid > roomRevenue) {
+  const fNew = folioOf(roomRevenue, fx.charges, fx.pays);
+  if (fNew.balance < 0) {
     document.getElementById('fx-new-sum')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return showToast(`Room payment overcharged by ${idr(roomPaid - roomRevenue)} — adjust room nights or post the excess on Misc Payment`);
+    return showToast(`Room payment overcharged by ${idr(-fNew.balance)} — adjust room nights or the payment`);
   }
   const securityDeposit = (roomPaid < roomRevenue || secRaw === '') ? null : Math.max(0, Math.round(parseFloat(secRaw) || 0));
   const arrivalMonth = arrival.toLocaleString('default', { month:'long', year:'numeric' });
@@ -4166,9 +4167,11 @@ function renderReservationDetail() {
         : `<div class="rd-fin-row"><span>Room rate (${idr(r.rate)} × ${nights})</span><b>${idr(r.room_revenue)}</b></div>`}
       <div class="rd-fin-row"><span>Sold as</span><b>${r.rate_type === 'total' ? 'Total stay' : 'Per night'}</b></div>
       <div class="rd-fin-row"><span>Room payment status</span>${paymentChip(payStatusOf(r))}</div>
-      <div class="rd-fin-row"><span>Room payments</span><b class="rd-paid">${signedIdr(fo.roomPaid)}</b></div>
-      ${fo.hasCharges || fo.extraPaidIn || fo.rebate ? `<div class="rd-fin-row"><span>Electricity & misc charges</span><b>${idr(fo.extraCharges)}</b></div>
+      <div class="rd-fin-row"><span>Room payments</span><b class="rd-paid">${idr(fo.roomPaid)}</b></div>
+      ${fo.hasCharges || fo.extraPaidIn ? `<div class="rd-fin-row"><span>Electricity & misc charges</span><b>${idr(fo.extraCharges)}</b></div>
       <div class="rd-fin-row"><span>Electricity & misc payments</span><b class="rd-paid">${idr(fo.extraPaidIn)}</b></div>` : ''}
+      ${fo.rebate ? `<div class="rd-fin-row"><span>Rebate</span><b class="misc-neg">${signedIdr(fo.rebate)}</b></div>` : ''}
+      ${fo.refunds ? `<div class="rd-fin-row"><span>Refunded to guest</span><b class="misc-neg">${idr(-fo.refunds)}</b></div>` : ''}
       <div class="rd-fin-row"><span>Balance due</span><b class="${fo.balance > 0 ? 'rd-due' : fo.balance < 0 ? 'misc-neg' : 'rd-paid'}">${fo.balance > 0 ? idr(fo.balance) : fo.balance < 0 ? 'Credit ' + idr(-fo.balance) : 'Balanced ✓'}</b></div>
       <div class="rd-fin-total"><span>Total Revenue</span><b>${idr((countsAsStay(r) ? Number(r.room_revenue || 0) : 0) + fo.extraCharges + fo.rebate)}</b></div>
       ${cancelled ? `<p class="rd-muted">Cancelled — not counted as revenue. Original value: ${idr(r.room_revenue)}.</p>`
@@ -4309,7 +4312,7 @@ async function buildTodos() {
     db.from('reservations').select('*').neq('status', 'Cancelled'),
     db.from('reservation_files').select('reservation_id').eq('category', 'Passport'),
     db.from('reservation_history').select('reservation_id').eq('action', 'Confirmation email sent'),
-    db.from('reservation_misc_payments').select('reservation_id, amount, notes').like('notes', 'Cancellation charge – No Show%'),
+    db.from('reservation_charges').select('reservation_id, amount, notes').like('notes', 'Cancellation charge – No Show%'),
     db.from('todo_dismissals').select('*').order('dismissed_at', { ascending: false }),
     isAdmin ? db.from('app_settings').select('key, value').in('key', ['backup', 'bank']) : Promise.resolve({ data: [] }),
     isAdmin ? googleFn('status').catch(() => null) : Promise.resolve(null),
@@ -4380,12 +4383,12 @@ async function buildTodos() {
     }
     // 5 · No Show — booking period has passed
     if (st === 'No-show' && r.departure_date < T) {
-      const posted = noShowMisc[r.id] || 0, pending = Number(r.amount_paid || 0);
+      const posted = noShowMisc[r.id] || 0, pending = posted ? 0 : Number(r.amount_paid || 0);
       add({ key: `noshowpast:${r.id}:${r.departure_date}`, group: 'info', icon: 'event_busy', r,
             title: 'No Show — booking period has passed',
             lines: [`The stay (${fmtDateLong(r.arrival_date)} – ${fmtDateLong(r.departure_date)}) has ended without the guest arriving.`,
-                    posted ? `Room payment <b>${idr(posted)}</b> was moved to Misc as a cancellation charge.`
-                    : pending ? `Room payment <b>${idr(pending)}</b> will be moved to Misc as a cancellation charge at the next nightly run.`
+                    posted ? `Room payment <b>${idr(posted)}</b> was kept as a Misc cancellation charge.`
+                    : pending ? `Room payment <b>${idr(pending)}</b> will be kept as a Misc cancellation charge at the next nightly run.`
                     : 'No room payment was received.'],
             actions: [open(r)] });
     }
@@ -4490,7 +4493,7 @@ async function loadReport() {
     db.from('reservations').select('id, confirmation_number, guest_name, room_name, status, arrival_date, departure_date, room_night, room_revenue, rate'),
     db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes, kind, method, created_by, created_at').order('paid_on').order('created_at'),
     db.from('rooms').select('name').order('created_at'),
-    db.from('reservation_charges').select('id, reservation_id, charged_on, amount, notes, kind, created_by, created_at').order('charged_on'),
+    db.from('reservation_charges').select('id, reservation_id, charged_on, amount, notes, kind, method, created_by, created_at').order('charged_on'),
   ]);
   if (resQ.error || miscQ.error || roomQ.error || chgQ.error) {
     document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Could not load report data.</div>';
@@ -4500,7 +4503,7 @@ async function loadReport() {
   // Misc revenue = Electricity + Misc charges (by charge date) less refunds / rebates (negative Electricity / Misc payments)
   _rp.pays = miscQ.data || [];
   _rp.charges = chgQ.data || [];
-  _rp.misc = [...(chgQ.data || []).map(c => ({ ...c, paid_on: c.charged_on })), ...(_rp.pays.filter(p => Number(p.amount) < 0 && p.kind !== 'Room'))]
+  _rp.misc = [...(chgQ.data || []).filter(c => c.kind !== 'Refund').map(c => ({ ...c, paid_on: c.charged_on }))]
     .sort((a, b) => String(a.paid_on).localeCompare(String(b.paid_on)));
   _rp.rooms = (roomQ.data || []).map(r => r.name);
   if (!_rp.sel) _rp.sel = new Set(_rp.rooms);
@@ -4733,7 +4736,7 @@ function rpTab(t) {
   if (sv) { _rp.from = sv.from; _rp.to = sv.to; _rp.preset = sv.preset; _rp.focus = null; rpRender(); }
   else if (t === 'fin') rpPreset('mtd'); else rpPreset('ytd');
 }
-const fnIsReal = p => p.method !== 'Internal';   // money that actually moved (method not set = entered before methods existed)
+const fnIsReal = p => p.method !== 'Internal';   // daily cash check: leave out internal entries (e.g. a kept security deposit)
 function fnResById() { const m = {}; _rp.res.forEach(r => m[r.id] = r); return m; }
 function fnInRooms(resById, rid) { const r = resById[rid]; return r && _rp.sel.has(r.room_name); }
 
@@ -4744,13 +4747,13 @@ function fnCompute() {
   const rows = perf.map(pr => {
     const ym = pr.ym;
     const ch = _rp.charges.filter(c => c.charged_on && c.charged_on.slice(0, 7) === ym && fnInRooms(resById, c.reservation_id));
-    const ps = _rp.pays.filter(p => p.paid_on && p.paid_on.slice(0, 7) === ym && fnInRooms(resById, p.reservation_id) && fnIsReal(p));
-    const rebate = sum(_rp.pays.filter(p => p.paid_on && p.paid_on.slice(0, 7) === ym && fnInRooms(resById, p.reservation_id)), p => p.kind !== 'Room' && Number(p.amount) < 0);
+    const ps = _rp.pays.filter(p => p.paid_on && p.paid_on.slice(0, 7) === ym && fnInRooms(resById, p.reservation_id));
+    const rebate = sum(ch, c => c.kind === 'Rebate');
     const o = {
       ym, when: pr.when, guests: pr.guests, ch, ps,
       room: pr.rev, elec: sum(ch, c => c.kind === 'Electricity'), misc: sum(ch, c => c.kind === 'Misc'), rebate,
       pRoom: sum(ps, p => p.kind === 'Room' && Number(p.amount) > 0), pElec: sum(ps, p => p.kind === 'Electricity' && Number(p.amount) > 0),
-      pMisc: sum(ps, p => p.kind === 'Misc' && Number(p.amount) > 0), refunds: sum(ps, p => Number(p.amount) < 0),
+      pMisc: sum(ps, p => p.kind === 'Misc' && Number(p.amount) > 0), refunds: sum(ch, c => c.kind === 'Refund'),
     };
     o.charges = o.room + o.elec + o.misc + o.rebate;
     o.paid = o.pRoom + o.pElec + o.pMisc + o.refunds;
@@ -4807,7 +4810,7 @@ function fnRender() {
   el.innerHTML = `
     <div class="rp-kpis">
       ${kpi('Total Charges', rpShort(t.charges), 'Room ' + rpShort(t.room) + ' · extras ' + rpShort(t.elec + t.misc + t.rebate), 'receipt_long', '#FBEFD9', '#8A5A12')}
-      ${kpi('Payments Received', rpShort(t.paid), 'Refunds & rebates ' + rpShort(t.refunds), 'payments', '#E3EFE9', '#0B3D2E')}
+      ${kpi('Payments Received', rpShort(t.paid), 'after refunds ' + rpShort(t.refunds), 'payments', '#E3EFE9', '#0B3D2E')}
       ${kpi('Guests Owe', rpShort(owe), out.filter(x => x.f.balance > 0).length + ' booking(s) · all dates', 'pending_actions', '#FBE3E1', '#b42318')}
       ${kpi('Credit to Refund', rpShort(credit), out.filter(x => x.f.balance < 0).length + ' booking(s)', 'undo', '', '', true)}
     </div>
@@ -4816,15 +4819,15 @@ function fnRender() {
       <div class="rp-card-head"><h3>Charges vs Payments</h3><span class="rp-sub">${period} · ${_rp.sel.size} of ${_rp.rooms.length} rooms · IDR · click a month for its transactions</span></div>
       <div class="rp-table-wrap"><table class="rp-table">
         <thead><tr class="fn-grp"><th></th><th colspan="5" class="ch">Charges</th><th colspan="5" class="py">Payments</th><th class="df"></th></tr>
-          <tr><th>Month</th><th class="ch">Room</th><th class="ch">Electricity</th><th class="ch">Misc</th><th class="ch">Discount / Rebate</th><th class="ch tot">Total Charges</th>
-          <th class="py">Room Paid</th><th class="py">Electricity Paid</th><th class="py">Misc Paid</th><th class="py">Refunds &amp; Rebates</th><th class="py tot">Total Payments</th><th class="df">Difference</th></tr></thead>
+          <tr><th>Month</th><th class="ch">Room</th><th class="ch">Electricity</th><th class="ch">Misc</th><th class="ch">Rebate</th><th class="ch tot">Total Charges</th>
+          <th class="py">Room Paid</th><th class="py">Electricity Paid</th><th class="py">Misc Paid</th><th class="py">Refunds</th><th class="py tot">Total Payments</th><th class="df">Difference</th></tr></thead>
         <tbody>${sorted.map(r => `<tr class="${f === r.ym ? 'sel-row' : ''}" style="cursor:pointer" onclick="fnFocus('${r.ym}')">
           <td><b>${rpLabel(r.ym)}</b>${tag(r.when)}</td><td class="ch">${n(r.room)}</td><td class="ch">${n(r.elec)}</td><td class="ch">${n(r.misc)}</td><td class="ch">${sgn(r.rebate)}</td><td class="ch tot"><b>${rpNum(r.charges)}</b></td>
           <td class="py">${n(r.pRoom)}</td><td class="py">${n(r.pElec)}</td><td class="py">${n(r.pMisc)}</td><td class="py">${sgn(r.refunds)}</td><td class="py tot"><b>${rpNum(r.paid)}</b></td><td class="df">${diffCell(r.diff)}</td></tr>`).join('')}</tbody>
         <tfoot><tr><td>Total</td><td class="ch">${rpNum(t.room)}</td><td class="ch">${rpNum(t.elec)}</td><td class="ch">${rpNum(t.misc)}</td><td class="ch">${rpSigned(t.rebate)}</td><td class="ch tot">${rpNum(t.charges)}</td>
           <td class="py">${rpNum(t.pRoom)}</td><td class="py">${rpNum(t.pElec)}</td><td class="py">${rpNum(t.pMisc)}</td><td class="py">${rpSigned(t.refunds)}</td><td class="py tot">${rpNum(t.paid)}</td><td class="df">${Math.round(t.diff) === 0 ? 'Balanced' : rpSigned(t.diff)}</td></tr></tfoot>
       </table></div>
-      <div class="rp-empty" style="border-top:1px solid var(--surface-container-high)">Difference = payments − charges in the month. <b>Negative</b>: guests still owe for that month. <b>Positive</b>: money received ahead (e.g. deposits for a later stay). Room charges follow the nights stayed; payments follow the payment date. Internal moves (No Show / cancellation) are not counted as money received.</div>
+      <div class="rp-empty" style="border-top:1px solid var(--surface-container-high)">Difference = payments − charges in the month. <b>Negative</b>: guests still owe for that month. <b>Positive</b>: money received ahead (e.g. deposits for a later stay). Room charges follow the nights stayed; payments follow the payment date; refunds are money handed back to guests.</div>
     </section>
 
     ${f ? fnMonthHTML(rows.find(r => r.ym === f), resById) : ''}
@@ -4853,12 +4856,10 @@ function fnTxRows(resById, list) {
 function fnMonthTx(row) {
   const list = [];
   row.guests.forEach(g => list.push({ date: g.from, rid: g.r.id, type: 'Room charge', method: '', notes: `${g.nights} night${g.nights === 1 ? '' : 's'} × ${rpNum(g.adr)} (${fmtShort(g.from)} – ${fmtShort(g.to)})`, charge: g.rev, paid: null }));
-  row.ch.forEach(c => list.push({ date: c.charged_on, rid: c.reservation_id, type: c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null }));
-  _rp.pays.filter(p => p.paid_on && p.paid_on.slice(0, 7) === row.ym && _rp.sel.has(fnResById()[p.reservation_id]?.room_name)).forEach(p => {
-    const real = fnIsReal(p), reb = p.kind !== 'Room' && Number(p.amount) < 0;
-    list.push({ date: p.paid_on, rid: p.reservation_id, type: reb ? `${p.kind} rebate` : `${p.kind} payment`, method: p.method || 'Not set',
-                notes: p.notes + (real ? '' : ' (internal move — not money received)'), charge: reb ? Number(p.amount) : null, paid: real ? Number(p.amount) : null });
-  });
+  row.ch.forEach(c => c.kind === 'Refund'
+    ? list.push({ date: c.charged_on, rid: c.reservation_id, type: 'Refund to guest', method: c.method || '', notes: c.notes, charge: null, paid: Number(c.amount) })
+    : list.push({ date: c.charged_on, rid: c.reservation_id, type: c.kind === 'Rebate' ? 'Rebate' : c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null }));
+  row.ps.forEach(p => list.push({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Not set', notes: p.notes, charge: null, paid: Number(p.amount) }));
   return list.sort((a, b) => String(a.date).localeCompare(String(b.date)));
 }
 function fnMonthHTML(row, resById) {
@@ -4877,17 +4878,20 @@ function fnDayHTML(resById) {
   const inRooms = rid => fnInRooms(resById, rid);
   const pays = _rp.pays.filter(p => p.paid_on === d && inRooms(p.reservation_id));
   const chs = _rp.charges.filter(c => c.charged_on === d && inRooms(c.reservation_id));
+  const refunds = chs.filter(c => c.kind === 'Refund');
   const real = pays.filter(fnIsReal);
-  const by = m => real.filter(p => p.method === m).reduce((s, p) => s + Number(p.amount), 0);
-  const total = real.reduce((s, p) => s + Number(p.amount), 0);
+  const by = m => real.filter(p => p.method === m).reduce((s, p) => s + Number(p.amount), 0) + refunds.filter(c => c.method === m).reduce((s, c) => s + Number(c.amount), 0);
+  const total = real.reduce((s, p) => s + Number(p.amount), 0) + refunds.reduce((s, c) => s + Number(c.amount), 0);
   const tile = (l, v, cls = '') => `<div class="fn-tile ${cls}"><small>${l}</small><b>${rpSigned(v).replace(/^\+/, '')}</b></div>`;
   const list = [
-    ...chs.map(c => ({ date: c.charged_on, rid: c.reservation_id, type: c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null })),
+    ...chs.map(c => c.kind === 'Refund'
+      ? { date: c.charged_on, rid: c.reservation_id, type: 'Refund to guest', method: c.method || '', notes: c.notes, charge: null, paid: Number(c.amount) }
+      : { date: c.charged_on, rid: c.reservation_id, type: c.kind === 'Rebate' ? 'Rebate' : c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null }),
     ...pays.map(p => ({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Not set', notes: p.notes + (fnIsReal(p) ? '' : ' (internal move)'), charge: null, paid: fnIsReal(p) ? Number(p.amount) : null })),
   ];
-  return `<div class="rp-card-head fn-day-head"><div><h3>Daily Reconciliation</h3><span class="rp-sub">Money received on the day, by method — check it against the cash box and bank statement</span></div>
+  return `<div class="rp-card-head fn-day-head"><div><h3>Daily Reconciliation</h3><span class="rp-sub">Money in minus refunds out on the day, by method — check it against the cash box and bank statement</span></div>
       <input type="date" value="${d}" max="${baliToday()}" onchange="_fnDay=this.value||baliToday();document.getElementById('fn-day').innerHTML=fnDayHTML(fnResById())"></div>
-    <div class="fn-tiles">${FX_METHODS.map(m => tile(m, by(m))).join('')}${real.some(p => !p.method) ? tile('Method not set', real.filter(p => !p.method).reduce((s, p) => s + Number(p.amount), 0)) : ''}${tile('Total received', total, 'total')}</div>
+    <div class="fn-tiles">${FX_METHODS.map(m => tile(m, by(m))).join('')}${real.some(p => !p.method) ? tile('Method not set', real.filter(p => !p.method).reduce((s, p) => s + Number(p.amount), 0)) : ''}${tile('Net received', total, 'total')}</div>
     <div class="rp-table-wrap"><table class="rp-table">
       <thead><tr><th class="l">Date</th><th class="l">Guest</th><th class="l">Type</th><th class="l">Method</th><th class="l">Notes</th><th>Charge</th><th>Payment</th></tr></thead>
       <tbody>${list.length ? fnTxRows(resById, list) : `<tr><td colspan="7" style="text-align:center;color:var(--secondary)">Nothing posted on ${fmtDateLong(d)}</td></tr>`}</tbody>
@@ -4920,8 +4924,8 @@ function exportFinance() {
 function _doExportFinance() {
   const { rows, t, resById } = fnCompute();
   const R = Math.round;
-  const mrow = (label, r) => ({ 'Month': label, 'Room Charges': R(r.room), 'Electricity Charges': R(r.elec), 'Misc Charges': R(r.misc), 'Discount / Rebate': R(r.rebate), 'Total Charges': R(r.charges),
-    'Room Paid': R(r.pRoom), 'Electricity Paid': R(r.pElec), 'Misc Paid': R(r.pMisc), 'Refunds & Rebates': R(r.refunds), 'Total Payments': R(r.paid), 'Difference': R(r.diff) });
+  const mrow = (label, r) => ({ 'Month': label, 'Room Charges': R(r.room), 'Electricity Charges': R(r.elec), 'Misc Charges': R(r.misc), 'Rebate': R(r.rebate), 'Total Charges': R(r.charges),
+    'Room Paid': R(r.pRoom), 'Electricity Paid': R(r.pElec), 'Misc Paid': R(r.pMisc), 'Refunds': R(r.refunds), 'Total Payments': R(r.paid), 'Difference': R(r.diff) });
   const monthly = rows.slice().reverse().map(r => mrow(rpLabel(r.ym), r)); monthly.push(mrow('Total', t));
   const tx = rows.flatMap(r => fnMonthTx(r).map(x => ({ 'Month': rpLabel(r.ym), 'Date': x.date, 'Confirmation No.': resById[x.rid]?.confirmation_number || '', 'Guest': resById[x.rid]?.guest_name || '',
     'Room': resById[x.rid]?.room_name || '', 'Type': x.type, 'Method': x.method, 'Notes': x.notes, 'Charge': x.charge === null ? '' : R(x.charge), 'Payment': x.paid === null ? '' : R(x.paid) })));
@@ -5072,6 +5076,8 @@ function invoiceHTML(r, room, roomIdx, bank) {
   const paid = fo.roomPaid;
   const due = Math.max(0, fo.balance);
   const extraPays = _rdMisc.filter(p => p.kind !== 'Room');
+  const invCharges = _rdCharges.filter(c => c.kind !== 'Refund');
+  const invRefunds = _rdCharges.filter(c => c.kind === 'Refund');
   const st = { 'Paid':           { t: 'Paid',           bg: '#DCFCE7', fg: '#166534', bd: '#86EFAC', dot: '#16A34A' },
                'Deposit':        { t: 'Deposit',        bg: '#E0E7FF', fg: '#3730A3', bd: '#A5B4FC', dot: '#4F46E5' },
                'Partially Paid': { t: 'Partially Paid', bg: '#FEF3C7', fg: '#92400E', bd: '#FCD34D', dot: '#D97706' },
@@ -5148,8 +5154,8 @@ function invoiceHTML(r, room, roomIdx, bank) {
         <td style="${TD}text-align:center;font-weight:500">${nights}</td>
         <td style="${TD}text-align:right;font-weight:500">${perNight ? invNum(r.rate) : 'Total stay'}</td>
         <td style="${TD}text-align:right;font-weight:700">${invNum(total)}</td>
-      </tr>${_rdCharges.map(c => `<tr>
-        <td style="${TD}padding-right:16px"><div style="font-weight:600">${c.kind === 'Electricity' ? 'Electricity' : 'Misc Charge'}</div>
+      </tr>${invCharges.map(c => `<tr>
+        <td style="${TD}padding-right:16px"><div style="font-weight:600">${c.kind === 'Electricity' ? 'Electricity' : c.kind === 'Rebate' ? 'Rebate' : 'Misc Charge'}</div>
           <div style="font-size:11px;color:#4B5563;margin-top:3px">${invDate(c.charged_on)}${c.notes ? ' · ' + e(c.notes) : ''}</div></td>
         <td style="${TD}text-align:center;font-weight:500">1</td>
         <td style="${TD}text-align:right;font-weight:500">${Number(c.amount) < 0 ? '-' : ''}${invNum(Math.abs(c.amount))}</td>
@@ -5171,7 +5177,8 @@ function invoiceHTML(r, room, roomIdx, bank) {
         ${fo.rebate ? `<div style="display:flex;justify-content:space-between;padding:4px 0"><span>Less discount / rebate:</span><b style="color:#111827">-IDR ${invNum(-fo.rebate)}</b></div>` : ''}
         ${fo.hasCharges || fo.rebate ? `<div style="display:flex;justify-content:space-between;padding:4px 0;border-top:1px solid #E5E7EB;margin-top:4px"><span>Subtotal:</span><b style="color:#111827">IDR ${invNum(total + fo.extraCharges + fo.rebate)}</b></div>` : ''}
         <div style="display:flex;justify-content:space-between;padding:4px 0"><span>Room Payment:</span><b style="color:#0F382A">${paid > 0 ? '-' : ''}IDR ${invNum(Math.abs(paid))}</b></div>
-        ${extraPays.map(p => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>${Number(p.amount) < 0 ? 'Rebate refunded' : p.kind + ' Payment'} (${invDate(p.paid_on)}):</span><b style="color:#0F382A;white-space:nowrap">${Number(p.amount) > 0 ? '-' : '+'}IDR ${invNum(Math.abs(p.amount))}</b></div>`).join('')}
+        ${extraPays.map(p => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>${p.kind} Payment (${invDate(p.paid_on)}):</span><b style="color:#0F382A;white-space:nowrap">-IDR ${invNum(p.amount)}</b></div>`).join('')}
+        ${invRefunds.map(c => `<div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px"><span>Refund to guest (${invDate(c.charged_on)}):</span><b style="color:#0F382A;white-space:nowrap">+IDR ${invNum(-c.amount)}</b></div>`).join('')}
 
         <div style="display:flex;justify-content:space-between;align-items:baseline;border-top:2px solid #0F382A;margin-top:8px;padding-top:10px">
           <span style="font-size:15px;font-weight:700;color:#0F382A">Total Amount Due:</span><span style="font-size:19px;font-weight:700;color:#0F382A">IDR ${invNum(due)}</span></div>
@@ -5381,7 +5388,8 @@ async function rdUpdate(payload, okMsg) {
    Room status comes from Room Payments vs room revenue (worked out by the database too). */
 let _rdCharges = [];
 const FX_PAY = ['Room', 'Electricity', 'Misc'];
-const FX_CHG = ['Electricity', 'Misc'];
+const FX_CHG = ['Electricity', 'Misc', 'Rebate', 'Refund'];
+const FX_NEG = k => k === 'Rebate' || k === 'Refund';   // stored as negative amounts
 const FX_METHODS = ['Cash', 'Bank Transfer', 'QRIS', 'OTA Collect'];
 const _fx = { new: null, ed: null };
 let _fxSeq = 0;
@@ -5390,15 +5398,18 @@ const fxSum = (list, f) => list.filter(f).reduce((t, x) => t + (Number(x.amount)
 function roomStatusFor(total, paid) { return paid <= 0 ? 'Unpaid' : paid < total ? 'Deposit' : 'Paid'; }
 
 // Money picture of one booking. roomRev = room revenue that counts (0 for Cancelled / No Show)
+//  owed = room + electricity + misc + rebate(−) ;  kept = payments − refunds ;  balance = owed − kept
 function folioOf(roomRev, charges, pays) {
   const roomPaid = fxSum(pays, p => p.kind === 'Room');
-  const extraCharges = fxSum(charges, () => true);
-  const extraPaidIn = fxSum(pays, p => p.kind !== 'Room' && Number(p.amount) > 0);
-  const rebate = fxSum(pays, p => p.kind !== 'Room' && Number(p.amount) < 0);      // ≤ 0
+  const extraCharges = fxSum(charges, c => c.kind === 'Electricity' || c.kind === 'Misc');
+  const rebate = fxSum(charges, c => c.kind === 'Rebate');        // ≤ 0
+  const refunds = fxSum(charges, c => c.kind === 'Refund');       // ≤ 0
+  const extraPaidIn = fxSum(pays, p => p.kind !== 'Room');
   const roomDue = roomRev - roomPaid;
-  const extrasDue = extraCharges - extraPaidIn;   // a rebate is money back AND less owed, so it nets out
-  return { roomRev, roomPaid, extraCharges, extraPaidIn, rebate, roomDue, extrasDue,
-           balance: roomDue + extrasDue, hasCharges: charges.length > 0, overRoom: roomPaid > roomRev ? roomPaid - roomRev : 0 };
+  const extrasDue = extraCharges - extraPaidIn;
+  const balance = (roomRev + extraCharges + rebate) - (roomPaid + extraPaidIn + refunds);
+  return { roomRev, roomPaid, extraCharges, extraPaidIn, rebate, refunds, roomDue, extrasDue, balance,
+           hasCharges: extraCharges > 0, overRoom: balance < 0 ? -balance : 0 };
 }
 // Per-booking totals for lists (chips, To Do): { [reservation_id]: { charges:[], pays:[] } }
 async function loadFolioMap() {
@@ -5420,7 +5431,7 @@ function folioFor(r) {
 // "Extras due" chip — only on bookings that have electricity / misc charges still unpaid
 function extrasChip(r) {
   const f = folioFor(r);
-  return f.hasCharges && f.extrasDue > 0 ? `<span class="st-chip pay-extras" title="Electricity / misc due ${idr(f.extrasDue)}">Extras due</span>` : '';
+  return f.hasCharges && f.extrasDue > 0 && f.balance > 0 ? `<span class="st-chip pay-extras" title="Electricity / misc due ${idr(f.extrasDue)}">Extras due</span>` : '';
 }
 
 /* ── The editor (New booking = 'new', Edit booking = 'ed': staged until Save; booking page = 'rd': saved straight away) ── */
@@ -5439,12 +5450,12 @@ function fxRoomTotal(which) {
 }
 function fxRowHTML(which, x, type) {
   const neg = Number(x.amount) < 0;
-  const kind = type === 'p' ? `${x.kind} Payment` : x.kind;
+  const kind = type === 'p' ? `${x.kind} Payment` : x.kind === 'Refund' ? 'Refund to guest' : x.kind;
   const date = type === 'p' ? x.paid_on : x.charged_on;
   const del = which === 'rd' ? `fxDelete('rd','${type}','${x.id}')` : `fxDelete('${which}','${type}','${x.id}')`;
   return `<div class="fx-row${x._new ? ' fresh' : ''}">
       <span class="fx-kind k-${x.kind.toLowerCase()}">${kind}</span>
-      <span class="fx-txt"><span>${fmtShort(date)}${type === 'p' && x.method ? ` · ${escHtml(x.method)}` : ''}${x.created_by && which === 'rd' ? ` · ${escHtml(String(x.created_by).split('@')[0])}` : ''}</span><small>${escHtml(x.notes || '')}${neg && type === 'p' ? ` <em class="misc-tag">${x.kind === 'Room' ? 'Refund' : 'Rebate'}</em>` : ''}</small></span>
+      <span class="fx-txt"><span>${fmtShort(date)}${x.method ? ` · ${escHtml(x.method)}` : ''}${x.created_by && which === 'rd' ? ` · ${escHtml(String(x.created_by).split('@')[0])}` : ''}</span><small>${escHtml(x.notes || '')}</small></span>
       <b class="fx-amt ${neg ? 'misc-neg' : ''}">${signedIdr(x.amount)}</b>
       <button type="button" class="doc-del" onclick="${del}" title="Remove"><span class="mso">delete</span></button>
     </div>`;
@@ -5453,15 +5464,21 @@ function fxAddHTML(which, type) {
   const id = s => `fx-${which}-${type}-${s}`;
   const kinds = type === 'p' ? FX_PAY : FX_CHG;
   return `<div class="fx-add${type === 'p' ? ' pay' : ''}" data-sign="+" id="${id('box')}">
-      <div class="form-group"><label for="${id('kind')}">Type</label><select id="${id('kind')}">${kinds.map(k => `<option value="${k}">${type === 'p' ? k + ' Payment' : k}</option>`).join('')}</select></div>
-      ${type === 'p' ? `<div class="form-group"><label for="${id('method')}">Method</label><select id="${id('method')}"><option value="">Select…</option>${FX_METHODS.map(m => `<option>${m}</option>`).join('')}</select></div>` : ''}
+      <div class="form-group"><label for="${id('kind')}">Type</label><select id="${id('kind')}"${type === 'c' ? ` onchange="fxKindChange('${which}')"` : ''}>${kinds.map(k => `<option value="${k}">${type === 'p' ? k + ' Payment' : k === 'Refund' ? 'Refund to guest' : k}</option>`).join('')}</select></div>
+      <div class="form-group fx-method"${type === 'c' ? ' style="display:none"' : ''}><label for="${id('method')}">${type === 'p' ? 'Method' : 'Refunded by'}</label><select id="${id('method')}"><option value="">Select…</option>${FX_METHODS.map(m => `<option>${m}</option>`).join('')}</select></div>
       <div class="form-group"><label for="${id('date')}">Date</label><input id="${id('date')}" type="date" value="${baliToday()}" ${type === 'p' ? `max="${baliToday()}"` : ''}></div>
       <div class="form-group"><label for="${id('amount')}">Amount</label>
-        <div class="fx-amount">${type === 'p' ? `<button type="button" class="fx-sign" id="${id('sign')}" onclick="fxToggleSign('${which}','${type}')" title="Switch between payment (+) and refund / rebate (−)">+</button>` : ''}
+        <div class="fx-amount">
         <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="${id('amount')}" type="text" inputmode="numeric" autocomplete="off" class="money" placeholder="0"></div></div></div>
-      <div class="form-group fx-notes"><label for="${id('notes')}">Notes</label><input id="${id('notes')}" type="text" maxlength="140" placeholder="${type === 'p' ? 'e.g. Transfer BCA · or reason for a refund / rebate' : 'e.g. Electricity Nov: 1.240 → 1.395 kWh'}"></div>
+      <div class="form-group fx-notes"><label for="${id('notes')}">Notes</label><input id="${id('notes')}" type="text" maxlength="140" placeholder="${type === 'p' ? 'e.g. Transfer BCA, ref 1234' : 'e.g. Electricity Nov: 1.240 → 1.395 kWh · or reason for the rebate / refund'}"></div>
       <button type="button" class="btn-primary fx-add-btn" onclick="fxAdd('${which}','${type}')"><span class="mso">add</span>Add</button>
     </div>`;
+}
+function fxKindChange(which) {
+  const k = document.getElementById(`fx-${which}-c-kind`).value;
+  const box = document.getElementById(`fx-${which}-c-box`);
+  box.querySelector('.fx-method').style.display = k === 'Refund' ? '' : 'none';
+  box.classList.toggle('pay', k === 'Refund');
 }
 function fxToggleSign(which, type) {
   const box = document.getElementById(`fx-${which}-${type}-box`), b = document.getElementById(`fx-${which}-${type}-sign`);
@@ -5475,12 +5492,12 @@ function fxRender(which) {
   const locked = live && _rd.status === 'Cancelled';
   el.innerHTML = `
     <div class="fx-block">
-      <div class="fx-head"><span class="mso">account_balance_wallet</span><div><b>Guest Payments</b><small>Money received: room, electricity or misc. Use − for a refund, discount or rebate (note the reason).</small></div></div>
+      <div class="fx-head"><span class="mso">account_balance_wallet</span><div><b>Guest Payments</b><small>Money received from the guest: room, electricity or misc. Rebates and refunds go under Additional Charges.</small></div></div>
       <div class="fx-list">${st.pays.length ? st.pays.map(x => fxRowHTML(which, x, 'p')).join('') : '<div class="fx-empty">No payments yet</div>'}</div>
       ${locked ? '' : fxAddHTML(which, 'p')}
     </div>
     <div class="fx-block">
-      <div class="fx-head"><span class="mso">receipt_long</span><div><b>Additional Charges</b><small>What the guest owes on top of the room: electricity (kWh in the notes) or misc.</small></div></div>
+      <div class="fx-head"><span class="mso">receipt_long</span><div><b>Additional Charges</b><small>Electricity (kWh in the notes) or Misc = guest owes more · Rebate = guest owes less · Refund = money handed back to the guest.</small></div></div>
       <div class="fx-list">${st.charges.length ? st.charges.map(x => fxRowHTML(which, x, 'c')).join('') : '<div class="fx-empty">No additional charges</div>'}</div>
       ${locked ? '' : fxAddHTML(which, 'c')}
     </div>
@@ -5498,18 +5515,18 @@ function fxSummary(which) {
     `<div class="fx-sum-col">
        <div class="fx-sum-title">Room ${total || f.roomPaid ? paymentChip(status) : ''}</div>
        ${line('Room revenue', total ? idr(total) : (which === 'new' ? 'Enter dates and rate' : idr(0)))}
-       ${line('Room payments', signedIdr(f.roomPaid))}
-       ${line(f.roomDue >= 0 ? 'Room balance' : 'Overpaid', idr(Math.abs(f.roomDue)), f.roomDue > 0 ? 'rd-due' : f.roomDue < 0 ? 'misc-neg' : 'rd-paid')}
+       ${line('Room payments', idr(f.roomPaid))}
+       ${line(f.roomDue >= 0 ? 'Room balance' : 'Paid above room revenue', idr(Math.abs(f.roomDue)), f.roomDue > 0 ? 'rd-due' : f.roomDue < 0 ? 'misc-neg' : 'rd-paid')}
      </div>
      <div class="fx-sum-col">
        <div class="fx-sum-title">Electricity & Misc</div>
        ${line('Charges', idr(f.extraCharges))}
        ${line('Payments', idr(f.extraPaidIn))}
-       ${f.rebate ? line('Refund / rebate', signedIdr(f.rebate), 'misc-neg') : ''}
-       ${line('Balance', idr(Math.max(0, f.extrasDue)), f.extrasDue > 0 ? 'rd-due' : 'rd-paid')}
+       ${f.rebate ? line('Rebate (owes less)', signedIdr(f.rebate), 'misc-neg') : ''}
+       ${f.refunds ? line('Refunded to guest', idr(-f.refunds), 'misc-neg') : ''}
      </div>
      <div class="fx-sum-total"><span>Total balance due</span><b class="${f.balance > 0 ? 'rd-due' : f.balance < 0 ? 'misc-neg' : 'rd-paid'}">${f.balance < 0 ? 'Credit ' + idr(-f.balance) : f.balance > 0 ? idr(f.balance) : 'Balanced ✓'}</b></div>
-     ${f.overRoom && total ? `<div class="fx-alert"><span class="mso">error</span><span><b>Room payment overcharged by ${idr(f.overRoom)}.</b> Adjust the room nights, or post the excess as a refund (− Room Payment).</span></div>` : ''}`;
+     ${f.balance < 0 && (total || which === 'rd') ? `<div class="fx-alert"><span class="mso">error</span><span><b>The guest has a credit of ${idr(-f.balance)}</b> (paid more than the bill). Adjust the room nights, or under Additional Charges post a <b>Refund</b> (money handed back) or a <b>Misc</b> charge (if the money is kept).</span></div>` : ''}`;
   if (which !== 'rd') syncSecurityField(which, total > 0 ? status : 'Unpaid');
 }
 function updatePayHint(which) { fxSummary(which); }
@@ -5517,28 +5534,29 @@ function updatePayHint(which) { fxSummary(which); }
 async function fxAdd(which, type) {
   const id = s => document.getElementById(`fx-${which}-${type}-${s}`);
   const kind = id('kind').value, date = id('date').value, notes = id('notes').value.trim();
-  const method = type === 'p' ? id('method').value : null;
-  const neg = type === 'p' && id('box').dataset.sign === '−';
+  const neg = type === 'c' && FX_NEG(kind);
+  const method = (type === 'p' || kind === 'Refund') ? id('method').value : null;
   const raw = parseFloat(unMoney(id('amount').value)) || 0;
-  if (type === 'p' && !method) return showToast(neg ? 'Choose how the money was returned (method)' : 'Choose the payment method');
+  if (type === 'p' && !method) return showToast('Choose the payment method');
+  if (kind === 'Refund' && !method) return showToast('Choose how the money was refunded (Cash, Bank Transfer…)');
   if (!date) return showToast('Choose the date');
   if (type === 'p' && date > baliToday()) return showToast("A payment date can't be in the future");
   if (!(raw > 0)) return showToast('Enter the amount');
-  if (!notes) return showToast(neg ? 'Add the reason for this refund / rebate' : 'Add a note');
+  if (!notes) return showToast(neg ? `Add the reason for this ${kind.toLowerCase()}` : 'Add a note');
   const amount = Math.round(raw) * (neg ? -1 : 1);
   const st = fxState(which);
-  if (neg) {
-    const received = fxSum(st.pays, p => Number(p.amount) > 0), returned = -fxSum(st.pays, p => Number(p.amount) < 0);
-    if (received <= 0) return showToast('A refund / rebate is only possible after money has been received');
-    if (returned - amount > received) return showToast(`Refunds can't be more than the money received (${idr(received)}). Already returned: ${idr(returned)}`);
+  if (kind === 'Refund') {
+    const received = fxSum(st.pays, () => true), returned = -fxSum(st.charges, c => c.kind === 'Refund');
+    if (received <= 0) return showToast('A refund is only possible after money has been received');
+    if (returned - amount > received) return showToast(`A refund can't be more than the money received (${idr(received)}). Already refunded: ${idr(returned)}`);
   }
-  const row = type === 'p' ? { kind, method, paid_on: date, amount, notes } : { kind, charged_on: date, amount, notes };
+  const row = type === 'p' ? { kind, method, paid_on: date, amount, notes } : { kind, charged_on: date, amount, notes, method };
   if (which === 'rd') {
     const btn = id('box').querySelector('.fx-add-btn'); btn.disabled = true;
     const table = type === 'p' ? 'reservation_misc_payments' : 'reservation_charges';
     const { error } = await db.from(table).insert({ reservation_id: _rd.id, ...row });
     if (error) { btn.disabled = false; return showToast('Error: ' + error.message); }
-    showToast(type === 'p' ? (neg ? 'Refund / rebate recorded ✓' : 'Payment recorded ✓') : 'Charge added ✓');
+    showToast(type === 'p' ? 'Payment recorded ✓' : kind === 'Refund' ? 'Refund recorded ✓' : kind === 'Rebate' ? 'Rebate recorded ✓' : 'Charge added ✓');
     return loadReservationDetail(_rd.id);
   }
   (type === 'p' ? st.pays : st.charges).push({ ...row, id: 'n' + (++_fxSeq), _new: true });
@@ -5550,7 +5568,7 @@ async function fxDelete(which, type, rowId) {
   const st = fxState(which);
   const list = type === 'p' ? st.pays : st.charges;
   const x = list.find(r => String(r.id) === String(rowId)); if (!x) return;
-  const what = `${type === 'p' ? x.kind + ' Payment' : x.kind + ' charge'} ${signedIdr(x.amount)} (${fmtDateLong(type === 'p' ? x.paid_on : x.charged_on)} · ${x.notes})`;
+  const what = `${type === 'p' ? x.kind + ' Payment' : FX_NEG(x.kind) ? x.kind : x.kind + ' charge'} ${signedIdr(x.amount)} (${fmtDateLong(type === 'p' ? x.paid_on : x.charged_on)} · ${x.notes})`;
   if (which === 'rd') {
     const ok = await showModal('Remove entry', `Remove ${what}? The removal is recorded in the change history.`, 'Remove');
     if (!ok) return;
@@ -5570,24 +5588,20 @@ async function fxCommit(which, reservationId) {
   if (st.delCharges.length) { const { error } = await db.from('reservation_charges').delete().in('id', st.delCharges); if (error) return error; }
   const clean = ({ id, _new, created_at, created_by, reservation_id, ...rest }) => ({ ...rest, reservation_id: reservationId });
   const newC = st.charges.filter(x => x._new).map(clean);
-  if (newC.length) { const { error } = await db.from('reservation_charges').insert(newC); if (error) return error; }
   const newP = st.pays.filter(x => x._new).map(clean);
-  for (const grp of [newP.filter(x => x.amount > 0), newP.filter(x => x.amount < 0)]) {
-    if (grp.length) { const { error } = await db.from('reservation_misc_payments').insert(grp); if (error) return error; }
+  for (const [table, grp] of [['reservation_charges', newC.filter(x => x.kind !== 'Refund')], ['reservation_misc_payments', newP], ['reservation_charges', newC.filter(x => x.kind === 'Refund')]]) {
+    if (grp.length) { const { error } = await db.from(table).insert(grp); if (error) return error; }
   }
   return null;
 }
-// Shortened stay / wrong entry: room payments above room revenue — offer to post the excess as a refund
+// Shortened stay / wrong entry: the guest would end up with a credit — ask before saving
 async function fxCheckOverpaid(which, total, label) {
   const st = fxState(which);
-  const over = fxSum(st.pays, p => p.kind === 'Room') - total;
-  if (over <= 0) return true;
-  const go = await showModal('Room payment overcharged',
-    `Room payments are ${idr(over)} more than the room revenue (${idr(total)}). This can happen after shortening the stay, or when a payment was entered by mistake.\n\nPost ${idr(over)} as a refund (− Room Payment) so the billing balances? Or go back and adjust the room nights / payments.`,
-    'Post refund & save', 'btn-primary', 'Go back');
-  if (!go) return false;
-  st.pays.push({ kind: 'Room', paid_on: baliToday(), amount: -Math.round(over), notes: `Refund – ${label}`, id: 'n' + (++_fxSeq), _new: true });
-  return true;
+  const f = folioOf(total, st.charges, st.pays);
+  if (f.balance >= 0) return true;
+  return await showModal('Room payment overcharged',
+    `After this change the guest has a credit of ${idr(-f.balance)} (${label}).\n\nGo back and, under Additional Charges, post a Refund (money handed back to the guest) or a Misc charge (if the money is kept) — or save now and post it later. It stays on the To Do list until balanced.`,
+    'Save anyway', 'btn-primary', 'Go back');
 }
 
 async function rdSaveSecurity() {
@@ -5653,8 +5667,8 @@ async function rdCancel() {
   const paid = Number(_rd.amount_paid) || 0, sec = Number(_rd.security_deposit) || 0;
   if (paid > 0 || sec > 0) {
     // Money already received: it must be moved to Misc Payment before the booking can be cancelled
-    const lines = [paid > 0 ? `• Room payment ${idr(paid)} → Misc charge & payment "Cancellation room charge"` : '',
-                   sec > 0 ? `• Security deposit ${idr(sec)} → Misc charge & payment "Cancellation security deposit charge"` : ''].filter(Boolean).join('\n');
+    const lines = [paid > 0 ? `• Room payment ${idr(paid)} → kept, as Misc charge "Cancellation room charge"` : '',
+                   sec > 0 ? `• Security deposit ${idr(sec)} → kept, as Misc charge "Cancellation security deposit charge"` : ''].filter(Boolean).join('\n');
     const move = await showModal('Move payments to Misc?',
       `${_rd.guest_name}'s booking (${_rd.confirmation_number}) already has money received:\n\n${lines}\n\nTo cancel, these amounts become a cancellation charge under Misc. Move them and cancel the booking? This cannot be undone.`,
       'Yes, move & cancel', 'btn-danger', 'No');
@@ -5840,8 +5854,7 @@ async function rdSaveEdit() {
   // Room payments above the (new) room revenue: offer to post the excess as a refund
   const oldNights = Number(_rd.room_night) || nightsBetween(_rd.arrival_date, _rd.departure_date);
   const okPaid = await fxCheckOverpaid('ed', total, nights < oldNights ? `shortened stay, ${oldNights} → ${nights} night${nights === 1 ? '' : 's'}` : 'room payment above room revenue');
-  if (!okPaid) { btn.disabled = false; fxRender('ed'); return; }
-  fxRender('ed');
+  if (!okPaid) { btn.disabled = false; document.getElementById('fx-ed-sum')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
   const roomPaidNew = fxSum(fxState('ed').pays, x => x.kind === 'Room');
   const payStatus = roomStatusFor(total, roomPaidNew);
   const payload = {
