@@ -26,7 +26,7 @@ delete from public.reservation_misc_payments where amount < 0;
 alter table public.reservation_charges add constraint reservation_charges_sign_check
   check ((kind in ('Electricity', 'Misc') and amount > 0) or (kind in ('Rebate', 'Refund') and amount < 0));
 alter table public.reservation_charges add constraint reservation_charges_method_check
-  check ((kind = 'Refund' and method in ('Cash', 'Bank Transfer', 'QRIS', 'OTA Collect')) or (kind <> 'Refund' and method is null));
+  check ((kind = 'Refund' and method is not null and method in ('Cash', 'Bank Transfer', 'QRIS', 'OTA Collect')) or (kind <> 'Refund' and method is null));
 
 -- 3) Guest Payments: positive only
 alter table public.reservation_misc_payments drop constraint if exists reservation_misc_payments_positive_check;
