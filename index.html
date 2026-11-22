@@ -4754,7 +4754,7 @@ function fnCompute() {
     };
     o.charges = o.room + o.elec + o.misc + o.rebate;
     o.paid = o.pRoom + o.pElec + o.pMisc + o.refunds;
-    o.diff = o.charges - o.paid;
+    o.diff = o.paid - o.charges;   // negative = guests still owe; positive = received ahead
     return o;
   });
   const t = {};
@@ -4792,7 +4792,7 @@ function fnRender() {
   const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
   const n = v => v ? rpNum(v) : '<span class="fn-muted">0</span>';
   const sgn = v => v ? `<span class="${v < 0 ? 'rp-neg' : ''}">${rpSigned(v)}</span>` : '<span class="fn-muted">0</span>';
-  const diffCell = v => Math.round(v) === 0 ? '<b class="rp-pos">Balanced</b>' : `<b class="${v > 0 ? 'rp-neg' : ''}">${rpSigned(v)}</b>`;
+  const diffCell = v => Math.round(v) === 0 ? '<b class="rp-pos">Balanced</b>' : `<b class="${v < 0 ? 'rp-neg' : 'rp-pos'}">${rpSigned(v)}</b>`;
   const tag = w => w === 'cur' ? '<span class="rp-tag cur">Current</span>' : w === 'fut' ? '<span class="rp-tag fut">On the books</span>' : '';
   const f = _rp.focus && _rp.focus.kind === 'fin' ? _rp.focus.month : null;
   const sorted = rows.slice().reverse();
@@ -4824,7 +4824,7 @@ function fnRender() {
         <tfoot><tr><td>Total</td><td class="ch">${rpNum(t.room)}</td><td class="ch">${rpNum(t.elec)}</td><td class="ch">${rpNum(t.misc)}</td><td class="ch">${rpSigned(t.rebate)}</td><td class="ch tot">${rpNum(t.charges)}</td>
           <td class="py">${rpNum(t.pRoom)}</td><td class="py">${rpNum(t.pElec)}</td><td class="py">${rpNum(t.pMisc)}</td><td class="py">${rpSigned(t.refunds)}</td><td class="py tot">${rpNum(t.paid)}</td><td class="df">${Math.round(t.diff) === 0 ? 'Balanced' : rpSigned(t.diff)}</td></tr></tfoot>
       </table></div>
-      <div class="rp-empty" style="border-top:1px solid var(--surface-container-high)">Difference = charges − payments in the month. <b>Positive</b>: guests still owe for that month. <b>Negative</b>: money received ahead (e.g. deposits for a later stay). Room charges follow the nights stayed; payments follow the payment date. Internal moves (No Show / cancellation) are not counted as money received.</div>
+      <div class="rp-empty" style="border-top:1px solid var(--surface-container-high)">Difference = payments − charges in the month. <b>Negative</b>: guests still owe for that month. <b>Positive</b>: money received ahead (e.g. deposits for a later stay). Room charges follow the nights stayed; payments follow the payment date. Internal moves (No Show / cancellation) are not counted as money received.</div>
     </section>
 
     ${f ? fnMonthHTML(rows.find(r => r.ym === f), resById) : ''}
