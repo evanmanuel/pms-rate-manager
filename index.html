@@ -2021,7 +2021,7 @@
               <div class="ra-panel" id="ra-new" style="margin-top:12px"></div>
             </div>
             <div class="form-section">
-              <div class="form-section-header"><span class="mso">payments</span><h3>Guest Payment &amp; Additional Charges</h3></div>
+              <div class="form-section-header"><span class="mso">payments</span><h3>Guest Payment</h3></div>
               <div class="fx-wrap" id="fx-new"></div>
               <div class="form-grid-2" style="margin-top:24px">
                 <div class="form-group sec-field off" id="sec-group-new"><label>Refundable Security Deposit (Optional)</label>
@@ -4201,7 +4201,7 @@ function renderReservationDetail() {
     </div>`;
 
   // ── Guest Payments + Additional Charges
-  const folioCard = `<div class="rd-card" id="rd-misc"><div class="rd-sd-head"><div class="rd-label">Guest Payments &amp; Additional Charges</div><span class="mso" style="font-size:20px;color:var(--secondary)">account_balance_wallet</span></div><div class="fx-wrap" id="fx-rd"></div></div>`;
+  const folioCard = `<div class="rd-card" id="rd-misc"><div class="rd-sd-head"><div class="rd-label">Guest Payment</div><span class="mso" style="font-size:20px;color:var(--secondary)">account_balance_wallet</span></div><div class="fx-wrap" id="fx-rd"></div></div>`;
 
   // ── Notes
   const notesCard = _rdMode === 'note'
@@ -5747,7 +5747,7 @@ function renderEditForm(r) {
       <div class="ra-panel" id="ra-ed" style="margin-top:12px"></div>
     </div>
     <div class="rd-edit-section">
-      <h3><span class="mso">payments</span>Guest Payment &amp; Additional Charges</h3>
+      <h3><span class="mso">payments</span>Guest Payment</h3>
       <div class="fx-wrap" id="fx-ed"></div>
       <div class="form-grid-3" style="margin-top:20px">
         <div class="form-group sec-field ${payStatusOf(r) === 'Paid' ? '' : 'off'}" id="sec-group-ed"><label for="ed-security">Refundable Security Deposit</label>
