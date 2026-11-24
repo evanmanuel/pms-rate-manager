@@ -1060,6 +1060,10 @@
     .fx-head small { display:block; font-size:12px; color:var(--secondary); line-height:1.5; margin-top:2px; }
     .fx-list { display:flex; flex-direction:column; }
     .fx-empty { font-size:12px; color:var(--secondary); padding:8px 0; }
+    .fx-toggle { width:100%; display:flex; justify-content:space-between; align-items:center; gap:10px; margin-top:8px; padding:10px 12px; border:1px solid var(--surface-container-high); border-radius:10px; background:var(--surface-container-low); font:inherit; font-size:12px; font-weight:700; color:var(--on-surface); cursor:pointer; text-align:left; }
+    .fx-toggle .mso { font-size:20px; transition:transform .15s; }
+    .fx-toggle.open .mso { transform:rotate(180deg); }
+    .fx-toggle + .fx-list { margin-top:6px; }
     .fx-row { display:grid; grid-template-columns:auto 1fr auto auto; gap:12px; align-items:center; padding:10px 0; border-top:1px solid var(--surface-container-high); }
     .fx-row:first-child { border-top:none; }
     .fx-row.fresh { background:linear-gradient(90deg, #EEF8F2, transparent); }
@@ -5641,16 +5645,27 @@ function fxRender(which) {
     <div class="fx-block">
       <div class="fx-head"><span class="mso">account_balance_wallet</span><div><b>Guest Payments</b><small>Money received from the guest: room, electricity or misc. Rebates and refunds go under Additional Charges.</small></div></div>
       ${locked ? '' : fxAddHTML(which, 'p')}
-      <div class="fx-list">${st.pays.length ? st.pays.map(x => fxRowHTML(which, x, 'p')).join('') : '<div class="fx-empty">No payments yet</div>'}</div>
+      ${fxListHTML(which, 'p', st.pays, 'payment', 'No payments yet')}
     </div>
     <div class="fx-block">
       <div class="fx-head"><span class="mso">receipt_long</span><div><b>Additional Charges</b><small>Electricity (kWh in the notes) or Misc = guest owes more · Rebate = guest owes less · Refund = money handed back to the guest.</small></div></div>
       ${locked ? '' : fxAddHTML(which, 'c')}
-      <div class="fx-list">${st.charges.length ? st.charges.map(x => fxRowHTML(which, x, 'c')).join('') : '<div class="fx-empty">No additional charges</div>'}</div>
+      ${fxListHTML(which, 'c', st.charges, 'entry', 'No additional charges')}
     </div>
     <div class="fx-sum" id="fx-${which}-sum"></div>`;
   fxSummary(which);
 }
+// Lists are folded by default; a toggle shows the breakdown
+const _fxOpen = {};
+function fxListHTML(which, type, list, noun, empty) {
+  if (!list.length) return `<div class="fx-empty">${empty}</div>`;
+  const key = which + type, open = !!_fxOpen[key];
+  const total = list.reduce((t, x) => t + Number(x.amount || 0), 0);
+  return `<button type="button" class="fx-toggle${open ? ' open' : ''}" onclick="fxToggleList('${which}','${type}')" aria-expanded="${open}">
+      <span>${open ? 'Hide' : 'Show'} ${list.length} ${list.length === 1 ? noun : (noun === 'entry' ? 'entries' : noun + 's')} · ${type === 'p' ? 'total ' + idr(total) : 'net ' + signedIdr(total)}</span><span class="mso">expand_more</span></button>
+    ${open ? `<div class="fx-list">${list.map(x => fxRowHTML(which, x, type)).join('')}</div>` : ''}`;
+}
+function fxToggleList(which, type) { _fxOpen[which + type] = !_fxOpen[which + type]; fxRender(which); }
 function fxSummary(which) {
   const el = document.getElementById(`fx-${which}-sum`); if (!el) return;
   const st = fxState(which);
@@ -5703,10 +5718,12 @@ async function fxAdd(which, type) {
     const table = type === 'p' ? 'reservation_misc_payments' : 'reservation_charges';
     const { error } = await db.from(table).insert({ reservation_id: _rd.id, ...row });
     if (error) { btn.disabled = false; return showToast('Error: ' + error.message); }
+    _fxOpen[which + type] = true;
     showToast(type === 'p' ? 'Payment recorded ✓' : kind === 'Refund' ? 'Refund recorded ✓' : kind === 'Rebate' ? 'Rebate recorded ✓' : 'Charge added ✓');
     return loadReservationDetail(_rd.id);
   }
   (type === 'p' ? st.pays : st.charges).push({ ...row, id: 'n' + (++_fxSeq), _new: true });
+  _fxOpen[which + type] = true;
   const keepKind = kind;
   fxRender(which);
   const k = document.getElementById(`fx-${which}-${type}-kind`); if (k) k.value = keepKind;
