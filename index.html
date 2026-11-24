@@ -3899,7 +3899,10 @@ function syncDateMins(which) {
   const d = document.getElementById(which === 'new' ? 'departure-date' : 'ed-departure');
   if (!a || !d) return;
   if (which === 'new') a.min = baliToday();
-  d.min = a.value ? isoPlus(a.value, 1) : (which === 'new' ? isoPlus(baliToday(), 1) : '');
+  let min = a.value ? isoPlus(a.value, 1) : (which === 'new' ? isoPlus(baliToday(), 1) : '');
+  // Departure can't be moved into the past (today is fine: early check-out)
+  if (which === 'ed' && (!min || min < baliToday())) min = baliToday();
+  d.min = min;
 }
 // Called when a date changes: some phones ignore the picker limits or allow typing,
 // so correct invalid dates right away instead of only on Save.
@@ -3910,6 +3913,10 @@ function guardDates(which, changed) {
   if (which === 'new' && a.value && a.value < baliToday()) {
     a.value = '';
     showToast("Arrival can't be in the past — choose today or later");
+  }
+  if (which === 'ed' && d.value && d.value < baliToday() && !(typeof _rd !== 'undefined' && _rd && d.value === _rd.departure_date)) {
+    d.value = (typeof _rd !== 'undefined' && _rd && _rd.departure_date >= baliToday()) ? _rd.departure_date : '';
+    showToast("Departure can't be moved into the past — choose today or later");
   }
   if (a.value && d.value && d.value <= a.value) {
     d.value = '';
@@ -5982,6 +5989,7 @@ async function rdSaveEdit() {
   if (d <= a) return showToast('Departure must be at least 1 day after arrival');
   const today = baliToday();
   if (a !== _rd.arrival_date && a < today) return showToast("Arrival can't be moved into the past — choose today or later");
+  if (d !== _rd.departure_date && d < today) return showToast("Departure can't be moved into the past — choose today or later");
 
   const btn = document.getElementById('ed-save'); btn.disabled = true;
   const free = await rdCheckAvail(a, d, room);
