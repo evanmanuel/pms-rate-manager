@@ -370,6 +370,15 @@
     .rp-fin .rp-table th:first-child, .rp-fin .rp-table td:first-child { position:sticky; left:0; z-index:1; background:var(--surface-container-lowest); box-shadow:1px 0 0 var(--surface-container-high); }
     .rp-fin .rp-table th:first-child, .rp-fin .rp-table tfoot td:first-child, .rp-fin .rp-table td.fn-group { background:var(--surface-container-low); }
     .fn-muted { color:var(--secondary); font-size:11px; }
+    .cp-grid { display:grid; grid-template-columns:1.3fr 1fr; gap:10px 32px; padding:16px 22px 20px; }
+    .cp-row { display:flex; justify-content:space-between; gap:12px; padding:8px 0; border-bottom:1px solid var(--surface-container-high); font-size:13px; }
+    .cp-row span small { display:block; font-size:11px; color:var(--secondary); margin-top:1px; }
+    .cp-row b { font-variant-numeric:tabular-nums; white-space:nowrap; }
+    .cp-row.neg b { color:#b42318; }
+    .cp-row.tot { border-bottom:none; border-top:2px solid var(--primary); margin-top:4px; padding-top:10px; font-size:15px; }
+    .cp-row.tot b { color:var(--primary); font-size:17px; }
+    .cp-col.side { background:var(--surface-container-low); border-radius:12px; padding:6px 14px 12px; }
+    @media (max-width:768px) { .cp-grid { grid-template-columns:1fr; padding:14px; } }
     .ota-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
     .ota-actions input[type=date] { border:1px solid var(--surface-container-high); background:var(--surface-container-low); border-radius:10px; padding:8px 10px; font:inherit; font-size:13px; font-weight:600; }
     .ota-actions .btn-primary[disabled] { opacity:.45; cursor:not-allowed; }
@@ -4515,7 +4524,7 @@ function rpPct(x) { return (x * 100).toFixed(1).replace(/\.0$/, '') + '%'; }
 async function loadReport() {
   document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Loading…</div>';
   const [resQ, miscQ, roomQ, chgQ, expQ] = await Promise.all([
-    db.from('reservations').select('id, confirmation_number, guest_name, room_name, status, arrival_date, departure_date, room_night, room_revenue, rate, channel'),
+    db.from('reservations').select('id, confirmation_number, guest_name, room_name, status, arrival_date, departure_date, room_night, room_revenue, rate, channel, security_deposit'),
     db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes, kind, method, created_by, created_at, ota_received_on, ota_received_by').order('paid_on').order('created_at'),
     db.from('rooms').select('name').order('created_at'),
     db.from('reservation_charges').select('id, reservation_id, charged_on, amount, notes, kind, method, created_by, created_at').order('charged_on'),
@@ -4791,21 +4800,24 @@ function fnCompute() {
   const rows = perf.map(pr => {
     const ym = pr.ym;
     const ch = _rp.charges.filter(c => c.charged_on && c.charged_on.slice(0, 7) === ym && fnInRooms(resById, c.reservation_id));
-    const ps = _rp.pays.filter(p => p.paid_on && p.paid_on.slice(0, 7) === ym && fnInRooms(resById, p.reservation_id));
+    // Money in: OTA Collect counts in the month the OTA payout is received; everything else on its payment date
+    const ps = _rp.pays.filter(p => fnInRooms(resById, p.reservation_id) && (p.method === 'OTA Collect'
+      ? (p.ota_received_on && p.ota_received_on.slice(0, 7) === ym) : (p.paid_on && p.paid_on.slice(0, 7) === ym)));
+    const otaWait = _rp.pays.filter(p => p.method === 'OTA Collect' && !p.ota_received_on && p.paid_on && p.paid_on.slice(0, 7) === ym && fnInRooms(resById, p.reservation_id));
     const rebate = sum(ch, c => c.kind === 'Rebate');
     const o = {
-      ym, when: pr.when, guests: pr.guests, ch, ps,
+      ym, when: pr.when, guests: pr.guests, ch, ps, otaWait, awaitOta: sum(otaWait, () => true),
       room: pr.rev, elec: sum(ch, c => c.kind === 'Electricity'), misc: sum(ch, c => c.kind === 'Misc'), rebate,
       pRoom: sum(ps, p => p.kind === 'Room' && Number(p.amount) > 0), pElec: sum(ps, p => p.kind === 'Electricity' && Number(p.amount) > 0),
       pMisc: sum(ps, p => p.kind === 'Misc' && Number(p.amount) > 0), refunds: sum(ch, c => c.kind === 'Refund'),
     };
     o.charges = o.room + o.elec + o.misc + o.rebate;
     o.paid = o.pRoom + o.pElec + o.pMisc + o.refunds;
-    o.diff = o.paid - o.charges;   // negative = guests still owe; positive = received ahead
+    o.diff = o.paid - o.charges;   // negative = not received yet (guest owes or OTA payout pending); positive = received ahead
     return o;
   });
   const t = {};
-  ['room', 'elec', 'misc', 'rebate', 'charges', 'pRoom', 'pElec', 'pMisc', 'refunds', 'paid', 'diff'].forEach(k => t[k] = rows.reduce((s, r) => s + r[k], 0));
+  ['room', 'elec', 'misc', 'rebate', 'charges', 'pRoom', 'pElec', 'pMisc', 'refunds', 'paid', 'diff', 'awaitOta'].forEach(k => t[k] = rows.reduce((s, r) => s + r[k], 0));
   return { rows, t, resById };
 }
 
@@ -4854,24 +4866,26 @@ function fnRender() {
   el.innerHTML = `
     <div class="rp-kpis">
       ${kpi('Total Charges', rpShort(t.charges), 'Room ' + rpShort(t.room) + ' · extras ' + rpShort(t.elec + t.misc + t.rebate), 'receipt_long', '#FBEFD9', '#8A5A12')}
-      ${kpi('Payments Received', rpShort(t.paid), 'after refunds ' + rpShort(t.refunds), 'payments', '#E3EFE9', '#0B3D2E')}
+      ${kpi('Payments Received', rpShort(t.paid), 'after refunds · OTA only when paid out', 'payments', '#E3EFE9', '#0B3D2E')}
       ${kpi('Guests Owe', rpShort(owe), out.filter(x => x.f.balance > 0).length + ' booking(s) · all dates', 'pending_actions', '#FBE3E1', '#b42318')}
       ${kpi('Credit to Refund', rpShort(credit), out.filter(x => x.f.balance < 0).length + ' booking(s)', 'undo', '', '', true)}
     </div>
 
+    ${fnCashHTML(t)}
+
     <section class="rp-card">
       <div class="rp-card-head"><h3>Charges vs Payments</h3><span class="rp-sub">${period} · ${_rp.sel.size} of ${_rp.rooms.length} rooms · IDR · click a month for its transactions</span></div>
       <div class="rp-table-wrap"><table class="rp-table">
-        <thead><tr class="fn-grp"><th></th><th colspan="5" class="ch">Charges</th><th colspan="5" class="py">Payments</th><th class="df"></th></tr>
+        <thead><tr class="fn-grp"><th></th><th colspan="5" class="ch">Charges</th><th colspan="5" class="py">Payments</th><th class="df" colspan="2"></th></tr>
           <tr><th>Month</th><th class="ch">Room</th><th class="ch">Electricity</th><th class="ch">Misc</th><th class="ch">Rebate</th><th class="ch tot">Total Charges</th>
-          <th class="py">Room Paid</th><th class="py">Electricity Paid</th><th class="py">Misc Paid</th><th class="py">Refunds</th><th class="py tot">Total Payments</th><th class="df">Difference</th></tr></thead>
+          <th class="py">Room Paid</th><th class="py">Electricity Paid</th><th class="py">Misc Paid</th><th class="py">Refunds</th><th class="py tot">Total Payments</th><th class="df">Difference</th><th class="df">Awaiting OTA Payout</th></tr></thead>
         <tbody>${sorted.map(r => `<tr class="${f === r.ym ? 'sel-row' : ''}" style="cursor:pointer" onclick="fnFocus('${r.ym}')">
           <td><b>${rpLabel(r.ym)}</b>${tag(r.when)}</td><td class="ch">${n(r.room)}</td><td class="ch">${n(r.elec)}</td><td class="ch">${n(r.misc)}</td><td class="ch">${sgn(r.rebate)}</td><td class="ch tot"><b>${rpNum(r.charges)}</b></td>
-          <td class="py">${n(r.pRoom)}</td><td class="py">${n(r.pElec)}</td><td class="py">${n(r.pMisc)}</td><td class="py">${sgn(r.refunds)}</td><td class="py tot"><b>${rpNum(r.paid)}</b></td><td class="df">${diffCell(r.diff)}</td></tr>`).join('')}</tbody>
+          <td class="py">${n(r.pRoom)}</td><td class="py">${n(r.pElec)}</td><td class="py">${n(r.pMisc)}</td><td class="py">${sgn(r.refunds)}</td><td class="py tot"><b>${rpNum(r.paid)}</b></td><td class="df">${diffCell(r.diff)}</td><td class="df">${r.awaitOta ? `<span class="rp-neg">${rpNum(r.awaitOta)}</span>` : '<span class="fn-muted">0</span>'}</td></tr>`).join('')}</tbody>
         <tfoot><tr><td>Total</td><td class="ch">${rpNum(t.room)}</td><td class="ch">${rpNum(t.elec)}</td><td class="ch">${rpNum(t.misc)}</td><td class="ch">${rpSigned(t.rebate)}</td><td class="ch tot">${rpNum(t.charges)}</td>
-          <td class="py">${rpNum(t.pRoom)}</td><td class="py">${rpNum(t.pElec)}</td><td class="py">${rpNum(t.pMisc)}</td><td class="py">${rpSigned(t.refunds)}</td><td class="py tot">${rpNum(t.paid)}</td><td class="df">${Math.round(t.diff) === 0 ? 'Balanced' : rpSigned(t.diff)}</td></tr></tfoot>
+          <td class="py">${rpNum(t.pRoom)}</td><td class="py">${rpNum(t.pElec)}</td><td class="py">${rpNum(t.pMisc)}</td><td class="py">${rpSigned(t.refunds)}</td><td class="py tot">${rpNum(t.paid)}</td><td class="df">${Math.round(t.diff) === 0 ? 'Balanced' : rpSigned(t.diff)}</td><td class="df">${rpNum(t.awaitOta)}</td></tr></tfoot>
       </table></div>
-      <div class="rp-empty" style="border-top:1px solid var(--surface-container-high)">Difference = payments − charges in the month. <b>Negative</b>: guests still owe for that month. <b>Positive</b>: money received ahead (e.g. deposits for a later stay). Room charges follow the nights stayed; payments follow the payment date; refunds are money handed back to guests.</div>
+      <div class="rp-empty" style="border-top:1px solid var(--surface-container-high)">Difference = payments − charges in the month. <b>Negative</b>: money not received yet — a guest still owes, or an OTA payout is pending (see Awaiting OTA Payout). <b>Positive</b>: money received ahead (e.g. deposits for a later stay). OTA Collect money counts only when the OTA payout is received. Room charges follow the nights stayed; payments follow the payment date; refunds are money handed back to guests.</div>
     </section>
 
     ${f ? fnMonthHTML(rows.find(r => r.ym === f), resById) : ''}
@@ -4905,7 +4919,10 @@ function fnMonthTx(row) {
   row.ch.forEach(c => c.kind === 'Refund'
     ? list.push({ date: c.charged_on, rid: c.reservation_id, type: 'Refund to guest', method: c.method || '', notes: c.notes, charge: null, paid: Number(c.amount) })
     : list.push({ date: c.charged_on, rid: c.reservation_id, type: c.kind === 'Rebate' ? 'Rebate' : c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null }));
-  row.ps.forEach(p => list.push({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Not set', notes: p.notes, charge: null, paid: Number(p.amount) }));
+  row.ps.forEach(p => p.method === 'OTA Collect'
+    ? list.push({ date: p.ota_received_on, rid: p.reservation_id, type: `${p.kind} – OTA payout received`, method: 'OTA Collect', notes: `${p.notes} (posted ${fmtShort(p.paid_on)})`, charge: null, paid: Number(p.amount) })
+    : list.push({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Not set', notes: p.notes, charge: null, paid: Number(p.amount) }));
+  row.otaWait.forEach(p => list.push({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} – OTA payout pending`, method: 'OTA Collect', notes: `${p.notes} (not counted until the OTA pays out)`, charge: null, paid: null }));
   return list.sort((a, b) => String(a.date).localeCompare(String(b.date)));
 }
 function fnMonthHTML(row, resById) {
@@ -4918,6 +4935,38 @@ function fnMonthHTML(row, resById) {
       <tbody>${list.length ? fnTxRows(resById, list) : '<tr><td colspan="7" style="text-align:center;color:var(--secondary)">No transactions this month</td></tr>'}</tbody>
       <tfoot><tr><td class="l" colspan="5">Total</td><td>${rpNum(row.charges)}</td><td>${rpNum(row.paid)}</td></tr></tfoot>
     </table></div></section>`;
+}
+/* ── Cash position: money actually received from operations in the period ── */
+function fnCashHTML(t) {
+  const resById = fnResById();
+  const inP = d => d && d.slice(0, 7) >= _rp.from && d.slice(0, 7) <= _rp.to;
+  const inR = rid => fnInRooms(resById, rid);
+  const pays = _rp.pays.filter(p => inR(p.reservation_id) && p.method !== 'Internal');
+  const direct = pays.filter(p => p.method !== 'OTA Collect' && inP(p.paid_on)).reduce((s, p) => s + Number(p.amount), 0);
+  const otaIn = pays.filter(p => p.method === 'OTA Collect' && inP(p.ota_received_on)).reduce((s, p) => s + Number(p.amount), 0);
+  const refunds = _rp.charges.filter(c => c.kind === 'Refund' && inR(c.reservation_id) && inP(c.charged_on)).reduce((s, c) => s + Number(c.amount), 0);   // ≤ 0
+  const exps = (_rp.expenses || []).filter(e => inP(e.spent_on)).reduce((s, e) => s + Number(e.amount), 0);
+  const net = direct + otaIn + refunds - exps;
+  const otaWaiting = pays.filter(p => p.method === 'OTA Collect' && !p.ota_received_on).reduce((s, p) => s + Number(p.amount), 0);
+  const deposits = _rp.res.filter(r => r.status !== 'Cancelled' && _rp.sel.has(r.room_name) && Number(r.security_deposit) > 0).reduce((s, r) => s + Number(r.security_deposit), 0);
+  const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
+  const line = (l, v, cls = '', sub = '') => `<div class="cp-row ${cls}"><span>${l}${sub ? `<small>${sub}</small>` : ''}</span><b>${v}</b></div>`;
+  return `<section class="rp-card">
+    <div class="rp-card-head"><h3>Cash Position</h3><span class="rp-sub">${period} · money actually received from operations</span></div>
+    <div class="cp-grid">
+      <div class="cp-col">
+        ${line('Received from guests', rpNum(direct), '', 'cash, bank transfer, QRIS')}
+        ${line('OTA payouts received', rpNum(otaIn), '', 'counted on the payout date')}
+        ${line('Refunds to guests', refunds ? '−' + rpNum(-refunds) : '0', refunds ? 'neg' : '')}
+        ${line('Expenses paid', exps ? '−' + rpNum(exps) : '0', exps ? 'neg' : '', 'electricity & misc')}
+        ${line('Net cash from operations', `<span class="${net < 0 ? 'rp-neg' : ''}">${rpSigned(net).replace(/^\+/, '')}</span>`, 'tot')}
+      </div>
+      <div class="cp-col side">
+        ${line('Not yet received: OTA awaiting payout', rpNum(otaWaiting), otaWaiting ? 'neg' : '', 'all dates · see OTA Receivables')}
+        ${line('Held for guests: security deposits', rpNum(deposits), '', 'belongs to the guest until refunded')}
+        <div class="fn-muted" style="margin-top:8px;line-height:1.5">Only what is entered in the PMS: other costs (salaries, supplies, commission…), owner money and opening balances are not included.</div>
+      </div>
+    </div></section>`;
 }
 /* ── Expenses (property costs) and the profit on what we charge guests for electricity / misc ── */
 let _expOpen = false;
@@ -4993,7 +5042,7 @@ async function expDelete(id) {
 function fnDayHTML(resById) {
   const d = _fnDay;
   const inRooms = rid => fnInRooms(resById, rid);
-  const pays = _rp.pays.filter(p => p.paid_on === d && inRooms(p.reservation_id));
+  const pays = _rp.pays.filter(p => inRooms(p.reservation_id) && (p.method === 'OTA Collect' ? p.ota_received_on === d : p.paid_on === d));
   const chs = _rp.charges.filter(c => c.charged_on === d && inRooms(c.reservation_id));
   const refunds = chs.filter(c => c.kind === 'Refund');
   const exps = (_rp.expenses || []).filter(e => e.spent_on === d);
@@ -5006,12 +5055,14 @@ function fnDayHTML(resById) {
     ...chs.map(c => c.kind === 'Refund'
       ? { date: c.charged_on, rid: c.reservation_id, type: 'Refund to guest', method: c.method || '', notes: c.notes, charge: null, paid: Number(c.amount) }
       : { date: c.charged_on, rid: c.reservation_id, type: c.kind === 'Rebate' ? 'Rebate' : c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null }),
-    ...pays.map(p => ({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Not set', notes: p.notes + (fnIsReal(p) ? '' : ' (internal move)'), charge: null, paid: fnIsReal(p) ? Number(p.amount) : null })),
+    ...pays.map(p => p.method === 'OTA Collect'
+      ? { date: d, rid: p.reservation_id, type: `${p.kind} – OTA payout received`, method: 'OTA Collect', notes: `${p.notes} (posted ${fmtShort(p.paid_on)})`, charge: null, paid: Number(p.amount) }
+      : { date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Not set', notes: p.notes + (fnIsReal(p) ? '' : ' (internal move)'), charge: null, paid: fnIsReal(p) ? Number(p.amount) : null }),
     ...exps.map(e => ({ date: e.spent_on, rid: null, type: `Expense – ${e.kind}`, method: e.method, notes: e.notes, charge: null, paid: -Number(e.amount) })),
   ];
   return `<div class="rp-card-head fn-day-head"><div><h3>Daily Reconciliation</h3><span class="rp-sub">Money in, minus refunds and expenses paid out on the day, by method — check it against the cash box and bank statement</span></div>
       <input type="date" value="${d}" max="${baliToday()}" onchange="_fnDay=this.value||baliToday();document.getElementById('fn-day').innerHTML=fnDayHTML(fnResById())"></div>
-    <div class="fn-tiles">${FX_METHODS.map(m => tile(m, by(m))).join('')}${real.some(p => !p.method) ? tile('Method not set', real.filter(p => !p.method).reduce((s, p) => s + Number(p.amount), 0)) : ''}${tile('Net cash flow', total, 'total')}</div>
+    <div class="fn-tiles">${FX_METHODS.map(m => tile(m === 'OTA Collect' ? 'OTA payouts received' : m, by(m))).join('')}${real.some(p => !p.method) ? tile('Method not set', real.filter(p => !p.method).reduce((s, p) => s + Number(p.amount), 0)) : ''}${tile('Net cash flow', total, 'total')}</div>
     <div class="rp-table-wrap"><table class="rp-table">
       <thead><tr><th class="l">Date</th><th class="l">Guest</th><th class="l">Type</th><th class="l">Method</th><th class="l">Notes</th><th>Charge</th><th>Payment</th></tr></thead>
       <tbody>${list.length ? fnTxRows(resById, list) : `<tr><td colspan="7" style="text-align:center;color:var(--secondary)">Nothing posted on ${fmtDateLong(d)}</td></tr>`}</tbody>
@@ -5045,7 +5096,7 @@ function _doExportFinance() {
   const { rows, t, resById } = fnCompute();
   const R = Math.round;
   const mrow = (label, r) => ({ 'Month': label, 'Room Charges': R(r.room), 'Electricity Charges': R(r.elec), 'Misc Charges': R(r.misc), 'Rebate': R(r.rebate), 'Total Charges': R(r.charges),
-    'Room Paid': R(r.pRoom), 'Electricity Paid': R(r.pElec), 'Misc Paid': R(r.pMisc), 'Refunds': R(r.refunds), 'Total Payments': R(r.paid), 'Difference': R(r.diff) });
+    'Room Paid': R(r.pRoom), 'Electricity Paid': R(r.pElec), 'Misc Paid': R(r.pMisc), 'Refunds': R(r.refunds), 'Total Payments': R(r.paid), 'Difference': R(r.diff), 'Awaiting OTA Payout': R(r.awaitOta) });
   const monthly = rows.slice().reverse().map(r => mrow(rpLabel(r.ym), r)); monthly.push(mrow('Total', t));
   const tx = rows.flatMap(r => fnMonthTx(r).map(x => ({ 'Month': rpLabel(r.ym), 'Date': x.date, 'Confirmation No.': resById[x.rid]?.confirmation_number || '', 'Guest': resById[x.rid]?.guest_name || '',
     'Room': resById[x.rid]?.room_name || '', 'Type': x.type, 'Method': x.method, 'Notes': x.notes, 'Charge': x.charge === null ? '' : R(x.charge), 'Payment': x.paid === null ? '' : R(x.paid) })));
