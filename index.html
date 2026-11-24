@@ -1085,8 +1085,9 @@
     .fx-txt { min-width:0; font-size:12px; color:var(--secondary); overflow-wrap:anywhere; }
     .fx-txt small { display:block; color:var(--on-surface); font-size:13px; overflow-wrap:anywhere; }
     .fx-amt { font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
-    .fx-add { display:grid; grid-template-columns:175px 140px 200px 1fr auto; gap:10px; align-items:end; margin-bottom:6px; padding-bottom:14px; border-bottom:1px dashed var(--surface-container-high); }
-    .fx-add.pay, .fx-add.exp { grid-template-columns:165px 150px 140px 190px 1fr auto; }
+    .fx-add { display:grid; grid-template-columns:175px 210px 1fr auto; gap:10px; align-items:end; margin-bottom:6px; padding-bottom:14px; border-bottom:1px dashed var(--surface-container-high); }
+    .fx-add.pay { grid-template-columns:165px 160px 200px 1fr auto; }
+    .fx-add.exp { grid-template-columns:165px 150px 140px 190px 1fr auto; }
     .fx-add .form-group { gap:6px; min-width:0; }
     .fx-add label { font-size:10px; }
     .fx-amount { display:flex; gap:6px; align-items:stretch; }
@@ -1103,18 +1104,19 @@
     .fx-alert .mso { font-size:18px; }
     @container (max-width:1000px) {
       .fx-add.pay, .fx-add.exp { grid-template-columns:1fr 1fr 1fr; }
-      .fx-add.pay > .form-group:nth-child(4), .fx-add.exp > .form-group:nth-child(4) { grid-column:1 / 2; }
-      .fx-add.pay .fx-notes, .fx-add.exp .fx-notes { grid-column:2 / -1; }
+      .fx-add.pay .fx-notes { grid-column:1 / -1; }
+      .fx-add.exp > .form-group:nth-child(4) { grid-column:1 / 2; }
+      .fx-add.exp .fx-notes { grid-column:2 / -1; }
       .fx-add.pay .fx-add-btn, .fx-add.exp .fx-add-btn { grid-column:1 / -1; }
     }
     @container (max-width:860px) {
-      .fx-add:not(.pay):not(.exp) { grid-template-columns:1fr 1fr 1.4fr; }
-      .fx-add:not(.pay):not(.exp) .fx-notes { grid-column:1 / 3; }
+      .fx-add:not(.pay):not(.exp) { grid-template-columns:1fr 1fr; }
+      .fx-add:not(.pay):not(.exp) .fx-notes, .fx-add:not(.pay):not(.exp) .fx-add-btn { grid-column:1 / -1; }
     }
     @container (max-width:520px) {
       .fx-add { grid-template-columns:1fr 1fr; }
       .fx-add { grid-template-columns:1fr 1fr !important; }
-      .fx-add .fx-notes, .fx-add:not(.pay):not(.exp) > .form-group:nth-child(3), .fx-add.pay > .form-group:nth-child(4), .fx-add.exp > .form-group:nth-child(4), .fx-add .fx-add-btn { grid-column:1 / -1 !important; }
+      .fx-add .fx-notes, .fx-add.pay .fx-amt-g, .fx-add.exp > .form-group:nth-child(4), .fx-add .fx-add-btn { grid-column:1 / -1 !important; }
       .fx-row { grid-template-columns:1fr auto auto; gap:6px 10px; }
       .fx-row .fx-kind { grid-column:1 / -1; justify-self:start; }
       .fx-sum { grid-template-columns:1fr; }
@@ -5776,8 +5778,7 @@ function fxAddHTML(which, type) {
   return `<div class="fx-add${type === 'p' ? ' pay' : ''}" data-sign="+" id="${id('box')}">
       <div class="form-group"><label for="${id('kind')}">Type</label><select id="${id('kind')}"${type === 'c' ? ` onchange="fxKindChange('${which}')"` : ''}>${kinds.map(k => `<option value="${k}">${type === 'p' ? k + ' Payment' : k === 'Refund' ? 'Refund to guest' : k}</option>`).join('')}</select></div>
       <div class="form-group fx-method"${type === 'c' ? ' style="display:none"' : ''}><label for="${id('method')}">${type === 'p' ? 'Method' : 'Refunded by'}</label><select id="${id('method')}"><option value="">Select…</option>${FX_METHODS.map(m => `<option>${m}</option>`).join('')}</select></div>
-      <div class="form-group"><label for="${id('date')}">Date</label><input id="${id('date')}" type="date" value="${baliToday()}" ${type === 'p' ? `max="${baliToday()}"` : ''}></div>
-      <div class="form-group"><label for="${id('amount')}">Amount</label>
+      <div class="form-group fx-amt-g"><label for="${id('amount')}">Amount</label>
         <div class="fx-amount">
         <div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="${id('amount')}" type="text" inputmode="numeric" autocomplete="off" class="money" placeholder="0"></div></div></div>
       <div class="form-group fx-notes"><label for="${id('notes')}">Notes</label><input id="${id('notes')}" type="text" maxlength="140" placeholder="${type === 'p' ? 'e.g. Transfer BCA, ref 1234' : 'e.g. Electricity Nov: 1.240 → 1.395 kWh · or reason for the rebate / refund'}"></div>
@@ -5860,14 +5861,12 @@ function updatePayHint(which) { fxSummary(which); }
 
 async function fxAdd(which, type) {
   const id = s => document.getElementById(`fx-${which}-${type}-${s}`);
-  const kind = id('kind').value, date = id('date').value, notes = id('notes').value.trim();
+  const kind = id('kind').value, date = baliToday(), notes = id('notes').value.trim();   // recorded on the day it is entered
   const neg = type === 'c' && FX_NEG(kind);
   const method = (type === 'p' || kind === 'Refund') ? id('method').value : null;
   const raw = parseFloat(unMoney(id('amount').value)) || 0;
   if (type === 'p' && !method) return showToast('Choose the payment method');
   if (kind === 'Refund' && !method) return showToast('Choose how the money was refunded (Cash, Bank Transfer…)');
-  if (!date) return showToast('Choose the date');
-  if (type === 'p' && date > baliToday()) return showToast("A payment date can't be in the future");
   if (!(raw > 0)) return showToast('Enter the amount');
   if (!notes) return showToast(neg ? `Add the reason for this ${kind.toLowerCase()}` : 'Add a note');
   const amount = Math.round(raw) * (neg ? -1 : 1);
