@@ -1762,6 +1762,9 @@
       <button class="nav-item" onclick="showPage('report',this)">
         <span class="mso">bar_chart</span><span class="label">Report</span>
       </button>
+      <button class="nav-item" onclick="showPage('finance',this)">
+        <span class="mso">account_balance</span><span class="label">Finance</span>
+      </button>
       <!-- Settings: administrator only — shown/hidden by JS -->
       <button class="nav-item hidden-nav" id="nav-settings" onclick="showPage('settings',this)">
         <span class="mso">settings</span><span class="label">Settings</span>
@@ -1816,8 +1819,8 @@
 
     <div class="page" id="page-report">
       <div class="rp-wrap">
-        <div class="rp-tabs">
-          <button id="rp-tab-perf" class="on" onclick="rpTab('perf')"><span class="mso">bar_chart</span>Performance</button>
+        <div class="rp-tabs" id="rp-tabs" style="display:none">
+          <button id="rp-tab-perf" class="on" onclick="rpTab('perf')" style="display:none"><span class="mso">bar_chart</span>Performance</button>
           <button id="rp-tab-fin" onclick="rpTab('fin')"><span class="mso">account_balance</span>Finance</button>
           <button id="rp-tab-ota" onclick="rpTab('ota')"><span class="mso">travel_explore</span>OTA Receivables</button>
         </div>
@@ -2411,7 +2414,7 @@ function enterApp() {
 /* ══════════════════════════════════════════════════════════
    NAVIGATION
 ══════════════════════════════════════════════════════════ */
-const PAGE_TITLES = { dashboard:'Dashboard', todo:'To Do', report:'Report', reservations:'Reservations', calendar:'Calendar', settings:'Settings', admin:'Admin' };
+const PAGE_TITLES = { dashboard:'Dashboard', todo:'To Do', report:'Report', finance:'Finance', reservations:'Reservations', calendar:'Calendar', settings:'Settings', admin:'Admin' };
 
 /* ── Where did the user come from? (Back buttons return there) ── */
 let _bookingOrigin = 'reservations';   // 'reservations' | 'availability'
@@ -2451,14 +2454,14 @@ function showPage(page, btn) {
 
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + page).classList.add('active');
+  document.getElementById('page-' + (page === 'finance' ? 'report' : page)).classList.add('active');   // Finance shares the report page
   if (btn) btn.classList.add('active');
   document.getElementById('topbar-title').textContent = PAGE_TITLES[page] || page;
 
   if (page === 'dashboard')    loadDashboard();
   if (page === 'todo')         loadTodo();
   else refreshTodoBadge();
-  if (page === 'report')       loadReport();
+  if (page === 'report' || page === 'finance') { rpSection(page === 'finance' ? 'fin' : 'perf'); loadReport(); }
   if (page === 'reservations') { showScreen('res-summary'); loadResSummary(); }
   if (page === 'settings')     { loadChannels(); loadRooms(); loadGoogleStatus(); loadBankSettings(); loadBackupInfo(); }
   if (page === 'admin')        loadUserList();
@@ -4008,7 +4011,7 @@ async function openReservation(id, backTo) {
   _fxOpen.rdp = _fxOpen.rdc = false;   // lists start folded on every booking
   if (backTo === 'availability') enterReservationsPage('calendar');
   if (backTo === 'todo') enterReservationsPage('todo');
-  if (backTo === 'report') enterReservationsPage('report');
+  if (backTo === 'report') enterReservationsPage(_rp.section === 'fin' ? 'finance' : 'report');
   _rdMode = 'view';
   showScreen('res-detail');
   document.getElementById('rd-root').innerHTML = '<div class="empty-state">Loading reservation…</div>';
@@ -4040,7 +4043,7 @@ async function loadReservationDetail(id) {
 function rdGoBack() {
   if (_rdBack === 'availability') return showPage('calendar', navBtn('calendar'));
   if (_rdBack === 'todo') return showPage('todo', navBtn('todo'));
-  if (_rdBack === 'report') return showPage('report', navBtn('report'));
+  if (_rdBack === 'report') { const pg = _rp.section === 'fin' ? 'finance' : 'report'; return showPage(pg, navBtn(pg)); }
   showScreen(_rdBack || 'all-reservations');
 }
 
@@ -4742,7 +4745,20 @@ function _doExportReport() {
 _rp.tab = 'perf';
 _rp.saved = {};
 let _fnDay = null;
-function rpTab(t) {
+// Report menu = Performance only; Finance menu = Finance Report + OTA Receivables tabs
+_rp.section = 'perf';
+_rp.finTab = 'fin';
+function rpSection(sec) {
+  _rp.section = sec;
+  document.getElementById('rp-tabs').style.display = sec === 'fin' ? '' : 'none';
+  rpTab(sec === 'fin' ? (_rp.finTab || 'fin') : 'perf', true);
+}
+function rpTab(t, force) {
+  if (t !== 'perf') _rp.finTab = t;
+  if (force && t === _rp.tab) {   // same tab, still make sure the right panels show
+    ['perf', 'fin', 'ota'].forEach(k => document.getElementById('rp-' + k).style.display = k === t ? '' : 'none');
+    return;
+  }
   if (t === _rp.tab) return;
   _rp.saved[_rp.tab] = { from: _rp.from, to: _rp.to, preset: _rp.preset };
   _rp.tab = t;
