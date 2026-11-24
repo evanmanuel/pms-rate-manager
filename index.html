@@ -1830,15 +1830,16 @@
       <div class="rp-wrap">
         <div class="rp-tabs" id="rp-tabs" style="display:none">
           <button id="rp-tab-perf" class="on" onclick="rpTab('perf')" style="display:none"><span class="mso">bar_chart</span>Performance</button>
-          <button id="rp-tab-fin" onclick="rpTab('fin')"><span class="mso">account_balance</span>Finance Report</button>
+          <button id="rp-tab-exp" onclick="rpTab('exp')"><span class="mso">receipt_long</span>Expenses &amp; Extras Profit</button>
           <button id="rp-tab-ota" onclick="rpTab('ota')"><span class="mso">travel_explore</span>OTA Receivables</button>
+          <button id="rp-tab-fin" onclick="rpTab('fin')"><span class="mso">account_balance</span>Finance Report</button>
         </div>
         <div class="rp-head">
           <div>
             <h2 id="rp-title">Performance Report</h2>
             <p id="rp-intro">Room nights, room revenue and misc revenue by month. Click a number in the table to see who it comes from.</p>
           </div>
-          <button class="btn-primary" onclick="_rp.tab === 'fin' ? exportFinance() : _rp.tab === 'ota' ? exportOta() : exportReport()"><span class="mso" style="font-size:18px">download</span>Export Excel</button>
+          <button class="btn-primary" onclick="(_rp.tab === 'fin' || _rp.tab === 'exp') ? exportFinance() : _rp.tab === 'ota' ? exportOta() : exportReport()"><span class="mso" style="font-size:18px">download</span>Export Excel</button>
         </div>
 
         <div class="rp-controls">
@@ -1861,6 +1862,7 @@
 
         <div id="rp-fin" class="rp-fin" style="display:none"></div>
         <div id="rp-ota" class="rp-fin" style="display:none"></div>
+        <div id="rp-exp" class="rp-fin" style="display:none"></div>
         <div id="rp-perf" class="rp-perf">
         <div id="rp-kpis" class="rp-kpis"></div>
 
@@ -4553,7 +4555,7 @@ async function loadReport() {
   const opts = _rp.months.map(m => `<option value="${m}">${rpLabel(m)}</option>`).join('');
   document.getElementById('rp-from').innerHTML = opts;
   document.getElementById('rp-to').innerHTML = opts;
-  if (!_rp.from) { if (_rp.tab === 'fin' || _rp.tab === 'ota') rpPreset('mtd', true); else rpPreset('ytd', true); } else rpRender();
+  if (!_rp.from) { if (_rp.tab !== 'perf') rpPreset('mtd', true); else rpPreset('ytd', true); } else rpRender();
 }
 
 function rpPreset(kind, silent) {
@@ -4625,6 +4627,7 @@ function rpRender() {
   _rp.data = { rows, t };
   if (_rp.tab === 'fin') return fnRender();
   if (_rp.tab === 'ota') return otaRender();
+  if (_rp.tab === 'exp') return expRender();
   const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
   const kpi = (lbl, val, sub, icon, ib, ic, dark) => `<div class="rp-kpi${dark ? ' dark' : ''}"><div><div class="k-l">${lbl}</div><div class="k-v">${val}</div><div class="k-s">${sub}</div></div><span class="mso k-i" style="--ib:${ib};--ic:${ic}">${icon}</span></div>`;
   document.getElementById('rp-kpis').innerHTML =
@@ -4758,16 +4761,16 @@ _rp.saved = {};
 let _fnDay = null;
 // Report menu = Performance only; Finance menu = Finance Report + OTA Receivables tabs
 _rp.section = 'perf';
-_rp.finTab = 'fin';
+_rp.finTab = 'exp';
 function rpSection(sec) {
   _rp.section = sec;
   document.getElementById('rp-tabs').style.display = sec === 'fin' ? '' : 'none';
-  rpTab(sec === 'fin' ? (_rp.finTab || 'fin') : 'perf', true);
+  rpTab(sec === 'fin' ? (_rp.finTab || 'exp') : 'perf', true);
 }
 function rpTab(t, force) {
   if (t !== 'perf') _rp.finTab = t;
   if (force && t === _rp.tab) {   // same tab, still make sure the right panels show
-    ['perf', 'fin', 'ota'].forEach(k => document.getElementById('rp-' + k).style.display = k === t ? '' : 'none');
+    ['perf', 'fin', 'ota', 'exp'].forEach(k => document.getElementById('rp-' + k).style.display = k === t ? '' : 'none');
     return;
   }
   if (t === _rp.tab) return;
@@ -4777,17 +4780,20 @@ function rpTab(t, force) {
   document.getElementById('rp-tab-perf').classList.toggle('on', t === 'perf');
   document.getElementById('rp-tab-fin').classList.toggle('on', t === 'fin');
   document.getElementById('rp-tab-ota').classList.toggle('on', t === 'ota');
+  document.getElementById('rp-tab-exp').classList.toggle('on', t === 'exp');
+  document.getElementById('rp-exp').style.display = t === 'exp' ? '' : 'none';
   document.getElementById('rp-perf').style.display = t === 'perf' ? '' : 'none';
   document.getElementById('rp-fin').style.display = t === 'fin' ? '' : 'none';
   document.getElementById('rp-ota').style.display = t === 'ota' ? '' : 'none';
-  document.getElementById('rp-title').textContent = { fin: 'Finance Report', ota: 'OTA Receivables', perf: 'Performance Report' }[t];
+  document.getElementById('rp-title').textContent = { fin: 'Finance Report', ota: 'OTA Receivables', exp: 'Expenses & Extras Profit', perf: 'Performance Report' }[t];
   document.getElementById('rp-intro').textContent = {
     fin: 'Charges against payments by month, the daily payment check by method, and every guest whose billing is not balanced. Use it to reconcile every day.',
     ota: 'Every OTA Collect payment and whether the OTA has paid it out. When a payout arrives, tick the payments it covers and mark them received.',
+    exp: 'Record what we pay for electricity and misc (laundry, supplies…) and see the profit against what we charge guests.',
     perf: 'Room nights, room revenue and misc revenue by month. Click a number in the table to see who it comes from.' }[t];
   if (!_rp.from) return;   // still loading; loadReport picks the right default
   if (sv) { _rp.from = sv.from; _rp.to = sv.to; _rp.preset = sv.preset; _rp.focus = null; rpRender(); }
-  else if (t === 'fin' || t === 'ota') rpPreset('mtd'); else rpPreset('ytd');
+  else if (t !== 'perf') rpPreset('mtd'); else rpPreset('ytd');
 }
 const fnIsReal = p => p.method !== 'Internal';   // daily cash check: leave out internal entries (e.g. a kept security deposit)
 function fnResById() { const m = {}; _rp.res.forEach(r => m[r.id] = r); return m; }
@@ -4890,8 +4896,6 @@ function fnRender() {
 
     ${f ? fnMonthHTML(rows.find(r => r.ym === f), resById) : ''}
 
-    <section class="rp-card" id="fn-exp">${fnExpensesHTML(rows)}</section>
-
     <section class="rp-card" id="fn-day">${fnDayHTML(resById)}</section>
 
     <section class="rp-card">
@@ -4935,6 +4939,11 @@ function fnMonthHTML(row, resById) {
       <tbody>${list.length ? fnTxRows(resById, list) : '<tr><td colspan="7" style="text-align:center;color:var(--secondary)">No transactions this month</td></tr>'}</tbody>
       <tfoot><tr><td class="l" colspan="5">Total</td><td>${rpNum(row.charges)}</td><td>${rpNum(row.paid)}</td></tr></tfoot>
     </table></div></section>`;
+}
+function expRender() {
+  const { rows, t } = fnCompute();
+  _rp.fin = { rows, t };
+  document.getElementById('rp-exp').innerHTML = `<section class="rp-card" id="fn-exp">${fnExpensesHTML(rows)}</section>`;
 }
 /* ── Cash position: money actually received from operations in the period ── */
 function fnCashHTML(t) {
@@ -4984,7 +4993,7 @@ function fnExpensesHTML(rows) {
   const mg = v => Math.round(v) ? `<b class="${v < 0 ? 'rp-neg' : 'rp-pos'}">${rpSigned(v)}</b>` : '<span class="fn-muted">0</span>';
   const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
   const total = exps.reduce((s, e) => s + Number(e.amount), 0);
-  return `<div class="rp-card-head"><h3>Expenses &amp; Extras Profit</h3><span class="rp-sub">Electricity and misc we pay for, against what we charge guests · ${period} · expenses are for the whole property</span></div>
+  return `<div class="rp-card-head"><h3>Expenses &amp; Profit by Month</h3><span class="rp-sub">Electricity and misc we pay for, against what we charge guests · ${period} · expenses are for the whole property</span></div>
     <div class="fx-wrap" style="padding:16px 22px 4px">
       <div class="fx-add exp" id="exp-box">
         <div class="form-group"><label for="exp-kind">Type</label><select id="exp-kind"><option>Electricity</option><option>Misc</option></select></div>
