@@ -370,6 +370,11 @@
     .rp-fin .rp-table th:first-child, .rp-fin .rp-table td:first-child { position:sticky; left:0; z-index:1; background:var(--surface-container-lowest); box-shadow:1px 0 0 var(--surface-container-high); }
     .rp-fin .rp-table th:first-child, .rp-fin .rp-table tfoot td:first-child, .rp-fin .rp-table td.fn-group { background:var(--surface-container-low); }
     .fn-muted { color:var(--secondary); font-size:11px; }
+    .ota-actions { display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+    .ota-actions input[type=date] { border:1px solid var(--surface-container-high); background:var(--surface-container-low); border-radius:10px; padding:8px 10px; font:inherit; font-size:13px; font-weight:600; }
+    .ota-actions .btn-primary[disabled] { opacity:.45; cursor:not-allowed; }
+    #rp-ota .rp-table input[type=checkbox] { width:18px; height:18px; accent-color:var(--primary); cursor:pointer; }
+    @media (max-width:768px) { .rp-tabs { align-self:stretch; } .rp-tabs button { flex:1; justify-content:center; padding:9px 8px; font-size:11px; } .rp-tabs button .mso { display:none; } .ota-actions { width:100%; } .ota-actions .btn-primary { width:100%; justify-content:center; } }
     /* Charges (amber) vs Payments (green) in the Finance table */
     .rp-fin .rp-table .ch { background:#FFF8EC; }
     .rp-fin .rp-table .ch.tot { background:#FDEBCB; color:#7A4A06; }
@@ -1810,13 +1815,14 @@
         <div class="rp-tabs">
           <button id="rp-tab-perf" class="on" onclick="rpTab('perf')"><span class="mso">bar_chart</span>Performance</button>
           <button id="rp-tab-fin" onclick="rpTab('fin')"><span class="mso">account_balance</span>Finance</button>
+          <button id="rp-tab-ota" onclick="rpTab('ota')"><span class="mso">travel_explore</span>OTA Receivables</button>
         </div>
         <div class="rp-head">
           <div>
             <h2 id="rp-title">Performance Report</h2>
             <p id="rp-intro">Room nights, room revenue and misc revenue by month. Click a number in the table to see who it comes from.</p>
           </div>
-          <button class="btn-primary" onclick="_rp.tab === 'fin' ? exportFinance() : exportReport()"><span class="mso" style="font-size:18px">download</span>Export Excel</button>
+          <button class="btn-primary" onclick="_rp.tab === 'fin' ? exportFinance() : _rp.tab === 'ota' ? exportOta() : exportReport()"><span class="mso" style="font-size:18px">download</span>Export Excel</button>
         </div>
 
         <div class="rp-controls">
@@ -1838,6 +1844,7 @@
         </div>
 
         <div id="rp-fin" class="rp-fin" style="display:none"></div>
+        <div id="rp-ota" class="rp-fin" style="display:none"></div>
         <div id="rp-perf" class="rp-perf">
         <div id="rp-kpis" class="rp-kpis"></div>
 
@@ -4492,8 +4499,8 @@ function rpPct(x) { return (x * 100).toFixed(1).replace(/\.0$/, '') + '%'; }
 async function loadReport() {
   document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Loading…</div>';
   const [resQ, miscQ, roomQ, chgQ] = await Promise.all([
-    db.from('reservations').select('id, confirmation_number, guest_name, room_name, status, arrival_date, departure_date, room_night, room_revenue, rate'),
-    db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes, kind, method, created_by, created_at').order('paid_on').order('created_at'),
+    db.from('reservations').select('id, confirmation_number, guest_name, room_name, status, arrival_date, departure_date, room_night, room_revenue, rate, channel'),
+    db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes, kind, method, created_by, created_at, ota_received_on, ota_received_by').order('paid_on').order('created_at'),
     db.from('rooms').select('name').order('created_at'),
     db.from('reservation_charges').select('id, reservation_id, charged_on, amount, notes, kind, method, created_by, created_at').order('charged_on'),
   ]);
@@ -4519,7 +4526,7 @@ async function loadReport() {
   const opts = _rp.months.map(m => `<option value="${m}">${rpLabel(m)}</option>`).join('');
   document.getElementById('rp-from').innerHTML = opts;
   document.getElementById('rp-to').innerHTML = opts;
-  if (!_rp.from) { if (_rp.tab === 'fin') rpPreset('mtd', true); else rpPreset('ytd', true); } else rpRender();
+  if (!_rp.from) { if (_rp.tab === 'fin' || _rp.tab === 'ota') rpPreset('mtd', true); else rpPreset('ytd', true); } else rpRender();
 }
 
 function rpPreset(kind, silent) {
@@ -4590,6 +4597,7 @@ function rpRender() {
   const { rows, t } = rpCompute();
   _rp.data = { rows, t };
   if (_rp.tab === 'fin') return fnRender();
+  if (_rp.tab === 'ota') return otaRender();
   const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
   const kpi = (lbl, val, sub, icon, ib, ic, dark) => `<div class="rp-kpi${dark ? ' dark' : ''}"><div><div class="k-l">${lbl}</div><div class="k-v">${val}</div><div class="k-s">${sub}</div></div><span class="mso k-i" style="--ib:${ib};--ic:${ic}">${icon}</span></div>`;
   document.getElementById('rp-kpis').innerHTML =
@@ -4728,15 +4736,18 @@ function rpTab(t) {
   const sv = _rp.saved[t];
   document.getElementById('rp-tab-perf').classList.toggle('on', t === 'perf');
   document.getElementById('rp-tab-fin').classList.toggle('on', t === 'fin');
+  document.getElementById('rp-tab-ota').classList.toggle('on', t === 'ota');
   document.getElementById('rp-perf').style.display = t === 'perf' ? '' : 'none';
   document.getElementById('rp-fin').style.display = t === 'fin' ? '' : 'none';
-  document.getElementById('rp-title').textContent = t === 'fin' ? 'Finance Report' : 'Performance Report';
-  document.getElementById('rp-intro').textContent = t === 'fin'
-    ? 'Charges against payments by month, the daily payment check by method, and every guest whose billing is not balanced. Use it to reconcile every day.'
-    : 'Room nights, room revenue and misc revenue by month. Click a number in the table to see who it comes from.';
+  document.getElementById('rp-ota').style.display = t === 'ota' ? '' : 'none';
+  document.getElementById('rp-title').textContent = { fin: 'Finance Report', ota: 'OTA Receivables', perf: 'Performance Report' }[t];
+  document.getElementById('rp-intro').textContent = {
+    fin: 'Charges against payments by month, the daily payment check by method, and every guest whose billing is not balanced. Use it to reconcile every day.',
+    ota: 'Every OTA Collect payment and whether the OTA has paid it out. When a payout arrives, tick the payments it covers and mark them received.',
+    perf: 'Room nights, room revenue and misc revenue by month. Click a number in the table to see who it comes from.' }[t];
   if (!_rp.from) return;   // still loading; loadReport picks the right default
   if (sv) { _rp.from = sv.from; _rp.to = sv.to; _rp.preset = sv.preset; _rp.focus = null; rpRender(); }
-  else if (t === 'fin') rpPreset('mtd'); else rpPreset('ytd');
+  else if (t === 'fin' || t === 'ota') rpPreset('mtd'); else rpPreset('ytd');
 }
 const fnIsReal = p => p.method !== 'Internal';   // daily cash check: leave out internal entries (e.g. a kept security deposit)
 function fnResById() { const m = {}; _rp.res.forEach(r => m[r.id] = r); return m; }
@@ -4941,6 +4952,133 @@ function _doExportFinance() {
   add(outs, 'Outstanding', [40, 16, 22, 10, 12, 12, 16, 14, 22, 14]);
   XLSX.writeFile(wb, `Finance Report ${rpLabel(_rp.from)}${_rp.from === _rp.to ? '' : ' - ' + rpLabel(_rp.to)}.xlsx`);
   showToast('Finance report exported');
+}
+
+/* ═══════════════ OTA RECEIVABLES ═════════════════════════════════════════
+   Every OTA Collect payment: awaiting payout (all dates) or received (in the selected period).
+   Amounts are entered excluding tax, service and commission, so the payout should match what was posted. */
+let _otaDate = null;
+const _otaSel = new Set();
+function otaRows() {
+  const resById = fnResById();
+  return _rp.pays.filter(p => p.method === 'OTA Collect' && fnInRooms(resById, p.reservation_id))
+    .map(p => ({ p, r: resById[p.reservation_id], channel: resById[p.reservation_id]?.channel || '—' }));
+}
+function otaDays(d) { return nightsBetween(d, baliToday()); }
+function otaRender() {
+  const el = document.getElementById('rp-ota');
+  if (!_otaDate) _otaDate = baliToday();
+  const all = otaRows();
+  const awaiting = all.filter(x => !x.p.ota_received_on).sort((a, b) => String(a.p.paid_on).localeCompare(String(b.p.paid_on)));
+  const received = all.filter(x => x.p.ota_received_on && x.p.ota_received_on.slice(0, 7) >= _rp.from && x.p.ota_received_on.slice(0, 7) <= _rp.to)
+    .sort((a, b) => String(b.p.ota_received_on).localeCompare(String(a.p.ota_received_on)));
+  [..._otaSel].forEach(id => { if (!awaiting.some(x => x.p.id === id)) _otaSel.delete(id); });
+  const sum = list => list.reduce((s, x) => s + Number(x.p.amount), 0);
+  const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
+  const oldest = awaiting.length ? otaDays(awaiting[0].p.paid_on) : 0;
+  const channels = [...new Set(all.map(x => x.channel))].sort();
+  const kpi = (lbl, val, sub, icon, ib, ic, dark) => `<div class="rp-kpi${dark ? ' dark' : ''}"><div><div class="k-l">${lbl}</div><div class="k-v">${val}</div><div class="k-s">${sub}</div></div><span class="mso k-i" style="--ib:${ib};--ic:${ic}">${icon}</span></div>`;
+  const guest = x => `<span class="rp-guest" onclick="openReservation('${x.r.id}','report')">${escHtml(x.r.guest_name)}</span><div class="fn-muted">${escHtml(x.r.confirmation_number || '')} · ${escHtml(x.r.room_name)}</div>`;
+  const selTotal = sum(awaiting.filter(x => _otaSel.has(x.p.id)));
+  el.innerHTML = `
+    <div class="rp-kpis">
+      ${kpi('Awaiting Payout', rpShort(sum(awaiting)), awaiting.length + ' payment(s) · all dates', 'hourglass_top', '#FBEFD9', '#8A5A12')}
+      ${kpi('Oldest Waiting', awaiting.length ? oldest + ' day' + (oldest === 1 ? '' : 's') : '—', awaiting.length ? 'since ' + fmtShort(awaiting[0].p.paid_on) : 'nothing waiting', 'schedule', '#FBE3E1', '#b42318')}
+      ${kpi('Received', rpShort(sum(received)), received.length + ' payment(s) · ' + period, 'price_check', '#E3EFE9', '#0B3D2E')}
+      ${kpi('Channels', channels.length || 0, channels.join(' · ') || 'no OTA Collect payments yet', 'travel_explore', '', '', true)}
+    </div>
+
+    <section class="rp-card">
+      <div class="rp-card-head"><h3>By Channel</h3><span class="rp-sub">Awaiting = all dates · Received = ${period}</span></div>
+      <div class="rp-table-wrap"><table class="rp-table">
+        <thead><tr><th>Channel</th><th>Awaiting</th><th>Payments</th><th>Received</th><th>Payments</th></tr></thead>
+        <tbody>${channels.length ? channels.map(c => { const a = awaiting.filter(x => x.channel === c), r = received.filter(x => x.channel === c);
+          return `<tr><td><b>${escHtml(c)}</b></td><td>${a.length ? `<b class="rp-neg">${rpNum(sum(a))}</b>` : '<span class="fn-muted">0</span>'}</td><td>${a.length}</td><td>${r.length ? rpNum(sum(r)) : '<span class="fn-muted">0</span>'}</td><td>${r.length}</td></tr>`; }).join('')
+          : '<tr><td colspan="5" style="text-align:center;color:var(--secondary)">No OTA Collect payments yet</td></tr>'}</tbody>
+        ${channels.length ? `<tfoot><tr><td>Total</td><td>${rpNum(sum(awaiting))}</td><td>${awaiting.length}</td><td>${rpNum(sum(received))}</td><td>${received.length}</td></tr></tfoot>` : ''}
+      </table></div>
+    </section>
+
+    <section class="rp-card">
+      <div class="rp-card-head fn-day-head"><div><h3>Awaiting Payout</h3><span class="rp-sub">All dates · tick the payments covered by the OTA transfer, then mark them received</span></div>
+        <div class="ota-actions"><label class="fn-muted" for="ota-date">Received on</label>
+          <input type="date" id="ota-date" value="${_otaDate}" max="${baliToday()}" onchange="_otaDate=this.value||baliToday()">
+          <button class="btn-primary" ${_otaSel.size ? '' : 'disabled'} onclick="otaMarkReceived()"><span class="mso" style="font-size:18px">price_check</span>Mark received${_otaSel.size ? ` (${_otaSel.size} · ${rpNum(selTotal)})` : ''}</button></div></div>
+      <div class="rp-table-wrap"><table class="rp-table">
+        <thead><tr><th class="l" style="width:36px"><input type="checkbox" ${awaiting.length && awaiting.every(x => _otaSel.has(x.p.id)) ? 'checked' : ''} onchange="otaSelectAll(this.checked)" aria-label="Select all"></th>
+          <th class="l">Posted</th><th class="l">Channel</th><th class="l">Guest</th><th class="l">Type</th><th class="l">Notes</th><th>Waiting</th><th>Amount</th></tr></thead>
+        <tbody>${awaiting.length ? awaiting.map(x => { const d = otaDays(x.p.paid_on); return `<tr>
+          <td class="l"><input type="checkbox" ${_otaSel.has(x.p.id) ? 'checked' : ''} onchange="otaToggle('${x.p.id}', this.checked)" aria-label="Select"></td>
+          <td class="l">${fmtShort(x.p.paid_on)}</td><td class="l">${escHtml(x.channel)}</td><td class="l">${guest(x)}</td>
+          <td class="l">${escHtml(x.p.kind)} payment</td><td class="l" style="white-space:normal;min-width:160px">${escHtml(x.p.notes || '')}</td>
+          <td><span class="${d > 30 ? 'rp-neg' : ''}">${d} day${d === 1 ? '' : 's'}</span></td><td><b>${rpNum(x.p.amount)}</b></td></tr>`; }).join('')
+          : '<tr><td colspan="8" style="text-align:center;color:var(--secondary)">✓ Nothing awaiting payout</td></tr>'}</tbody>
+      </table></div>
+    </section>
+
+    <section class="rp-card">
+      <div class="rp-card-head"><h3>Received</h3><span class="rp-sub">Payouts received in ${period}</span></div>
+      <div class="rp-table-wrap"><table class="rp-table">
+        <thead><tr><th class="l">Received</th><th class="l">Posted</th><th class="l">Channel</th><th class="l">Guest</th><th class="l">Type</th><th class="l">Marked by</th><th>Amount</th><th></th></tr></thead>
+        <tbody>${received.length ? received.map(x => `<tr>
+          <td class="l"><b>${fmtShort(x.p.ota_received_on)}</b></td><td class="l">${fmtShort(x.p.paid_on)}</td><td class="l">${escHtml(x.channel)}</td><td class="l">${guest(x)}</td>
+          <td class="l">${escHtml(x.p.kind)} payment</td><td class="l fn-muted">${escHtml(String(x.p.ota_received_by || '').split('@')[0])}</td>
+          <td><b>${rpNum(x.p.amount)}</b></td><td><button class="rp-link" onclick="otaUndo('${x.p.id}')">Undo</button></td></tr>`).join('')
+          : `<tr><td colspan="8" style="text-align:center;color:var(--secondary)">No payouts marked received in ${period}</td></tr>`}</tbody>
+      </table></div>
+    </section>`;
+}
+function otaToggle(id, on) { on ? _otaSel.add(id) : _otaSel.delete(id); otaRender(); }
+function otaSelectAll(on) {
+  otaRows().filter(x => !x.p.ota_received_on).forEach(x => on ? _otaSel.add(x.p.id) : _otaSel.delete(x.p.id));
+  otaRender();
+}
+async function otaMarkReceived() {
+  const ids = [..._otaSel]; if (!ids.length) return;
+  const d = document.getElementById('ota-date')?.value || _otaDate;
+  if (!d) return showToast('Choose the date the payout was received');
+  if (d > baliToday()) return showToast("The received date can't be in the future");
+  const list = otaRows().filter(x => ids.includes(x.p.id));
+  const total = list.reduce((s, x) => s + Number(x.p.amount), 0);
+  const ok = await showModal('Mark OTA payout received',
+    `Mark ${ids.length} OTA Collect payment${ids.length === 1 ? '' : 's'} (${idr(total)}) as received on ${fmtDateLong(d)}?\n\nIt is recorded in each booking's change history.`, 'Mark received', 'btn-primary');
+  if (!ok) return;
+  const { error } = await db.from('reservation_misc_payments').update({ ota_received_on: d }).in('id', ids);
+  if (error) return showToast('Error: ' + error.message);
+  _otaSel.clear();
+  showToast('OTA payout recorded ✓');
+  loadReport();
+}
+async function otaUndo(id) {
+  const x = otaRows().find(y => y.p.id === id); if (!x) return;
+  const ok = await showModal('Undo OTA payout', `Move ${x.r.guest_name}'s ${x.p.kind} payment (${idr(x.p.amount)}) back to Awaiting Payout?`, 'Undo');
+  if (!ok) return;
+  const { error } = await db.from('reservation_misc_payments').update({ ota_received_on: null }).eq('id', id);
+  if (error) return showToast('Error: ' + error.message);
+  showToast('Moved back to Awaiting Payout');
+  loadReport();
+}
+function exportOta() {
+  if (typeof XLSX === 'undefined') {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js';
+    s.onload = _doExportOta; s.onerror = () => showToast('Could not load the Excel library');
+    document.head.appendChild(s); showToast('Preparing export…');
+  } else _doExportOta();
+}
+function _doExportOta() {
+  const all = otaRows();
+  const row = x => ({ 'Status': x.p.ota_received_on ? 'Received' : 'Awaiting payout', 'Channel': x.channel, 'Posted': x.p.paid_on, 'Received': x.p.ota_received_on || '',
+    'Days waiting': x.p.ota_received_on ? '' : otaDays(x.p.paid_on), 'Confirmation No.': x.r.confirmation_number || '', 'Guest': x.r.guest_name, 'Room': x.r.room_name,
+    'Type': x.p.kind + ' payment', 'Notes': x.p.notes || '', 'Amount': Math.round(Number(x.p.amount)) });
+  const awaiting = all.filter(x => !x.p.ota_received_on).map(row);
+  const received = all.filter(x => x.p.ota_received_on && x.p.ota_received_on.slice(0, 7) >= _rp.from && x.p.ota_received_on.slice(0, 7) <= _rp.to).map(row);
+  const wb = XLSX.utils.book_new();
+  const add = (data, name) => { const ws = XLSX.utils.json_to_sheet(data.length ? data : [{ 'Note': 'No data' }]); ws['!cols'] = [16, 14, 12, 12, 12, 16, 22, 10, 18, 40, 14].map(w => ({ wch: w })); XLSX.utils.book_append_sheet(wb, ws, name); };
+  add(awaiting, 'Awaiting payout');
+  add(received, 'Received');
+  XLSX.writeFile(wb, `OTA Receivables ${baliToday()}.xlsx`);
+  showToast('OTA receivables exported');
 }
 
 async function loadTodo() {
@@ -5348,7 +5486,7 @@ function histVal(field, v) {
 }
 function renderHistory() {
   const items = _rdHistory.map(h => {
-    const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz' : h.action === 'Moved' ? 'open_with' : (h.action === 'Misc payment added' || h.action === 'Payment added') ? 'add_card' : (h.action === 'Misc payment removed' || h.action === 'Payment removed') ? 'credit_card_off' : h.action === 'Charge added' ? 'receipt_long' : h.action === 'Charge removed' ? 'remove_circle_outline'
+    const icon = h.action === 'Created' ? 'add_circle' : h.action === 'Cancelled' ? 'cancel' : h.action === 'Status changed' ? 'swap_horiz' : h.action === 'Moved' ? 'open_with' : h.action === 'OTA payout received' ? 'price_check' : h.action === 'OTA payout undone' ? 'undo' : (h.action === 'Misc payment added' || h.action === 'Payment added') ? 'add_card' : (h.action === 'Misc payment removed' || h.action === 'Payment removed') ? 'credit_card_off' : h.action === 'Charge added' ? 'receipt_long' : h.action === 'Charge removed' ? 'remove_circle_outline'
                : h.action === 'File uploaded' ? 'upload_file' : h.action === 'File deleted' ? 'delete' : h.action === 'Room renamed' ? 'bed' : h.action === 'Invoice generated' ? 'receipt_long'
                : h.action === 'Confirmation email sent' ? 'mark_email_read' : h.action === 'Cancellation email sent' ? 'cancel_schedule_send' : 'edit';
     const ch = h.changes || {};
