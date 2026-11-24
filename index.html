@@ -1077,7 +1077,7 @@
     .fx-txt small { display:block; color:var(--on-surface); font-size:13px; overflow-wrap:anywhere; }
     .fx-amt { font-size:13px; white-space:nowrap; font-variant-numeric:tabular-nums; }
     .fx-add { display:grid; grid-template-columns:175px 140px 200px 1fr auto; gap:10px; align-items:end; margin-bottom:6px; padding-bottom:14px; border-bottom:1px dashed var(--surface-container-high); }
-    .fx-add.pay { grid-template-columns:165px 150px 140px 190px 1fr auto; }
+    .fx-add.pay, .fx-add.exp { grid-template-columns:165px 150px 140px 190px 1fr auto; }
     .fx-add .form-group { gap:6px; min-width:0; }
     .fx-add label { font-size:10px; }
     .fx-amount { display:flex; gap:6px; align-items:stretch; }
@@ -1093,19 +1093,19 @@
     .fx-alert { grid-column:1 / -1; display:flex; gap:8px; align-items:flex-start; background:#FDE8E8; color:#9b1c1c; border-radius:10px; padding:10px 12px; font-size:12px; line-height:1.5; }
     .fx-alert .mso { font-size:18px; }
     @container (max-width:1000px) {
-      .fx-add.pay { grid-template-columns:1fr 1fr 1fr; }
-      .fx-add.pay > .form-group:nth-child(4) { grid-column:1 / 2; }
-      .fx-add.pay .fx-notes { grid-column:2 / -1; }
-      .fx-add.pay .fx-add-btn { grid-column:1 / -1; }
+      .fx-add.pay, .fx-add.exp { grid-template-columns:1fr 1fr 1fr; }
+      .fx-add.pay > .form-group:nth-child(4), .fx-add.exp > .form-group:nth-child(4) { grid-column:1 / 2; }
+      .fx-add.pay .fx-notes, .fx-add.exp .fx-notes { grid-column:2 / -1; }
+      .fx-add.pay .fx-add-btn, .fx-add.exp .fx-add-btn { grid-column:1 / -1; }
     }
     @container (max-width:860px) {
-      .fx-add:not(.pay) { grid-template-columns:1fr 1fr 1.4fr; }
-      .fx-add:not(.pay) .fx-notes { grid-column:1 / 3; }
+      .fx-add:not(.pay):not(.exp) { grid-template-columns:1fr 1fr 1.4fr; }
+      .fx-add:not(.pay):not(.exp) .fx-notes { grid-column:1 / 3; }
     }
     @container (max-width:520px) {
       .fx-add { grid-template-columns:1fr 1fr; }
       .fx-add { grid-template-columns:1fr 1fr !important; }
-      .fx-add .fx-notes, .fx-add:not(.pay) > .form-group:nth-child(3), .fx-add.pay > .form-group:nth-child(4), .fx-add .fx-add-btn { grid-column:1 / -1 !important; }
+      .fx-add .fx-notes, .fx-add:not(.pay):not(.exp) > .form-group:nth-child(3), .fx-add.pay > .form-group:nth-child(4), .fx-add.exp > .form-group:nth-child(4), .fx-add .fx-add-btn { grid-column:1 / -1 !important; }
       .fx-row { grid-template-columns:1fr auto auto; gap:6px 10px; }
       .fx-row .fx-kind { grid-column:1 / -1; justify-self:start; }
       .fx-sum { grid-template-columns:1fr; }
@@ -4514,11 +4514,12 @@ function rpPct(x) { return (x * 100).toFixed(1).replace(/\.0$/, '') + '%'; }
 
 async function loadReport() {
   document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Loading…</div>';
-  const [resQ, miscQ, roomQ, chgQ] = await Promise.all([
+  const [resQ, miscQ, roomQ, chgQ, expQ] = await Promise.all([
     db.from('reservations').select('id, confirmation_number, guest_name, room_name, status, arrival_date, departure_date, room_night, room_revenue, rate, channel'),
     db.from('reservation_misc_payments').select('id, reservation_id, paid_on, amount, notes, kind, method, created_by, created_at, ota_received_on, ota_received_by').order('paid_on').order('created_at'),
     db.from('rooms').select('name').order('created_at'),
     db.from('reservation_charges').select('id, reservation_id, charged_on, amount, notes, kind, method, created_by, created_at').order('charged_on'),
+    db.from('expenses').select('*').order('spent_on', { ascending: false }).order('created_at', { ascending: false }),
   ]);
   if (resQ.error || miscQ.error || roomQ.error || chgQ.error) {
     document.getElementById('rp-kpis').innerHTML = '<div class="rp-empty">Could not load report data.</div>';
@@ -4528,6 +4529,7 @@ async function loadReport() {
   // Misc revenue = Electricity + Misc charges (by charge date) less refunds / rebates (negative Electricity / Misc payments)
   _rp.pays = miscQ.data || [];
   _rp.charges = chgQ.data || [];
+  _rp.expenses = (expQ && expQ.data) || [];
   _rp.misc = [...(chgQ.data || []).filter(c => c.kind !== 'Refund').map(c => ({ ...c, paid_on: c.charged_on }))]
     .sort((a, b) => String(a.paid_on).localeCompare(String(b.paid_on)));
   _rp.rooms = (roomQ.data || []).map(r => r.name);
@@ -4874,6 +4876,8 @@ function fnRender() {
 
     ${f ? fnMonthHTML(rows.find(r => r.ym === f), resById) : ''}
 
+    <section class="rp-card" id="fn-exp">${fnExpensesHTML(rows)}</section>
+
     <section class="rp-card" id="fn-day">${fnDayHTML(resById)}</section>
 
     <section class="rp-card">
@@ -4915,25 +4919,99 @@ function fnMonthHTML(row, resById) {
       <tfoot><tr><td class="l" colspan="5">Total</td><td>${rpNum(row.charges)}</td><td>${rpNum(row.paid)}</td></tr></tfoot>
     </table></div></section>`;
 }
+/* ── Expenses (property costs) and the profit on what we charge guests for electricity / misc ── */
+let _expOpen = false;
+function fnExpensesHTML(rows) {
+  const inMonth = (e, ym) => e.spent_on && e.spent_on.slice(0, 7) === ym;
+  const exps = (_rp.expenses || []).filter(e => e.spent_on && e.spent_on.slice(0, 7) >= _rp.from && e.spent_on.slice(0, 7) <= _rp.to);
+  const m = rows.slice().reverse().map(r => {
+    const eE = (_rp.expenses || []).filter(e => inMonth(e, r.ym) && e.kind === 'Electricity').reduce((s, e) => s + Number(e.amount), 0);
+    const eM = (_rp.expenses || []).filter(e => inMonth(e, r.ym) && e.kind === 'Misc').reduce((s, e) => s + Number(e.amount), 0);
+    const rE = r.elec, rM = r.misc + r.rebate;
+    return { ym: r.ym, rE, eE, rM, eM, mE: rE - eE, mM: rM - eM };
+  });
+  const T = k => m.reduce((s, x) => s + x[k], 0);
+  const n = v => v ? rpNum(v) : '<span class="fn-muted">0</span>';
+  const mg = v => Math.round(v) ? `<b class="${v < 0 ? 'rp-neg' : 'rp-pos'}">${rpSigned(v)}</b>` : '<span class="fn-muted">0</span>';
+  const period = rpLabel(_rp.from) + (_rp.from === _rp.to ? '' : ' – ' + rpLabel(_rp.to));
+  const total = exps.reduce((s, e) => s + Number(e.amount), 0);
+  return `<div class="rp-card-head"><h3>Expenses &amp; Extras Profit</h3><span class="rp-sub">Electricity and misc we pay for, against what we charge guests · ${period} · expenses are for the whole property</span></div>
+    <div class="fx-wrap" style="padding:16px 22px 4px">
+      <div class="fx-add exp" id="exp-box">
+        <div class="form-group"><label for="exp-kind">Type</label><select id="exp-kind"><option>Electricity</option><option>Misc</option></select></div>
+        <div class="form-group"><label for="exp-method">Paid by</label><select id="exp-method"><option value="">Select…</option><option>Cash</option><option>Bank Transfer</option><option>QRIS</option></select></div>
+        <div class="form-group"><label for="exp-date">Date</label><input id="exp-date" type="date" value="${baliToday()}" max="${baliToday()}"></div>
+        <div class="form-group"><label for="exp-amount">Amount</label><div class="rate-wrap"><span class="rate-prefix">IDR</span><input id="exp-amount" type="text" inputmode="numeric" autocomplete="off" class="money" placeholder="0"></div></div>
+        <div class="form-group fx-notes"><label for="exp-notes">Notes</label><input id="exp-notes" type="text" maxlength="140" placeholder="e.g. PLN token Nov · or Laundry vendor 12 kg"></div>
+        <button type="button" class="btn-primary fx-add-btn" onclick="expAdd()"><span class="mso">add</span>Add expense</button>
+      </div>
+      ${exps.length ? `<button type="button" class="fx-toggle${_expOpen ? ' open' : ''}" onclick="_expOpen=!_expOpen;document.getElementById('fn-exp').innerHTML=fnExpensesHTML(_rp.fin.rows)">
+          <span>${_expOpen ? 'Hide' : 'Show'} ${exps.length} expense${exps.length === 1 ? '' : 's'} · total ${idr(total)}</span><span class="mso">expand_more</span></button>
+        ${_expOpen ? `<div class="fx-list">${exps.map(e => `<div class="fx-row">
+            <span class="fx-kind k-${e.kind.toLowerCase()}">${e.kind}</span>
+            <span class="fx-txt"><span>${fmtShort(e.spent_on)} · ${escHtml(e.method)} · ${escHtml(String(e.created_by || '').split('@')[0])}</span><small>${escHtml(e.notes)}</small></span>
+            <b class="fx-amt">${idr(e.amount)}</b>
+            <button type="button" class="doc-del" onclick="expDelete('${e.id}')" title="Remove"><span class="mso">delete</span></button></div>`).join('')}</div>` : ''}`
+        : '<div class="fx-empty">No expenses in this period</div>'}
+    </div>
+    <div class="rp-table-wrap" style="margin-top:12px"><table class="rp-table">
+      <thead><tr class="fn-grp"><th></th><th colspan="3" class="ch">Electricity</th><th colspan="3" class="py">Misc</th><th class="df"></th></tr>
+        <tr><th>Month</th><th class="ch">Charged to guests</th><th class="ch">Expense</th><th class="ch tot">Profit</th><th class="py">Charged to guests</th><th class="py">Expense</th><th class="py tot">Profit</th><th class="df">Total Profit</th></tr></thead>
+      <tbody>${m.map(x => `<tr><td><b>${rpLabel(x.ym)}</b></td><td class="ch">${n(x.rE)}</td><td class="ch">${n(x.eE)}</td><td class="ch tot">${mg(x.mE)}</td>
+        <td class="py">${n(x.rM)}</td><td class="py">${n(x.eM)}</td><td class="py tot">${mg(x.mM)}</td><td class="df">${mg(x.mE + x.mM)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total</td><td class="ch">${rpNum(T('rE'))}</td><td class="ch">${rpNum(T('eE'))}</td><td class="ch tot">${rpSigned(T('mE'))}</td>
+        <td class="py">${rpNum(T('rM'))}</td><td class="py">${rpNum(T('eM'))}</td><td class="py tot">${rpSigned(T('mM'))}</td><td class="df">${rpSigned(T('mE') + T('mM'))}</td></tr></tfoot>
+    </table></div>
+    <div class="rp-empty" style="border-top:1px solid var(--surface-container-high)">Misc charged to guests = misc charges (laundry, fees…) less rebates. Profit = charged to guests − expense in the same month.</div>`;
+}
+async function expAdd() {
+  const g = id => document.getElementById(id);
+  const kind = g('exp-kind').value, method = g('exp-method').value, date = g('exp-date').value, notes = g('exp-notes').value.trim();
+  const amount = Math.round(parseFloat(unMoney(g('exp-amount').value)) || 0);
+  if (!method) return showToast('Choose how it was paid');
+  if (!date) return showToast('Choose the date');
+  if (date > baliToday()) return showToast("An expense date can't be in the future");
+  if (!(amount > 0)) return showToast('Enter the amount');
+  if (!notes) return showToast(kind === 'Misc' ? 'Add a note — what was it for?' : 'Add a note');
+  const btn = g('exp-box').querySelector('.fx-add-btn'); btn.disabled = true;
+  const { error } = await db.from('expenses').insert({ kind, method, spent_on: date, amount, notes });
+  btn.disabled = false;
+  if (error) return showToast('Error: ' + error.message);
+  _expOpen = true;
+  showToast('Expense added ✓');
+  loadReport();
+}
+async function expDelete(id) {
+  const e = (_rp.expenses || []).find(x => x.id === id); if (!e) return;
+  const ok = await showModal('Remove expense', `Remove ${e.kind} expense ${idr(e.amount)} (${fmtDateLong(e.spent_on)} · ${e.notes})?`, 'Remove');
+  if (!ok) return;
+  const { error } = await db.from('expenses').delete().eq('id', id);
+  if (error) return showToast('Error: ' + error.message);
+  showToast('Expense removed');
+  loadReport();
+}
 function fnDayHTML(resById) {
   const d = _fnDay;
   const inRooms = rid => fnInRooms(resById, rid);
   const pays = _rp.pays.filter(p => p.paid_on === d && inRooms(p.reservation_id));
   const chs = _rp.charges.filter(c => c.charged_on === d && inRooms(c.reservation_id));
   const refunds = chs.filter(c => c.kind === 'Refund');
+  const exps = (_rp.expenses || []).filter(e => e.spent_on === d);
   const real = pays.filter(fnIsReal);
-  const by = m => real.filter(p => p.method === m).reduce((s, p) => s + Number(p.amount), 0) + refunds.filter(c => c.method === m).reduce((s, c) => s + Number(c.amount), 0);
-  const total = real.reduce((s, p) => s + Number(p.amount), 0) + refunds.reduce((s, c) => s + Number(c.amount), 0);
+  const by = m => real.filter(p => p.method === m).reduce((s, p) => s + Number(p.amount), 0) + refunds.filter(c => c.method === m).reduce((s, c) => s + Number(c.amount), 0)
+                  - exps.filter(e => e.method === m).reduce((s, e) => s + Number(e.amount), 0);
+  const total = real.reduce((s, p) => s + Number(p.amount), 0) + refunds.reduce((s, c) => s + Number(c.amount), 0) - exps.reduce((s, e) => s + Number(e.amount), 0);
   const tile = (l, v, cls = '') => `<div class="fn-tile ${cls}"><small>${l}</small><b>${rpSigned(v).replace(/^\+/, '')}</b></div>`;
   const list = [
     ...chs.map(c => c.kind === 'Refund'
       ? { date: c.charged_on, rid: c.reservation_id, type: 'Refund to guest', method: c.method || '', notes: c.notes, charge: null, paid: Number(c.amount) }
       : { date: c.charged_on, rid: c.reservation_id, type: c.kind === 'Rebate' ? 'Rebate' : c.kind + ' charge', method: '', notes: c.notes, charge: Number(c.amount), paid: null }),
     ...pays.map(p => ({ date: p.paid_on, rid: p.reservation_id, type: `${p.kind} payment`, method: p.method || 'Not set', notes: p.notes + (fnIsReal(p) ? '' : ' (internal move)'), charge: null, paid: fnIsReal(p) ? Number(p.amount) : null })),
+    ...exps.map(e => ({ date: e.spent_on, rid: null, type: `Expense – ${e.kind}`, method: e.method, notes: e.notes, charge: null, paid: -Number(e.amount) })),
   ];
-  return `<div class="rp-card-head fn-day-head"><div><h3>Daily Reconciliation</h3><span class="rp-sub">Money in minus refunds out on the day, by method — check it against the cash box and bank statement</span></div>
+  return `<div class="rp-card-head fn-day-head"><div><h3>Daily Reconciliation</h3><span class="rp-sub">Money in, minus refunds and expenses paid out on the day, by method — check it against the cash box and bank statement</span></div>
       <input type="date" value="${d}" max="${baliToday()}" onchange="_fnDay=this.value||baliToday();document.getElementById('fn-day').innerHTML=fnDayHTML(fnResById())"></div>
-    <div class="fn-tiles">${FX_METHODS.map(m => tile(m, by(m))).join('')}${real.some(p => !p.method) ? tile('Method not set', real.filter(p => !p.method).reduce((s, p) => s + Number(p.amount), 0)) : ''}${tile('Net received', total, 'total')}</div>
+    <div class="fn-tiles">${FX_METHODS.map(m => tile(m, by(m))).join('')}${real.some(p => !p.method) ? tile('Method not set', real.filter(p => !p.method).reduce((s, p) => s + Number(p.amount), 0)) : ''}${tile('Net cash flow', total, 'total')}</div>
     <div class="rp-table-wrap"><table class="rp-table">
       <thead><tr><th class="l">Date</th><th class="l">Guest</th><th class="l">Type</th><th class="l">Method</th><th class="l">Notes</th><th>Charge</th><th>Payment</th></tr></thead>
       <tbody>${list.length ? fnTxRows(resById, list) : `<tr><td colspan="7" style="text-align:center;color:var(--secondary)">Nothing posted on ${fmtDateLong(d)}</td></tr>`}</tbody>
@@ -4979,6 +5057,9 @@ function _doExportFinance() {
   add(monthly, 'Charges vs Payments', [12, 14, 16, 14, 16, 14, 14, 16, 12, 16, 14, 13]);
   add(tx, 'Transactions', [12, 12, 16, 22, 10, 18, 14, 44, 13, 13]);
   add(outs, 'Outstanding', [40, 16, 22, 10, 12, 12, 16, 14, 22, 14]);
+  const exps = (_rp.expenses || []).filter(e => e.spent_on.slice(0, 7) >= _rp.from && e.spent_on.slice(0, 7) <= _rp.to)
+    .map(e => ({ 'Date': e.spent_on, 'Type': e.kind, 'Paid by': e.method, 'Notes': e.notes, 'Amount': R(e.amount), 'Entered by': e.created_by || '' }));
+  add(exps, 'Expenses', [12, 12, 14, 44, 14, 26]);
   XLSX.writeFile(wb, `Finance Report ${rpLabel(_rp.from)}${_rp.from === _rp.to ? '' : ' - ' + rpLabel(_rp.to)}.xlsx`);
   showToast('Finance report exported');
 }

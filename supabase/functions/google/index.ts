@@ -123,7 +123,7 @@ async function bookingFolder(at: string, res: { id: string; confirmation_number:
 }
 /* ── Backups to Google Drive ("PMS Backup" folder, admin only) ── */
 const BACKUP_FOLDER_NAME = 'PMS Backup';
-const BACKUP_TABLES = ['reservations', 'reservation_history', 'reservation_misc_payments', 'reservation_charges', 'rooms', 'channels', 'reservation_files', 'reservation_drive_folders', 'app_settings', 'todo_dismissals'];
+const BACKUP_TABLES = ['reservations', 'reservation_history', 'reservation_misc_payments', 'reservation_charges', 'rooms', 'channels', 'reservation_files', 'reservation_drive_folders', 'app_settings', 'todo_dismissals', 'expenses'];
 const REPO = 'evanmanuel/pms-rate-manager';
 const folderLink = (id: string) => `https://drive.google.com/drive/folders/${id}`;
 
