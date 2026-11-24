@@ -5664,7 +5664,7 @@ function fxListHTML(which, type, list, noun, empty) {
   const key = which + type, open = !!_fxOpen[key];
   const total = list.reduce((t, x) => t + Number(x.amount || 0), 0);
   return `<button type="button" class="fx-toggle${open ? ' open' : ''}" onclick="fxToggleList('${which}','${type}')" aria-expanded="${open}">
-      <span>${open ? 'Hide' : 'Show'} ${list.length} ${list.length === 1 ? noun : (noun === 'entry' ? 'entries' : noun + 's')} · ${type === 'p' ? 'total ' + idr(total) : 'net ' + signedIdr(total)}</span><span class="mso">expand_more</span></button>
+      <span>${open ? 'Hide' : 'Show'} ${list.length} ${list.length === 1 ? noun : (noun === 'entry' ? 'entries' : noun + 's')} ${type === 'p' ? ' · total ' + idr(total) : ''}</span><span class="mso">expand_more</span></button>
     ${open ? `<div class="fx-list">${list.map(x => fxRowHTML(which, x, type)).join('')}</div>` : ''}`;
 }
 function fxToggleList(which, type) { _fxOpen[which + type] = !_fxOpen[which + type]; fxRender(which); }
