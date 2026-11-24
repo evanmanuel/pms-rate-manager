@@ -3123,6 +3123,7 @@ function showBookingConfirmed(r) {
 function clearForm() {
   ['guest-name','arrival-date','departure-date','rate','country','guest-email','guest-phone','emergency-name','emergency-phone','security-deposit'].forEach(id => document.getElementById(id).value = '');
   syncSecurityField('new', 'Unpaid');
+  _fxOpen.newp = _fxOpen.newc = false;
   fxReset('new'); fxRender('new');
   _rateMode.new = 'per_night'; paintRateMode('new'); document.getElementById('rate-summary-new').textContent = '';
   document.getElementById('guest-count').value = '1';
@@ -4004,6 +4005,7 @@ let _rdOptions = { rooms: [], channels: [] };
 
 async function openReservation(id, backTo) {
   if (backTo) _rdBack = backTo;
+  _fxOpen.rdp = _fxOpen.rdc = false;   // lists start folded on every booking
   if (backTo === 'availability') enterReservationsPage('calendar');
   if (backTo === 'todo') enterReservationsPage('todo');
   if (backTo === 'report') enterReservationsPage('report');
@@ -5860,6 +5862,7 @@ function rdStartEdit() {
   if (_rd.status === 'Cancelled') return;
   _rateMode.ed = _rd.rate_type === 'total' ? 'total' : 'per_night';
   fxReset('ed', _rdMisc, _rdCharges);
+  _fxOpen.edp = _fxOpen.edc = false;
   _rdMode = 'edit';
   renderReservationDetail();
 }
