@@ -1149,17 +1149,56 @@
     .btn-soft .mso { font-size:17px; }
     .btn-soft:disabled, .btn-primary:disabled { opacity:.45; cursor:not-allowed; transform:none; }
 
-    .rd-grid { display:grid; grid-template-columns:330px 1fr; gap:24px; align-items:start; }
+    .rd-grid { display:grid; grid-template-columns:minmax(300px, 1fr) 2fr; gap:24px; align-items:start; }
+    .rd-hero { display:grid; grid-template-columns:2fr 1fr; gap:24px; margin-bottom:24px; align-items:stretch; }
+    .rd-hero > * { min-width:0; }
+    .rd-head-main { min-width:0; }
+    .rd-pill { display:inline-flex; align-items:center; gap:5px; padding:4px 12px; border-radius:20px; border:1px solid var(--surface-container-high); background:var(--surface-container-lowest); font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; color:var(--on-surface); white-space:nowrap; }
+    .rd-pill .mso { font-size:14px; color:var(--primary); }
+    .rd-pill.muted { color:var(--secondary); }
+    .rd-pill.muted .mso { color:var(--secondary); }
+    .rd-chip-dep { background:#E3EFE9; color:#0F382A; }
+    .rd-main-act { display:inline-flex; align-items:center; gap:8px; }
+    .rd-main-act .mso { font-size:17px; }
+    .rd-card-head { display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:16px; }
+    .rd-card-aside { font-size:12px; color:var(--secondary); text-align:right; }
+    .rd-count { display:inline-block; margin-left:6px; padding:1px 8px; border-radius:20px; background:var(--surface-container-high); color:var(--on-surface-variant); letter-spacing:0; font-variant-numeric:tabular-nums; }
+    .rd-status-card { display:flex; flex-direction:column; }
+    .rd-status-card .rd-mail-btns { margin-top:4px; }
+    .rd-undo { margin-top:auto; padding-top:14px; border-top:1px solid var(--surface-container-high); display:flex; justify-content:space-between; align-items:center; gap:10px; font-size:12px; color:var(--secondary); }
+    .rd-status-card .rd-mail-btns + .rd-undo { margin-top:16px; }
+    .rd-undo button { display:inline-flex; align-items:center; gap:4px; border:none; background:none; cursor:pointer; padding:6px 0; font-family:'Manrope',sans-serif; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--primary); }
+    .rd-undo button .mso { font-size:15px; }
+    .rd-hist-more { display:block; width:100%; margin-top:8px; padding:12px; border:none; border-top:1px solid var(--surface-container-high); background:none; cursor:pointer; font-family:'Manrope',sans-serif; font-size:10px; font-weight:800; letter-spacing:.08em; text-transform:uppercase; color:var(--primary); }
+    .rd-hist-more:hover { text-decoration:underline; }
+    /* ledger tabs (reservation detail) */
+    .rd-card.rd-ledger { padding:0; overflow:hidden; }
+    .rd-ledger .fx-wrap { gap:0; }
+    .fx-tabbar { display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:16px 24px; border-bottom:1px solid var(--surface-container-high); }
+    .fx-tabs { display:flex; gap:4px; padding:4px; background:var(--surface-container-low); border:1px solid var(--surface-container-high); border-radius:12px; }
+    .fx-tab { border:none; background:none; cursor:pointer; padding:8px 14px; border-radius:8px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:800; letter-spacing:.07em; text-transform:uppercase; color:var(--secondary); white-space:nowrap; }
+    .fx-tab span { display:inline-block; min-width:18px; padding:0 5px; margin-left:4px; border-radius:10px; background:var(--surface-container-high); color:var(--on-surface-variant); }
+    .fx-tab.on { background:var(--primary); color:#fff; box-shadow:var(--shadow-sm); }
+    .fx-tab.on span { background:rgba(255,255,255,.2); color:#fff; }
+    .fx-paid-total { font-size:12px; color:var(--secondary); white-space:nowrap; }
+    .fx-paid-total b { color:#065f46; font-variant-numeric:tabular-nums; }
+    .fx-panel { padding:20px 24px; }
+    .fx-panel-note { font-size:12px; color:var(--secondary); line-height:1.5; margin-bottom:14px; }
+    .fx-panel .fx-add { background:var(--surface-container-low); border:1px solid var(--surface-container-high); border-radius:12px; padding:14px; margin-bottom:10px; }
+    .rd-ledger .fx-sum { border-radius:0; border-top:1px solid var(--surface-container-high); padding:18px 24px; }
     .rd-col { display:flex; flex-direction:column; gap:24px; min-width:0; }
     .rd-card { background:var(--surface-container-lowest); border-radius:16px; padding:28px; box-shadow:var(--shadow-sm); }
     .rd-card.tint { background:#f2f6f3; box-shadow:none; }
     .rd-label { font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:0.12em; text-transform:uppercase; color:var(--secondary); }
 
     /* guest card */
-    .rd-guest { text-align:center; padding-bottom:22px; border-bottom:1px solid var(--surface-container-high); margin:22px 0 20px; }
-    .rd-avatar { width:84px; height:84px; border-radius:22px; background:var(--grad-primary); color:var(--primary-fixed); display:flex; align-items:center; justify-content:center; margin:0 auto 14px; font-family:'Manrope',sans-serif; font-size:28px; font-weight:800; letter-spacing:-0.02em; }
-    .rd-guest h3 { font-family:'Manrope',sans-serif; font-size:21px; font-weight:800; color:var(--on-surface); word-break:break-word; }
-    .rd-guest p { margin-top:4px; color:var(--secondary); font-size:13px; }
+    .rd-guest { display:flex; align-items:center; gap:14px; padding-bottom:16px; border-bottom:1px solid var(--surface-container-high); }
+    .rd-avatar { width:56px; height:56px; border-radius:14px; background:var(--grad-primary); color:var(--primary-fixed); display:flex; align-items:center; justify-content:center; flex-shrink:0; font-family:'Manrope',sans-serif; font-size:19px; font-weight:800; letter-spacing:-0.02em; }
+    .rd-guest h3 { font-family:'Manrope',sans-serif; font-size:18px; font-weight:800; color:var(--on-surface); word-break:break-word; line-height:1.25; }
+    .rd-info-list > .rd-info + .rd-info { border-top:1px solid var(--surface-container-high); }
+    .rd-info-list .rd-info-icon { width:34px; height:34px; border-radius:10px; box-shadow:none; background:#f2f6f3; }
+    .rd-info-list .rd-info-icon .mso { font-size:17px; }
+    .rd-guest p { margin-top:2px; color:var(--secondary); font-size:13px; }
     .rd-info { display:flex; align-items:center; gap:14px; padding:10px 0; }
     .rd-info-icon { width:40px; height:40px; border-radius:12px; background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); display:flex; align-items:center; justify-content:center; color:var(--primary); flex-shrink:0; }
     .rd-info-val { font-size:14px; font-weight:500; margin-top:3px; word-break:break-all; }
@@ -1184,13 +1223,16 @@
     .rd-room small { font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--primary-fixed); opacity:.85; }
     .rd-period { padding:28px; }
     .rd-period-top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
-    .rd-dates { font-family:'Manrope',sans-serif; font-size:24px; font-weight:800; color:var(--on-surface); letter-spacing:-0.02em; margin-top:8px; line-height:1.25; }
+    .rd-room-top { display:flex; justify-content:space-between; align-items:center; gap:8px; }
+    .rd-room-top .mso { font-size:22px; color:var(--primary-fixed); opacity:.85; }
+    .rd-inout-val.out .mso { color:#9a5b2b; }
+    .rd-dates { font-family:'Manrope',sans-serif; font-size:19px; font-weight:800; color:var(--on-surface); letter-spacing:-0.02em; margin-top:8px; line-height:1.25; }
     .rd-nights { background:#eaf5ef; border-radius:12px; padding:10px 16px; text-align:center; color:var(--primary); flex-shrink:0; }
     .rd-nights b { display:block; font-family:'Manrope',sans-serif; font-size:22px; font-weight:800; }
     .rd-nights span { font-family:'Manrope',sans-serif; font-size:9px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; }
-    .rd-inout { display:grid; grid-template-columns:1fr 1fr; margin-top:24px; }
+    .rd-inout { display:grid; grid-template-columns:1fr 1fr; margin-top:20px; padding-top:18px; border-top:1px solid var(--surface-container-high); }
     .rd-inout > div + div { border-left:1px solid var(--surface-container-high); padding-left:20px; }
-    .rd-inout-val { display:flex; align-items:center; gap:8px; font-size:16px; font-weight:600; margin-top:8px; }
+    .rd-inout-val { display:flex; align-items:center; gap:8px; font-size:14px; font-weight:600; margin-top:8px; }
     .rd-inout-val .mso { color:var(--primary); }
     .rd-meta { margin-top:22px; background:#f2f6f3; border-radius:12px; padding:12px 16px; display:flex; gap:20px; flex-wrap:wrap; font-size:12px; color:var(--on-surface-variant); }
     .rd-meta b { color:var(--on-surface); font-weight:600; }
@@ -1234,6 +1276,17 @@
     .misc-form .rate-wrap input { padding-left:42px; }
     .misc-actions { display:flex; gap:10px; justify-content:flex-end; }
     @media (max-width:768px) { .misc-form { grid-template-columns:1fr; } .misc-actions button { flex:1; justify-content:center; } .misc-form input { font-size:16px; } }
+    .rd-sd-card { background:var(--grad-primary); color:#fff; display:flex; flex-direction:column; }
+    .rd-sd-card .rd-label, .rd-sd-card .rd-sd-head .mso { color:#a7f3d0; }
+    .rd-sd-card .rd-sd-amount { color:#fff; }
+    .rd-sd-card .rd-sd-amount.zero { color:rgba(255,255,255,.7); }
+    .rd-sd-card .rd-sd-note { color:rgba(255,255,255,.75); }
+    .rd-sd-card .rd-sd-alert { background:rgba(255,255,255,.1); color:#fff; border:1px solid rgba(167,243,208,.3); }
+    .rd-sd-card .rd-sd-alert .mso { color:#a7f3d0; }
+    .rd-sd-card .rd-mini-btn { margin-top:auto !important; }
+    .rd-sd-card > p + .rd-mini-btn, .rd-sd-card > .rd-sd-alert + .rd-mini-btn { margin-top:16px !important; }
+    .rd-sd-card .btn-ghost { background:rgba(255,255,255,.12); color:#fff; border-color:rgba(255,255,255,.25); }
+    .rd-sd-card .btn-primary { background:#fff; color:var(--primary); box-shadow:none; }
     .rd-sd-card.flash { animation: sdflash 1.6s ease; }
     @keyframes sdflash { 0%,100% { box-shadow:var(--shadow-sm); } 30% { box-shadow:0 0 0 3px #f59e0b; } }
     .rd-mini-btn { display:inline-flex; align-items:center; justify-content:center; gap:6px; border:none; background:var(--surface-container-lowest); box-shadow:var(--shadow-sm); border-radius:10px; padding:12px 16px; font-family:'Manrope',sans-serif; font-size:10px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; cursor:pointer; color:var(--primary); margin-top:22px; width:100%; }
@@ -1278,8 +1331,19 @@
     .rd-edit-summary { margin-top:24px; display:flex; flex-wrap:wrap; gap:12px; align-items:center; }
     .rd-edit-actions { display:flex; justify-content:flex-end; gap:10px; margin-top:28px; flex-wrap:wrap; }
 
+    @media (max-width: 1100px) { .rd-hero { grid-template-columns:1fr; } }
     @media (max-width: 960px) {
       .rd-grid { grid-template-columns:1fr; }
+      /* one column on phone: money first, paperwork last */
+      .rd-grid > .rd-col { display:contents; }
+      .rd-grid > .rd-col:first-child > :nth-child(1) { order:1; }
+      .rd-grid > .rd-col:first-child > :nth-child(2) { order:2; }
+      .rd-grid > .rd-col:first-child > :nth-child(3) { order:5; }
+      .rd-grid > .rd-col:first-child > :nth-child(4) { order:7; }
+      .rd-grid > .rd-col:last-child > :nth-child(1) { order:3; }
+      .rd-grid > .rd-col:last-child > :nth-child(2) { order:4; }
+      .rd-grid > .rd-col:last-child > :nth-child(3) { order:6; }
+      .rd-grid > .rd-col > * { min-width:0; }
       .rd-two { grid-template-columns:1fr; }
       .rd-edit .form-grid-3 { grid-template-columns:1fr 1fr; }
     }
@@ -1292,7 +1356,12 @@
       .rd-card, .rd-notes { padding:22px; }
       .rd-edit .form-grid-3 { grid-template-columns:1fr; }
       .rd-actions { width:100%; }
-      .rd-actions > button { flex:1; justify-content:center; }
+      .rd-actions > button { flex:1; justify-content:center; padding-left:10px; padding-right:10px; }
+      .rd-main-act { flex-basis:100% !important; order:-1; }
+      .fx-tabbar, .fx-panel { padding-left:16px; padding-right:16px; }
+      .rd-ledger .fx-sum { padding:16px; }
+      .fx-tabs { width:100%; }
+      .fx-tab { flex:1; padding:8px 4px; letter-spacing:.03em; }
     }
     /* ══════════════════════════════════════════════════════════
        BOOKING CONFIRMED
@@ -4045,6 +4114,7 @@ async function loadReservationDetail(id) {
     document.getElementById('rd-root').innerHTML = '<div class="empty-state">Could not load this reservation.</div>';
     return;
   }
+  if (!_rd || _rd.id !== resQ.data.id) { _rdHistAll = false; _fxTab = 'p'; }
   _rd = resQ.data;
   _rdHistory = histQ.data || [];
   _rdMisc = miscQ.data || [];
@@ -4066,22 +4136,47 @@ function renderReservationDetail() {
   const nights = r.room_night || nightsBetween(r.arrival_date, r.departure_date);
   const root = document.getElementById('rd-root');
 
+  // ── Main stay action (shown in the header) + undo link (shown in the status card)
+  const today = baliToday();
+  const st = r.status || 'New Reservation';
+  let mainAct = null, undoAct = null, statusHint = '';
+  if (!cancelled) switch (st) {
+    case 'New Reservation':
+    case 'No-show': {
+      const onDay = r.arrival_date === today;
+      mainAct = { to: 'Checked-in', icon: 'login', label: 'Check In', disabled: !onDay };
+      if (!onDay) statusHint = r.arrival_date > today
+        ? `Check-in opens on the arrival date (${fmtDateLong(r.arrival_date)}).`
+        : `Guest arriving late? Edit the arrival date to today first, and record any charge for missed nights under Additional Charges.`;
+      break;
+    }
+    case 'Checked-in':
+      mainAct = { to: 'Checked-out', icon: 'logout', label: 'Check Out' };
+      if (r.arrival_date === today) undoAct = { to: 'New Reservation', label: 'Undo Check-in' };
+      break;
+    case 'Checked-out':
+      if (r.departure_date === today) undoAct = { to: 'Checked-in', label: 'Undo Check-out' };
+      else statusHint = 'Stay completed.';
+      break;
+  }
+  const sdHeldChip = Number(r.security_deposit) > 0 && !cancelled ? '<span class="st-chip rd-chip-dep">Deposit held</span>' : '';
   const header = `
     <div class="rd-crumb">
       <a onclick="rdGoBack()">Reservations</a><span class="mso" style="font-size:14px">chevron_right</span><b>${escHtml(r.confirmation_number || '')}</b>
     </div>
     <div class="rd-head">
-      <div>
+      <div class="rd-head-main">
         <div class="rd-title">${escHtml(r.guest_name || 'Guest')}</div>
         <div class="rd-sub">
-          ${statusChip(r.status)} ${payDisplayChip(r)} ${(() => { const f = folioOf(countsAsStay(r) ? Number(r.room_revenue || 0) : 0, _rdCharges, _rdMisc); return f.hasCharges && f.extrasDue > 0 ? '<span class="st-chip pay-extras">Extras due</span>' : ''; })()}
-          <span><span class="mso">bed</span> ${escHtml(r.room_name || '—')}</span>
-          <span><span class="mso">hub</span> ${escHtml(r.channel || '—')}</span>
+          ${statusChip(r.status)} ${payDisplayChip(r)} ${(() => { const f = folioOf(countsAsStay(r) ? Number(r.room_revenue || 0) : 0, _rdCharges, _rdMisc); return f.hasCharges && f.extrasDue > 0 ? '<span class="st-chip pay-extras">Extras due</span>' : ''; })()} ${sdHeldChip}
+          <span class="rd-pill"><span class="mso">bed</span>${escHtml(r.room_name || '—')}</span>
+          <span class="rd-pill muted"><span class="mso">hub</span>${escHtml(r.channel || '—')}</span>
         </div>
       </div>
       ${_rdMode === 'edit' ? '' : `<div class="rd-actions">
         <button class="btn-ghost" onclick="rdGoBack()"><span class="mso" style="font-size:16px">arrow_back</span>Back</button>
         <button class="btn-soft" onclick="rdStartEdit()" ${cancelled ? 'disabled title="Cancelled reservations cannot be edited"' : ''}><span class="mso">edit</span>Edit Booking</button>
+        ${mainAct ? `<button class="btn-primary rd-main-act" onclick="rdSetStatus('${mainAct.to}')" ${mainAct.disabled ? `disabled title="${escHtml(statusHint)}"` : ''}><span class="mso">${mainAct.icon}</span>${mainAct.label}</button>` : ''}
       </div>`}
     </div>`;
 
@@ -4099,55 +4194,24 @@ function renderReservationDetail() {
       <div style="min-width:0"><div class="rd-label">${label}</div>
         <div class="rd-info-val ${val ? '' : 'empty'}">${val ? (href ? `<a href="${href}">${escHtml(val)}</a>` : escHtml(val)) : 'Not added'}</div></div>
     </div>`;
+  const occ = (r.guests || 1) + ' Guest' + ((r.guests || 1) > 1 ? 's' : '');
   const guestCard = `
-    <div class="rd-card tint">
-      <div class="rd-label">Guest Profile</div>
+    <div class="rd-card">
+      <div class="rd-card-head"><div class="rd-label">Guest Profile</div><span class="rd-card-aside">${escHtml(r.country || 'Country not added')}</span></div>
       <div class="rd-guest">
         <div class="rd-avatar">${escHtml(initials(r.guest_name))}</div>
-        <h3>${escHtml(r.guest_name || '—')}</h3>
-        <p>${escHtml(r.country || 'Country not added')}</p>
+        <div style="min-width:0"><h3>${escHtml(r.guest_name || '—')}</h3><p>${occ}</p></div>
       </div>
+      <div class="rd-info-list">
       ${info('mail', 'Email Address', r.guest_email, r.guest_email ? 'mailto:' + encodeURIComponent(r.guest_email) : '')}
       ${info('call', 'Phone Number', r.guest_phone, r.guest_phone ? 'tel:' + String(r.guest_phone).replace(/[^\d+]/g, '') : '')}
-      ${info('group', 'Occupancy', (r.guests || 1) + ' Guest' + ((r.guests || 1) > 1 ? 's' : ''))}
       ${info('emergency', 'Emergency Contact', [r.emergency_contact_name, r.emergency_contact_phone].filter(Boolean).join(' · '),
              r.emergency_contact_phone ? 'tel:' + String(r.emergency_contact_phone).replace(/[^\d+]/g, '') : '')}
+      </div>
       <button class="rd-inv-btn" onclick="generateInvoice()" ${cancelled ? 'disabled title="No invoice for cancelled bookings"' : ''}><span class="mso">receipt_long</span>Download Invoice</button>
     </div>`;
 
-  // ── Stay status actions
-  const btn = (to, icon, label, subtle, disabled) =>
-    `<button class="rd-status-btn ${subtle ? 'subtle' : ''}" onclick="rdSetStatus('${to}')" ${disabled ? 'disabled' : ''}><span class="mso">${icon}</span>${label}</button>`;
-  const today = baliToday();
-  let statusBtns = '', statusHint = '';
-  switch (r.status || 'New Reservation') {
-    case 'New Reservation':
-    case 'No-show': {
-      const onDay = r.arrival_date === today;
-      statusBtns = btn('Checked-in', 'login', 'Check in', false, !onDay);
-      if (!onDay) statusHint = r.arrival_date > today
-        ? `Check-in opens on the arrival date (${fmtDateLong(r.arrival_date)}).`
-        : `Guest arriving late? Edit the arrival date to today first, and record any charge for missed nights under Misc Payment.`;
-      break;
-    }
-    case 'Checked-in':
-      statusBtns = btn('Checked-out', 'logout', 'Check out') + (r.arrival_date === today ? btn('New Reservation', 'undo', 'Undo check-in', true) : '');
-      break;
-    case 'Checked-out':
-      statusBtns = r.departure_date === today ? btn('Checked-in', 'undo', 'Undo check-out', true) : '';
-      if (!statusBtns) statusHint = 'Stay completed.';
-      break;
-  }
-  const statusCard = `
-    <div class="rd-card tint">
-      <div class="rd-label">Stay Status</div>
-      <div style="margin-top:12px">${statusChip(r.status)}</div>
-      ${cancelled
-        ? `<p class="rd-muted">This booking is cancelled and locked. To bring the guest back, create a new booking.</p>`
-        : `${statusBtns ? `<div class="rd-status-btns">${statusBtns}</div>` : ''}${statusHint ? `<p class="rd-muted" style="margin-top:12px">${statusHint}</p>` : ''}`}
-    </div>`;
-
-  // ── Guest emails
+  // ── Stay status & guest emails
   const hasEmail = !!String(r.guest_email || '').trim();
   const lastSent = (act) => {
     const h = _rdHistory.find(x => x.action === act);
@@ -4156,15 +4220,18 @@ function renderReservationDetail() {
   const stayed = r.status === 'Checked-in' || r.status === 'Checked-out';
   const confNote = stayed ? 'Not available after check-in' : !hasEmail ? 'Add a guest email to send' : cancelled ? 'Booking is cancelled' : (lastSent('Confirmation email sent') || 'Not sent yet');
   const cancNote = stayed ? 'Not available after check-in' : !hasEmail ? 'Add a guest email to send' : !cancelled ? 'Available after cancelling the booking' : (lastSent('Cancellation email sent') || 'Not sent yet');
-  const mailCard = `
-    <div class="rd-card tint">
-      <div class="rd-label">Guest Emails</div>
+  const statusCard = `
+    <div class="rd-card rd-status-card">
+      <div class="rd-card-head"><div class="rd-label">Stay Status &amp; Emails</div>${statusChip(r.status)}</div>
+      ${cancelled ? `<p class="rd-muted" style="margin-top:0">This booking is cancelled and locked. To bring the guest back, create a new booking.</p>`
+        : statusHint ? `<p class="rd-muted" style="margin-top:0">${statusHint}</p>` : ''}
       <div class="rd-mail-btns">
         <button class="rd-mail-btn" onclick="previewGuestEmail('confirmation')" ${hasEmail && !cancelled && !stayed ? '' : 'disabled'}>
           <span class="mso">mark_email_read</span><span>Send Confirmation Email<small>${confNote}</small></span></button>
         <button class="rd-mail-btn cancel" onclick="previewGuestEmail('cancellation')" ${hasEmail && cancelled && !stayed ? '' : 'disabled'}>
           <span class="mso">cancel_schedule_send</span><span>Send Cancellation Email<small>${cancNote}</small></span></button>
       </div>
+      ${undoAct ? `<div class="rd-undo"><span>Set status by mistake?</span><button onclick="rdSetStatus('${undoAct.to}')"><span class="mso">undo</span>${undoAct.label}</button></div>` : ''}
     </div>`;
 
   // ── Stay card
@@ -4172,19 +4239,19 @@ function renderReservationDetail() {
     <div class="rd-stay">
       <div class="rd-room">
         <span class="mso bg">bed</span>
-        <small>Room</small>
+        <div class="rd-room-top"><small>Assigned Room</small><span class="mso">king_bed</span></div>
         <div><div class="rd-room-name">${escHtml(r.room_name || '—')}</div>
           <small>via ${escHtml(r.channel || '—')}</small></div>
       </div>
       <div class="rd-period">
         <div class="rd-period-top">
           <div><div class="rd-label">Reservation Period</div>
-            <div class="rd-dates">${fmtDateLong(r.arrival_date)} –<br>${fmtDateLong(r.departure_date)}</div></div>
+            <div class="rd-dates">${fmtDateLong(r.arrival_date)} – ${fmtDateLong(r.departure_date)}</div></div>
           <div class="rd-nights"><b>${nights}</b><span>Night${nights === 1 ? '' : 's'}</span></div>
         </div>
         <div class="rd-inout">
           <div><div class="rd-label">Arrival</div><div class="rd-inout-val"><span class="mso">login</span>${fmtDateLong(r.arrival_date)}</div></div>
-          <div><div class="rd-label">Departure</div><div class="rd-inout-val"><span class="mso">logout</span>${fmtDateLong(r.departure_date)}</div></div>
+          <div><div class="rd-label">Departure</div><div class="rd-inout-val out"><span class="mso">logout</span>${fmtDateLong(r.departure_date)}</div></div>
         </div>
         <div class="rd-meta">
           <span>Conf. No. <b>${escHtml(r.confirmation_number || '—')}</b></span>
@@ -4197,7 +4264,7 @@ function renderReservationDetail() {
   // ── Finance
   const fo = folioOf(countsAsStay(r) ? Number(r.room_revenue || 0) : 0, _rdCharges, _rdMisc);
   const finCard = `
-    <div class="rd-card tint">
+    <div class="rd-card">
       <div class="rd-label" style="display:flex;justify-content:space-between">Financial Overview <span class="mso" style="font-size:20px">payments</span></div>
       ${r.rate_type === 'total'
         ? `<div class="rd-fin-row"><span>Total stay price · ${nights} night${nights === 1 ? '' : 's'}</span><b>${idr(r.room_revenue)}</b></div>
@@ -4222,7 +4289,7 @@ function renderReservationDetail() {
   const sdHeld = Number(sd) > 0;
   const sdCard = `
     <div class="rd-card rd-sd-card" id="rd-sd">
-      <div class="rd-sd-head"><div class="rd-label">Refundable Security Deposit</div><span class="mso" style="font-size:20px;color:var(--secondary)">shield</span></div>
+      <div class="rd-sd-head"><div class="rd-label">Security Deposit</div><span class="mso" style="font-size:20px">verified_user</span></div>
       ${_rdMode === 'sd'
         ? `<div class="rd-sd-edit">
              <div class="form-group rate-wrap"><span class="rate-prefix">IDR</span><input id="sd-input" type="text" inputmode="numeric" autocomplete="off" class="money" value="${moneyStr(sd)}" placeholder="0"></div>
@@ -4237,7 +4304,7 @@ function renderReservationDetail() {
     </div>`;
 
   // ── Guest Payments + Additional Charges
-  const folioCard = `<div class="rd-card" id="rd-misc"><div class="rd-sd-head"><div class="rd-label">Guest Payment</div><span class="mso" style="font-size:20px;color:var(--secondary)">account_balance_wallet</span></div><div class="fx-wrap" id="fx-rd"></div></div>`;
+  const folioCard = `<div class="rd-card rd-ledger" id="rd-misc"><div class="fx-wrap" id="fx-rd"></div></div>`;
 
   // ── Notes
   const notesCard = _rdMode === 'note'
@@ -4250,8 +4317,7 @@ function renderReservationDetail() {
         </div>
       </div>`
     : `<div class="rd-notes">
-        <div class="rd-label">Operation Notes</div>
-        <div class="rd-label" style="margin-top:20px;color:#a7f3d0;opacity:.8">Internal Notes</div>
+        <div class="rd-card-head"><div class="rd-label">Operation Notes</div><span class="rd-label" style="opacity:.75">Internal</span></div>
         <div class="rd-notes-text ${r.notes ? '' : 'empty'}">${r.notes ? '“' + escHtml(r.notes) + '”' : 'No notes yet.'}</div>
         <button class="rd-notes-btn" onclick="_rdMode='note';renderReservationDetail();setTimeout(()=>document.getElementById('rd-note-input')?.focus(),50)">${r.notes ? 'Edit Note' : 'Add Note'}</button>
       </div>`;
@@ -4259,8 +4325,8 @@ function renderReservationDetail() {
   // ── History
   const histCard = `
     <div class="rd-card" id="rd-history">
-      <div class="rd-label">Change History</div>
-      <div style="margin-top:8px">${renderHistory()}</div>
+      <div class="rd-card-head"><div class="rd-label">Change History <span class="rd-count">${_rdHistory.length + (_rdHistory.some(h => h.action === 'Created') ? 0 : 1)}</span></div><span class="rd-card-aside">Latest first</span></div>
+      <div>${renderHistory()}</div>
     </div>`;
 
   // ── Cancellation
@@ -4273,20 +4339,22 @@ function renderReservationDetail() {
           <p>Cancelling frees the room for these dates. A cancelled booking cannot be reopened — the guest would need a new booking.</p></div>
           <button class="rd-cancel-btn" onclick="rdCancel()"><span class="mso">cancel</span>Cancel Reservation</button></div>`
       : `<div class="rd-cancel"><div><h4>Cancellation</h4>
-          <p>This guest has already ${r.status === 'Checked-in' ? 'checked in' : 'checked out'}, so the booking can't be cancelled. Use “Undo” under Stay Status if the status was set by mistake.</p></div></div>`;
+          <p>This guest has already ${r.status === 'Checked-in' ? 'checked in' : 'checked out'}, so the booking can't be cancelled. Use “Undo” under Stay Status &amp; Emails if the status was set by mistake.</p></div></div>`;
 
   setTimeout(() => loadDocs(r.id), 0);
   root.innerHTML = header + `
+    <div class="rd-hero">${stayCard}${statusCard}</div>
     <div class="rd-grid">
-      <div class="rd-col">${guestCard}${statusCard}${mailCard}</div>
       <div class="rd-col">
-        ${stayCard}
-        <div class="rd-two">${finCard}${sdCard}</div>
-        ${folioCard}
+        ${guestCard}
         ${notesCard}
         <div class="rd-card" id="rd-docs"><div class="rd-label">Documents</div><div class="rd-muted">Loading…</div></div>
-        ${histCard}
         ${cancelBox}
+      </div>
+      <div class="rd-col">
+        <div class="rd-two">${finCard}${sdCard}</div>
+        ${folioCard}
+        ${histCard}
       </div>
     </div>`;
   fxRender('rd');
@@ -5679,8 +5747,11 @@ function renderHistory() {
         <div class="rd-hist-who">Booked before the change history started</div></div>
     </div>`);
   }
-  return items.join('');
+  const SHOW = 5;
+  if (items.length <= SHOW + 1 || _rdHistAll) return items.join('') + (items.length > SHOW + 1 ? `<button class="rd-hist-more" onclick="_rdHistAll=false;renderReservationDetail()">Show less</button>` : '');
+  return items.slice(0, SHOW).join('') + `<button class="rd-hist-more" onclick="_rdHistAll=true;renderReservationDetail()">Show ${items.length - SHOW} earlier entries</button>`;
 }
+let _rdHistAll = false;
 
 /* ── Status changes & cancel ─────────────────────────────── */
 async function rdUpdate(payload, okMsg) {
@@ -5801,6 +5872,26 @@ function fxRender(which) {
   const st = fxState(which);
   const live = which === 'rd';
   const locked = live && _rd.status === 'Cancelled';
+  if (live) {
+    const paid = st.pays.reduce((t, x) => t + Number(x.amount || 0), 0);
+    const tab = (t, label, n) => `<button type="button" class="fx-tab${_fxTab === t ? ' on' : ''}" onclick="_fxTab='${t}';fxRender('rd')">${label} <span>${n}</span></button>`;
+    el.innerHTML = `
+    <div class="fx-tabbar">
+      <div class="fx-tabs">${tab('p', 'Guest Payments', st.pays.length)}${tab('c', 'Additional Charges', st.charges.length)}</div>
+      <span class="fx-paid-total">Total paid <b>${idr(paid)}</b></span>
+    </div>
+    <div class="fx-panel">
+      ${_fxTab === 'p'
+        ? `<p class="fx-panel-note">Money received from the guest: room, electricity or misc. Rebates and refunds go under Additional Charges.</p>
+           ${locked ? '' : fxAddHTML(which, 'p')}
+           ${fxListHTML(which, 'p', st.pays, 'payment', 'No payments yet')}`
+        : `<p class="fx-panel-note">Electricity (kWh in the notes) or Misc = guest owes more · Rebate = guest owes less · Refund = money handed back to the guest.</p>
+           ${locked ? '' : fxAddHTML(which, 'c')}
+           ${fxListHTML(which, 'c', st.charges, 'entry', 'No additional charges')}`}
+    </div>
+    <div class="fx-sum" id="fx-${which}-sum"></div>`;
+    return fxSummary(which);
+  }
   el.innerHTML = `
     <div class="fx-block">
       <div class="fx-head"><span class="mso">account_balance_wallet</span><div><b>Guest Payments</b><small>Money received from the guest: room, electricity or misc. Rebates and refunds go under Additional Charges.</small></div></div>
@@ -5817,6 +5908,7 @@ function fxRender(which) {
 }
 // Lists are folded by default; a toggle shows the breakdown
 const _fxOpen = {};
+let _fxTab = 'p';   // reservation detail: which ledger tab is showing
 function fxListHTML(which, type, list, noun, empty) {
   if (!list.length) return `<div class="fx-empty">${empty}</div>`;
   const key = which + type, open = !!_fxOpen[key];
